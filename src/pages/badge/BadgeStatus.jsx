@@ -36,7 +36,7 @@ const JOBSEEKER_BENEFITS = [
     icon: FileText,
     title: "Weekly & Monthly Job Application Report",
     description:
-      "Receive a weekly & monthly job application insights report.",
+      "See recruiters who found you in advanced search, profile views, and applications viewed but not reviewed.",
   },
   {
     icon: Calendar,
@@ -69,7 +69,7 @@ const RECRUITER_BENEFITS = [
     icon: FileText,
     title: "Weekly & Monthly Job Posting Report",
     description:
-      "Receive a weekly & monthly job posting insights report.",
+      "Track jobseekers who view or apply to your posts, plus insights to target the professionals you need.",
   },
   {
     icon: Calendar,
