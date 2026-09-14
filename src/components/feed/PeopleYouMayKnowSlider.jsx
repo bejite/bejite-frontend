@@ -144,37 +144,50 @@ export const PeopleSuggestionsProvider = ({
           sessionOffset = 0;
         }
 
+        // Fetch multiple batches to build a deep pool (up to 100+ candidates)
+        // so multiple sliders throughout the feed each have fresh, unique people
         let discoverList = [];
         try {
-          const res = await connectionsApi.discoverUsers(
-            POOL_BATCH_SIZE,
-            sessionOffset,
-          );
-          discoverList = res?.users || (Array.isArray(res) ? res : []);
+          const res1 = await connectionsApi.discoverUsers(40, sessionOffset);
+          const list1 = res1?.users || (Array.isArray(res1) ? res1 : []);
+          discoverList = [...list1];
         } catch (err) {
-          console.warn("Discover users with offset failed:", err);
+          console.warn("Discover users batch 1 failed:", err);
         }
 
-        // Fallback to offset 0 if offset returned empty or small
-        if (!discoverList || discoverList.length < 10) {
+        try {
+          const res2 = await connectionsApi.discoverUsers(
+            40,
+            sessionOffset + (discoverList.length > 0 ? discoverList.length : 40),
+          );
+          const list2 = res2?.users || (Array.isArray(res2) ? res2 : []);
+          discoverList = [...discoverList, ...list2];
+        } catch {
+          // optional batch 2
+        }
+
+        // Fallback to offset 0 if offset returned small batch
+        if (discoverList.length < 20 && sessionOffset !== 0) {
           try {
-            const fallbackRes = await connectionsApi.discoverUsers(
-              POOL_BATCH_SIZE,
-              0,
-            );
-            discoverList =
+            const fallbackRes = await connectionsApi.discoverUsers(40, 0);
+            const fallbackList =
               fallbackRes?.users ||
               (Array.isArray(fallbackRes) ? fallbackRes : []);
+            discoverList = [...discoverList, ...fallbackList];
           } catch (err) {
             console.warn("Discover users fallback to 0 failed:", err);
-            try {
-              const netRes = await connectionsApi.getConnections(1, 50);
-              discoverList = (netRes?.connections || []).map(
-                (c) => c.user || c,
-              );
-            } catch {
-              discoverList = [];
-            }
+          }
+        }
+
+        // Also search for general users if discover pool is still modest
+        if (discoverList.length < 25) {
+          try {
+            const searchRes = await connectionsApi.searchUsers("", 40, 0);
+            const searchList =
+              searchRes?.users || (Array.isArray(searchRes) ? searchRes : []);
+            discoverList = [...discoverList, ...searchList];
+          } catch {
+            // optional search
           }
         }
 
@@ -247,10 +260,19 @@ export const PeopleSuggestionsProvider = ({
         });
 
         setConnectionStatuses((prev) => ({ ...initialStatuses, ...prev }));
+        connectionStatusesRef.current = { ...initialStatuses };
+
+        // Synchronously update refs before triggering state re-renders so children
+        // immediately access the updated pool and fresh clean allocations
+        masterPoolRef.current = finalOrderedPool;
+        segmentAllocationsRef.current = {};
+
         setMasterPool(finalOrderedPool);
         setSegmentAllocations({});
       } catch (err) {
         console.error("Error loading people you may know pool:", err);
+        masterPoolRef.current = [];
+        segmentAllocationsRef.current = {};
         setMasterPool([]);
       } finally {
         setLoading(false);
@@ -266,11 +288,15 @@ export const PeopleSuggestionsProvider = ({
   // Allocate non-overlapping cards for a specific slider segment
   const getSegmentUsers = useCallback(
     (segmentIndex, requestedCount = SEGMENT_CARD_COUNT) => {
-      const pool = masterPoolRef.current;
-      if (pool.length === 0) return [];
+      const pool =
+        masterPoolRef.current.length > 0
+          ? masterPoolRef.current
+          : masterPool;
+      if (!pool || pool.length === 0) return [];
 
       const existingIds = segmentAllocationsRef.current[segmentIndex];
       const dismissed = dismissedUserIdsRef.current;
+      const statuses = connectionStatusesRef.current;
 
       if (existingIds && existingIds.length > 0) {
         const idToUser = new Map(
@@ -278,11 +304,19 @@ export const PeopleSuggestionsProvider = ({
         );
         const userList = existingIds
           .map((id) => idToUser.get(id))
-          .filter((u) => u && !dismissed.has(String(u.id || u.userId)));
+          .filter((u) => {
+            if (!u) return false;
+            const uId = String(u.id || u.userId);
+            return (
+              !dismissed.has(uId) &&
+              statuses[uId] !== "connected" &&
+              statuses[uId] !== "following"
+            );
+          });
         if (userList.length > 0) return userList;
       }
 
-      // Find users not allocated to any other segment
+      // Collect all user IDs allocated to ANY other segment so far
       const allocatedInOtherSegments = new Set();
       Object.entries(segmentAllocationsRef.current).forEach(([idx, ids]) => {
         if (Number(idx) !== Number(segmentIndex)) {
@@ -290,7 +324,7 @@ export const PeopleSuggestionsProvider = ({
         }
       });
 
-      const statuses = connectionStatusesRef.current;
+      // Filter available users who have not been allocated to any other slider
       const availableUsers = pool.filter((u) => {
         const id = String(u.id || u.userId);
         return (
@@ -301,7 +335,7 @@ export const PeopleSuggestionsProvider = ({
         );
       });
 
-      // If segmentIndex > 0 and no more available users, return empty to prevent duplicates
+      // If this is a subsequent segment and there are no unique unallocated users left:
       if (availableUsers.length === 0 && segmentIndex > 0) {
         return [];
       }
@@ -310,9 +344,14 @@ export const PeopleSuggestionsProvider = ({
       const assignedIds = assigned.map((u) => String(u.id || u.userId));
 
       if (assignedIds.length > 0) {
+        // SYNCHRONOUSLY store in ref immediately so concurrent slider renders in the
+        // same tick will see these IDs as already allocated and pick different users
+        segmentAllocationsRef.current[segmentIndex] = assignedIds;
+
+        // Sync with React state asynchronously
         setTimeout(() => {
           setSegmentAllocations((prev) => {
-            if (prev[segmentIndex]) return prev;
+            if (prev[segmentIndex] === assignedIds) return prev;
             return {
               ...prev,
               [segmentIndex]: assignedIds,
@@ -323,7 +362,7 @@ export const PeopleSuggestionsProvider = ({
 
       return assigned;
     },
-    [],
+    [masterPool],
   );
 
   // Rotate / re-shuffle suggestions for a specific slider segment on demand
@@ -331,7 +370,10 @@ export const PeopleSuggestionsProvider = ({
     async (segmentIndex) => {
       setRefreshingSegments((prev) => ({ ...prev, [segmentIndex]: true }));
 
-      const pool = masterPoolRef.current;
+      const pool =
+        masterPoolRef.current.length > 0
+          ? masterPoolRef.current
+          : masterPool;
       const currentSegmentIds = new Set(
         segmentAllocationsRef.current[segmentIndex] || [],
       );
@@ -374,6 +416,9 @@ export const PeopleSuggestionsProvider = ({
       const newAssigned = candidates.slice(0, SEGMENT_CARD_COUNT);
       const newAssignedIds = newAssigned.map((u) => String(u.id || u.userId));
 
+      // Update ref immediately
+      segmentAllocationsRef.current[segmentIndex] = newAssignedIds;
+
       setTimeout(() => {
         setSegmentAllocations((prev) => ({
           ...prev,
@@ -382,7 +427,7 @@ export const PeopleSuggestionsProvider = ({
         setRefreshingSegments((prev) => ({ ...prev, [segmentIndex]: false }));
       }, 350);
     },
-    [],
+    [masterPool],
   );
 
   // Send connection request and replenish card smoothly
@@ -400,6 +445,7 @@ export const PeopleSuggestionsProvider = ({
         ...prev,
         [targetUserId]: "connecting",
       }));
+      connectionStatusesRef.current[targetUserId] = "connecting";
 
       try {
         const followStatus = await followsApi
@@ -414,6 +460,7 @@ export const PeopleSuggestionsProvider = ({
             ...prev,
             [targetUserId]: "following",
           }));
+          connectionStatusesRef.current[targetUserId] = "following";
         } else {
           const res = await connectionsApi.sendConnectionRequest(targetUserId);
           if (res?.connected) {
@@ -422,51 +469,47 @@ export const PeopleSuggestionsProvider = ({
               ...prev,
               [targetUserId]: "connected",
             }));
+            connectionStatusesRef.current[targetUserId] = "connected";
           } else {
             toast.success(`Connection request sent to ${targetName}!`);
             setConnectionStatuses((prev) => ({
               ...prev,
               [targetUserId]: "pending",
             }));
+            connectionStatusesRef.current[targetUserId] = "pending";
           }
         }
 
         // Replenish with a candidate from master pool after card exit animation
         setTimeout(() => {
-          setSegmentAllocations((prev) => {
-            const currentIds = prev[segmentIndex] || [];
-            const remainingIds = currentIds.filter((id) => id !== targetUserId);
+          const currentIds = segmentAllocationsRef.current[segmentIndex] || [];
+          const remainingIds = currentIds.filter((id) => id !== targetUserId);
 
-            const allAllocated = new Set();
-            Object.values(prev).forEach((ids) =>
-              (ids || []).forEach((id) => allAllocated.add(id)),
+          const allAllocated = new Set();
+          Object.values(segmentAllocationsRef.current).forEach((ids) =>
+            (ids || []).forEach((id) => allAllocated.add(id)),
+          );
+          allAllocated.add(targetUserId);
+
+          const candidate = masterPoolRef.current.find((u) => {
+            const id = String(u.id || u.userId);
+            return (
+              !allAllocated.has(id) &&
+              !dismissedUserIdsRef.current.has(id) &&
+              connectionStatusesRef.current[id] !== "connected" &&
+              connectionStatusesRef.current[id] !== "following"
             );
-            allAllocated.add(targetUserId);
-
-            const candidate = masterPoolRef.current.find((u) => {
-              const id = String(u.id || u.userId);
-              return (
-                !allAllocated.has(id) &&
-                !dismissedUserIdsRef.current.has(id) &&
-                connectionStatusesRef.current[id] !== "connected" &&
-                connectionStatusesRef.current[id] !== "following"
-              );
-            });
-
-            if (candidate) {
-              return {
-                ...prev,
-                [segmentIndex]: [
-                  ...remainingIds,
-                  String(candidate.id || candidate.userId),
-                ],
-              };
-            }
-            return {
-              ...prev,
-              [segmentIndex]: remainingIds,
-            };
           });
+
+          const nextIds = candidate
+            ? [...remainingIds, String(candidate.id || candidate.userId)]
+            : remainingIds;
+
+          segmentAllocationsRef.current[segmentIndex] = nextIds;
+          setSegmentAllocations((prev) => ({
+            ...prev,
+            [segmentIndex]: nextIds,
+          }));
         }, 700);
       } catch (err) {
         console.error("Failed to connect:", err);
@@ -480,6 +523,7 @@ export const PeopleSuggestionsProvider = ({
           delete next[targetUserId];
           return next;
         });
+        delete connectionStatusesRef.current[targetUserId];
       }
     },
     [currentUser],
@@ -489,42 +533,40 @@ export const PeopleSuggestionsProvider = ({
   const dismissCard = useCallback((userId, segmentIndex) => {
     const uId = String(userId);
     setDismissedUserIds((prev) => new Set([...prev, uId]));
+    dismissedUserIdsRef.current = new Set([
+      ...dismissedUserIdsRef.current,
+      uId,
+    ]);
 
     setTimeout(() => {
-      setSegmentAllocations((prev) => {
-        const currentIds = prev[segmentIndex] || [];
-        const remainingIds = currentIds.filter((id) => id !== uId);
+      const currentIds = segmentAllocationsRef.current[segmentIndex] || [];
+      const remainingIds = currentIds.filter((id) => id !== uId);
 
-        const allAllocated = new Set();
-        Object.values(prev).forEach((ids) =>
-          (ids || []).forEach((id) => allAllocated.add(id)),
+      const allAllocated = new Set();
+      Object.values(segmentAllocationsRef.current).forEach((ids) =>
+        (ids || []).forEach((id) => allAllocated.add(id)),
+      );
+      allAllocated.add(uId);
+
+      const candidate = masterPoolRef.current.find((u) => {
+        const id = String(u.id || u.userId);
+        return (
+          !allAllocated.has(id) &&
+          !dismissedUserIdsRef.current.has(id) &&
+          connectionStatusesRef.current[id] !== "connected" &&
+          connectionStatusesRef.current[id] !== "following"
         );
-        allAllocated.add(uId);
-
-        const candidate = masterPoolRef.current.find((u) => {
-          const id = String(u.id || u.userId);
-          return (
-            !allAllocated.has(id) &&
-            !dismissedUserIdsRef.current.has(id) &&
-            connectionStatusesRef.current[id] !== "connected" &&
-            connectionStatusesRef.current[id] !== "following"
-          );
-        });
-
-        if (candidate) {
-          return {
-            ...prev,
-            [segmentIndex]: [
-              ...remainingIds,
-              String(candidate.id || candidate.userId),
-            ],
-          };
-        }
-        return {
-          ...prev,
-          [segmentIndex]: remainingIds,
-        };
       });
+
+      const nextIds = candidate
+        ? [...remainingIds, String(candidate.id || candidate.userId)]
+        : remainingIds;
+
+      segmentAllocationsRef.current[segmentIndex] = nextIds;
+      setSegmentAllocations((prev) => ({
+        ...prev,
+        [segmentIndex]: nextIds,
+      }));
     }, 250);
   }, []);
 
