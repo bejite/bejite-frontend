@@ -31,6 +31,16 @@ function isFeatureTourActive() {
   }
 }
 
+/** Below Tailwind `lg` — skip Lottie intro on phones/tablets. */
+function checkIsMobile() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.matchMedia("(max-width: 1023px)").matches;
+  } catch {
+    return false;
+  }
+}
+
 export default function TwoFactorAnnouncementModal({
   forceShow = false,
   autoAdvanceDelay = 5500,
@@ -49,7 +59,9 @@ export default function TwoFactorAnnouncementModal({
   const lottieContainerRef = useRef(null);
   const animInstanceRef = useRef(null);
 
-  const tryOpen = () => {
+  const openAnnouncement = () => {
+    const mobile = checkIsMobile();
+    setIsMobile(mobile);
     if (isFeatureTourActive()) {
       pendingOpenRef.current = true;
       setIsOpen(false);
@@ -57,7 +69,11 @@ export default function TwoFactorAnnouncementModal({
     }
     pendingOpenRef.current = false;
     setIsOpen(true);
+<<<<<<< Updated upstream
     setStage(checkIsMobile() ? "details" : "intro");
+=======
+    setStage(mobile ? "details" : "intro");
+>>>>>>> Stashed changes
   };
 
   // Window resize listener to keep isMobile in sync
@@ -82,8 +98,14 @@ export default function TwoFactorAnnouncementModal({
         setIsOpen(false);
       } else if (pendingOpenRef.current) {
         pendingOpenRef.current = false;
+        const mobile = checkIsMobile();
+        setIsMobile(mobile);
         setIsOpen(true);
+<<<<<<< Updated upstream
         setStage(checkIsMobile() ? "details" : "intro");
+=======
+        setStage(mobile ? "details" : "intro");
+>>>>>>> Stashed changes
       }
     };
     window.addEventListener("bejite:feature-tour", onTour);
@@ -100,7 +122,7 @@ export default function TwoFactorAnnouncementModal({
     setIsMobile(mobile);
 
     if (forceShow || urlForce) {
-      tryOpen();
+      openAnnouncement();
       return;
     }
 
@@ -135,7 +157,7 @@ export default function TwoFactorAnnouncementModal({
         } else {
           // If 2FA is NOT enabled (false), show the modal for this user
           openTimer = setTimeout(() => {
-            if (!cancelled) tryOpen();
+            if (!cancelled) openAnnouncement();
           }, 600);
         }
       })
