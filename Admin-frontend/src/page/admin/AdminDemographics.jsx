@@ -14,12 +14,13 @@ import {
   PieChart,
   Pie,
   Cell,
+  LabelList,
 } from "recharts";
 import WorldMap from "../../components/admin/WorldMap";
 
 // StatCard component
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between mb-4">
       <div className={`p-3 rounded-xl ${colorClass}`}>
         <Icon size={24} />
@@ -89,17 +90,18 @@ const AdminDemographics = () => {
   };
 
   const jobseekersByCountry = formatPieData(metrics?.jobseekers_by_country);
+  const topCountriesJobseekers = formatBarData(metrics?.jobseekers_by_country);
   const jobseekersByGender = formatPieData(metrics?.jobseekers_by_gender);
   const jobseekersByAge = formatPieData(metrics?.jobseekers_by_age_group);
   const jobseekersByState = formatBarData(metrics?.jobseekers_by_state);
   const employersByCountry = formatBarData(metrics?.employers_by_country);
 
   return (
-    <div className="max-w-7xl mx-auto w-full space-y-8">
+    <div className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800">User Demographics</h1>
-        <p className="text-gray-500 text-sm mt-1">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">User Demographics</h1>
+        <p className="text-gray-500 text-xs sm:text-sm mt-1">
           Geographic and demographic distribution of jobseekers and employers.
         </p>
       </div>
@@ -136,41 +138,154 @@ const AdminDemographics = () => {
         />
       </div>
 
-      {/* Jobseekers by Country - World Map (full width) */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-800">
-              Jobseekers by Country
-            </h3>
-            <p className="text-xs text-gray-400 mt-1">
-              Hover over a country to see jobseeker count. Scroll to zoom, drag to pan.
-            </p>
+      {/* Jobseekers by Country - World Map + Top Countries Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* World Map (Left, 2 cols) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                Jobseekers by Country
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                <span className="hidden sm:inline">
+                  Hover over a country to see jobseeker count. Use + / - buttons to zoom, drag to pan.
+                </span>
+                <span className="sm:hidden">
+                  Tap a country to see count. Use + / - buttons to zoom.
+                </span>
+              </p>
+            </div>
+            <div className="self-start sm:self-auto flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-gray-100 shrink-0 whitespace-nowrap font-medium">
+              <Globe size={13} className="text-[#16730F]" />
+              <span>{jobseekersByCountry.length} countries</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Globe size={14} className="text-[#16730F]" />
-            <span>{jobseekersByCountry.length} countries</span>
+          <div className="w-full min-h-[300px] sm:min-h-[360px] lg:h-[420px] flex flex-col">
+            {jobseekersByCountry.length > 0 ? (
+              <WorldMap
+                data={jobseekersByCountry}
+                totalJobseekers={metrics?.total_jobseekers || 0}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                No country data available
+              </div>
+            )}
           </div>
         </div>
-        <div className="w-full" style={{ height: "420px" }}>
-          {jobseekersByCountry.length > 0 ? (
-            <WorldMap
-              data={jobseekersByCountry}
-              totalJobseekers={metrics?.total_jobseekers || 0}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
-              No country data available
+
+        {/* Top Countries (Jobseekers) (Right, 1 col - styled like Top States) */}
+        <div className="lg:col-span-1 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                Top Countries (Jobseekers)
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Countries with highest total jobseekers
+              </p>
             </div>
-          )}
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-[#16730F] border border-green-100 shrink-0 whitespace-nowrap">
+              Top {topCountriesJobseekers.length}
+            </span>
+          </div>
+          <div className="w-full h-80 sm:h-96 lg:h-[420px]">
+            {topCountriesJobseekers.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                <BarChart
+                  data={topCountriesJobseekers}
+                  layout="vertical"
+                  margin={{ top: 4, right: 36, left: 8, bottom: 4 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={true}
+                    vertical={false}
+                    stroke="#f0f0f0"
+                  />
+                  <XAxis
+                    type="number"
+                    hide
+                    domain={[
+                      0,
+                      (dataMax) =>
+                        Math.max(dataMax + 1, Math.ceil(dataMax * 1.18)),
+                    ]}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#4b5563", fontSize: 11 }}
+                    width={75}
+                    tickFormatter={(val) =>
+                      val && val.length > 11 ? `${val.slice(0, 10)}…` : val
+                    }
+                  />
+                  <RechartsTooltip
+                    cursor={{ fill: "transparent" }}
+                    formatter={(value) => [
+                      `${Number(value).toLocaleString()} jobseekers${
+                        metrics?.total_jobseekers
+                          ? ` (${(
+                              (value / metrics.total_jobseekers) *
+                              100
+                            ).toFixed(1)}%)`
+                          : ""
+                      }`,
+                      "Jobseekers",
+                    ]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    name="Jobseekers"
+                    fill="#16730F"
+                    radius={[0, 4, 4, 0]}
+                    barSize={16}
+                  >
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      offset={6}
+                      formatter={(val) =>
+                        val != null ? Number(val).toLocaleString() : ""
+                      }
+                      style={{
+                        fill: "#15803d",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                      }}
+                    />
+                    {topCountriesJobseekers.map((entry, index) => (
+                      <Cell
+                        key={`cell-country-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                No country data available
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Age Distribution (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Age Distribution
           </h3>
           <div className="h-72 w-full">
@@ -228,8 +343,8 @@ const AdminDemographics = () => {
         </div>
 
         {/* Jobseekers by Gender (Pie) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Gender Distribution
           </h3>
           <div className="h-64 w-full">
@@ -279,8 +394,8 @@ const AdminDemographics = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Jobseekers by State (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Top States (Jobseekers)
           </h3>
           <div className="h-72 w-full">
@@ -338,8 +453,8 @@ const AdminDemographics = () => {
         </div>
 
         {/* Top Countries (Employers) - Pie Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Top Countries (Employers)
           </h3>
           <div className="h-72 w-full">
