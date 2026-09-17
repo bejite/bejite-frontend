@@ -67,13 +67,10 @@ import { normalizeHashtag } from "../../utils/postBodyFormat";
 import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
-<<<<<<< HEAD
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
-=======
 import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
 import PitchPreviewModal from "../pitch/PitchPreviewModal";
 import { INITIAL_PITCHES } from "../../pages/pitch/pitchData";
->>>>>>> bd0f236e42c2b67a49f50b02c32e1935fc01079b
 
 const FEED_PAGE_SIZE = 20;
 
