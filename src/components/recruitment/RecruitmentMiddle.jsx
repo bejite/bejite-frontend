@@ -67,6 +67,9 @@ import { normalizeHashtag } from "../../utils/postBodyFormat";
 import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
+import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
+import PitchPreviewModal from "../pitch/PitchPreviewModal";
+import { INITIAL_PITCHES } from "../../pages/pitch/pitchData";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -199,6 +202,15 @@ export default function RecruitmentMiddle() {
   };
 
   const visibleAds = ads.filter((ad) => !dismissedAds.has(ad.id));
+
+  // Pitch Reels preview modal state
+  const [selectedPitchForPreview, setSelectedPitchForPreview] = useState(null);
+  const [isPitchPreviewOpen, setIsPitchPreviewOpen] = useState(false);
+
+  const handleOpenPitchPreview = (pitch) => {
+    setSelectedPitchForPreview(pitch);
+    setIsPitchPreviewOpen(true);
+  };
 
   const [posts, setPosts] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
@@ -554,6 +566,16 @@ export default function RecruitmentMiddle() {
                 onVotePoll={handleVotePoll}
               />
               </div>
+
+              {/* Pitch Reels carousel (Facebook-style, shown after 2 posts) */}
+              {feedMode === "home" &&
+                (index === 1 || (posts.length < 2 && index === posts.length - 1)) && (
+                  <PitchReelsCarousel
+                    pitches={INITIAL_PITCHES}
+                    onSelectPitch={handleOpenPitchPreview}
+                  />
+                )}
+
               {/* this is ads so is just dummy for now  */}
               {/* it will display after three posts u can use it */}
               {(index + 1) % 3 === 0 && visibleAds.length > 0 && (
@@ -612,6 +634,14 @@ export default function RecruitmentMiddle() {
             );
           }
         }}
+      />
+
+      {/* Pitch Preview Modal Popup */}
+      <PitchPreviewModal
+        isOpen={isPitchPreviewOpen}
+        onClose={() => setIsPitchPreviewOpen(false)}
+        initialPitch={selectedPitchForPreview}
+        allPitches={INITIAL_PITCHES}
       />
     </main>
   );

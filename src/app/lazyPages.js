@@ -98,3 +98,4 @@ export const EditCampaignAudience = lazy(() => import("../pages/ads/EditCampaign
 export const ResumeLayout = lazy(() => import("../components/ResumeLayout"));
 export const IndividualVerificationLayout = lazy(() => import("../components/IndividualVerificationLayout"));
 export const CoperateVerificationLayout = lazy(() => import("../components/CoperateVerificationLayout"));
+export const PitchPage = lazy(() => import("../pages/pitch/PitchPage.jsx"));
