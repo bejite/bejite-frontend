@@ -67,6 +67,7 @@ import { normalizeHashtag } from "../../utils/postBodyFormat";
 import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
+import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -224,6 +225,11 @@ export default function RecruitmentMiddle() {
     void location.pathname;
     return mergeAuthUsers(getUser() || {}, reduxUser);
   }, [reduxUser, location.pathname]);
+
+  const isCorporateViewer = useMemo(
+    () => isCorporateRecruiter(mergedUser),
+    [mergedUser],
+  );
 
   const currentUserImage = useMemo(() => {
     void location.pathname;
@@ -567,8 +573,9 @@ export default function RecruitmentMiddle() {
                 />
               )}
 
-              {/* People You May Know slider (Facebook-style, shown after every 4 posts) */}
+              {/* People You May Know — not for corporate (follow-only accounts) */}
               {feedMode === "home" &&
+                !isCorporateViewer &&
                 (((index + 1) % 4 === 0) ||
                   (posts.length < 4 && index === posts.length - 1)) && (
                   <PeopleYouMayKnowSlider

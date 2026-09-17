@@ -17,25 +17,16 @@ import { toast } from "react-toastify";
 
 function checkIsMobile() {
   if (typeof window === "undefined") return false;
-  return (
-    window.innerWidth < 640 ||
-    (window.matchMedia ? window.matchMedia("(max-width: 639px)").matches : false)
-  );
-}
-
-function isFeatureTourActive() {
   try {
-    return sessionStorage.getItem("bejite_feature_tour_active") === "true";
+    return window.matchMedia("(max-width: 1023px)").matches;
   } catch {
     return false;
   }
 }
 
-/** Below Tailwind `lg` — skip Lottie intro on phones/tablets. */
-function checkIsMobile() {
-  if (typeof window === "undefined") return false;
+function isFeatureTourActive() {
   try {
-    return window.matchMedia("(max-width: 1023px)").matches;
+    return sessionStorage.getItem("bejite_feature_tour_active") === "true";
   } catch {
     return false;
   }
@@ -69,11 +60,7 @@ export default function TwoFactorAnnouncementModal({
     }
     pendingOpenRef.current = false;
     setIsOpen(true);
-<<<<<<< Updated upstream
-    setStage(checkIsMobile() ? "details" : "intro");
-=======
     setStage(mobile ? "details" : "intro");
->>>>>>> Stashed changes
   };
 
   // Window resize listener to keep isMobile in sync
@@ -101,11 +88,7 @@ export default function TwoFactorAnnouncementModal({
         const mobile = checkIsMobile();
         setIsMobile(mobile);
         setIsOpen(true);
-<<<<<<< Updated upstream
-        setStage(checkIsMobile() ? "details" : "intro");
-=======
         setStage(mobile ? "details" : "intro");
->>>>>>> Stashed changes
       }
     };
     window.addEventListener("bejite:feature-tour", onTour);
