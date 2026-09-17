@@ -136,9 +136,23 @@ input:disabled,
   font-style: normal;
 }
 
-/* font-nunito-regular (for NunitoRegular)
-font-nunito-semi (for NunitoSemi)
-font-nunito-bold (for NunitoBold) */
+@theme {
+  --font-nunito-regular: "NunitoRegular", sans-serif;
+  --font-nunito-semi: "NunitoSemi", sans-serif;
+  --font-nunito-bold: "NunitoBold", sans-serif;
+}
+
+.font-nunito-regular {
+  font-family: "NunitoRegular", sans-serif;
+}
+
+.font-nunito-semi {
+  font-family: "NunitoSemi", sans-serif;
+}
+
+.font-nunito-bold {
+  font-family: "NunitoBold", sans-serif;
+}
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

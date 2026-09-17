@@ -67,7 +67,10 @@ const AdminDemographics = () => {
 
   if (loading) {
     return (
-      <div className="h-[80vh] flex items-center justify-center">
+      <div
+        className="h-[80vh] flex items-center justify-center capitalize   font-nunito-regular"
+        style={{ fontFamily: "NunitoRegular" }}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
       </div>
     );
@@ -97,7 +100,10 @@ const AdminDemographics = () => {
   const employersByCountry = formatBarData(metrics?.employers_by_country);
 
   return (
-    <div className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+    <div
+      className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8 capitalize   font-nunito-regular"
+      style={{ fontFamily: "NunitoRegular" }}
+    >
       {/* Header */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800">User Demographics</h1>
@@ -218,7 +224,7 @@ const AdminDemographics = () => {
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 11 }}
+                    tick={{ fill: "#4b5563", fontSize: 11, fontFamily: "NunitoRegular" }}
                     width={75}
                     tickFormatter={(val) =>
                       val && val.length > 11 ? `${val.slice(0, 10)}…` : val
@@ -241,6 +247,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
@@ -261,6 +268,7 @@ const AdminDemographics = () => {
                         fill: "#15803d",
                         fontSize: "11px",
                         fontWeight: 700,
+                        fontFamily: "NunitoRegular",
                       }}
                     />
                     {topCountriesJobseekers.map((entry, index) => (
@@ -308,7 +316,7 @@ const AdminDemographics = () => {
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
+                    tick={{ fill: "#4b5563", fontSize: 12, fontFamily: "NunitoRegular" }}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "transparent" }}
@@ -316,6 +324,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
@@ -374,12 +383,14 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Legend
                     verticalAlign="bottom"
                     height={36}
                     iconType="circle"
+                    wrapperStyle={{ fontFamily: "NunitoRegular" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -418,7 +429,7 @@ const AdminDemographics = () => {
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
+                    tick={{ fill: "#4b5563", fontSize: 12, fontFamily: "NunitoRegular" }}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "transparent" }}
@@ -426,6 +437,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
@@ -488,6 +500,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Legend
@@ -495,6 +508,7 @@ const AdminDemographics = () => {
                     height={36}
                     iconType="circle"
                     iconSize={8}
+                    wrapperStyle={{ fontFamily: "NunitoRegular" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
