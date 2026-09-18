@@ -4,7 +4,7 @@ import VerifiedBadgeIcon from "../VerifiedBadgeIcon";
 
 const JOBSEEKER_BENEFITS = [
   "Verified badge on your profile name",
-  "Weekly & monthly job application reports",
+  "ASE search, profile view & application metrics",
   "Access to exclusive partner events",
   "Featured profile placement",
   "Premium career resources",
@@ -14,7 +14,7 @@ const RECRUITER_BENEFITS = [
   "Verified Recruiter badge on your profile",
   "More trust from jobseekers you reach out to",
   "Access to exclusive partner events",
-  "Weekly & monthly job posting reports",
+  "Post views, applications & targeting insights",
   "Premium recruitment resources",
 ];
 

@@ -14,11 +14,13 @@ import {
   PieChart,
   Pie,
   Cell,
+  LabelList,
 } from "recharts";
+import WorldMap from "../../components/admin/WorldMap";
 
 // StatCard component
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between mb-4">
       <div className={`p-3 rounded-xl ${colorClass}`}>
         <Icon size={24} />
@@ -65,7 +67,10 @@ const AdminDemographics = () => {
 
   if (loading) {
     return (
-      <div className="h-[80vh] flex items-center justify-center">
+      <div
+        className="h-[80vh] flex items-center justify-center capitalize   font-nunito-regular"
+        style={{ fontFamily: "NunitoRegular" }}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
       </div>
     );
@@ -88,17 +93,21 @@ const AdminDemographics = () => {
   };
 
   const jobseekersByCountry = formatPieData(metrics?.jobseekers_by_country);
+  const topCountriesJobseekers = formatBarData(metrics?.jobseekers_by_country);
   const jobseekersByGender = formatPieData(metrics?.jobseekers_by_gender);
   const jobseekersByAge = formatPieData(metrics?.jobseekers_by_age_group);
   const jobseekersByState = formatBarData(metrics?.jobseekers_by_state);
   const employersByCountry = formatBarData(metrics?.employers_by_country);
 
   return (
-    <div className="max-w-7xl mx-auto w-full space-y-8">
+    <div
+      className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8 capitalize   font-nunito-regular"
+      style={{ fontFamily: "NunitoRegular" }}
+    >
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800">User Demographics</h1>
-        <p className="text-gray-500 text-sm mt-1">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">User Demographics</h1>
+        <p className="text-gray-500 text-xs sm:text-sm mt-1">
           Geographic and demographic distribution of jobseekers and employers.
         </p>
       </div>
@@ -135,19 +144,65 @@ const AdminDemographics = () => {
         />
       </div>
 
+      {/* Jobseekers by Country - World Map + Top Countries Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Jobseekers by Country (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
-            Jobseekers by Country
-          </h3>
-          <div className="h-72 w-full">
+        {/* World Map (Left, 2 cols) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                Jobseekers by Country
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                <span className="hidden sm:inline">
+                  Hover over a country to see jobseeker count. Use + / - buttons to zoom, drag to pan.
+                </span>
+                <span className="sm:hidden">
+                  Tap a country to see count. Use + / - buttons to zoom.
+                </span>
+              </p>
+            </div>
+            <div className="self-start sm:self-auto flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-gray-100 shrink-0 whitespace-nowrap font-medium">
+              <Globe size={13} className="text-[#16730F]" />
+              <span>{jobseekersByCountry.length} countries</span>
+            </div>
+          </div>
+          <div className="w-full min-h-[300px] sm:min-h-[360px] lg:h-[420px] flex flex-col">
             {jobseekersByCountry.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <WorldMap
+                data={jobseekersByCountry}
+                totalJobseekers={metrics?.total_jobseekers || 0}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                No country data available
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Top Countries (Jobseekers) (Right, 1 col - styled like Top States) */}
+        <div className="lg:col-span-1 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                Top Countries (Jobseekers)
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Countries with highest total jobseekers
+              </p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-[#16730F] border border-green-100 shrink-0 whitespace-nowrap">
+              Top {topCountriesJobseekers.length}
+            </span>
+          </div>
+          <div className="w-full h-80 sm:h-96 lg:h-[420px]">
+            {topCountriesJobseekers.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <BarChart
-                  data={jobseekersByCountry}
+                  data={topCountriesJobseekers}
                   layout="vertical"
-                  margin={{ top: 0, right: 0, left: 60, bottom: 0 }}
+                  margin={{ top: 4, right: 36, left: 8, bottom: 4 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -155,32 +210,70 @@ const AdminDemographics = () => {
                     vertical={false}
                     stroke="#f0f0f0"
                   />
-                  <XAxis type="number" hide />
+                  <XAxis
+                    type="number"
+                    hide
+                    domain={[
+                      0,
+                      (dataMax) =>
+                        Math.max(dataMax + 1, Math.ceil(dataMax * 1.18)),
+                    ]}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
+                    tick={{ fill: "#4b5563", fontSize: 11, fontFamily: "NunitoRegular" }}
+                    width={75}
+                    tickFormatter={(val) =>
+                      val && val.length > 11 ? `${val.slice(0, 10)}…` : val
+                    }
                   />
                   <RechartsTooltip
                     cursor={{ fill: "transparent" }}
+                    formatter={(value) => [
+                      `${Number(value).toLocaleString()} jobseekers${
+                        metrics?.total_jobseekers
+                          ? ` (${(
+                              (value / metrics.total_jobseekers) *
+                              100
+                            ).toFixed(1)}%)`
+                          : ""
+                      }`,
+                      "Jobseekers",
+                    ]}
                     contentStyle={{
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
                     dataKey="count"
                     name="Jobseekers"
-                    fill="#3b82f6"
+                    fill="#16730F"
                     radius={[0, 4, 4, 0]}
-                    barSize={18}
+                    barSize={16}
                   >
-                    {jobseekersByCountry.map((entry, index) => (
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      offset={6}
+                      formatter={(val) =>
+                        val != null ? Number(val).toLocaleString() : ""
+                      }
+                      style={{
+                        fill: "#15803d",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        fontFamily: "NunitoRegular",
+                      }}
+                    />
+                    {topCountriesJobseekers.map((entry, index) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`cell-country-${index}`}
                         fill={COLORS[index % COLORS.length]}
                       />
                     ))}
@@ -194,10 +287,13 @@ const AdminDemographics = () => {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Age Distribution (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Age Distribution
           </h3>
           <div className="h-72 w-full">
@@ -220,7 +316,7 @@ const AdminDemographics = () => {
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
+                    tick={{ fill: "#4b5563", fontSize: 12, fontFamily: "NunitoRegular" }}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "transparent" }}
@@ -228,6 +324,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
@@ -255,8 +352,8 @@ const AdminDemographics = () => {
         </div>
 
         {/* Jobseekers by Gender (Pie) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Gender Distribution
           </h3>
           <div className="h-64 w-full">
@@ -286,12 +383,14 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Legend
                     verticalAlign="bottom"
                     height={36}
                     iconType="circle"
+                    wrapperStyle={{ fontFamily: "NunitoRegular" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -306,8 +405,8 @@ const AdminDemographics = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Jobseekers by State (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Top States (Jobseekers)
           </h3>
           <div className="h-72 w-full">
@@ -330,7 +429,7 @@ const AdminDemographics = () => {
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
+                    tick={{ fill: "#4b5563", fontSize: 12, fontFamily: "NunitoRegular" }}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "transparent" }}
@@ -338,6 +437,7 @@ const AdminDemographics = () => {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
                   <Bar
@@ -364,56 +464,53 @@ const AdminDemographics = () => {
           </div>
         </div>
 
-        {/* Employers by State (Bar) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        {/* Top Countries (Employers) - Pie Chart */}
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">
             Top Countries (Employers)
           </h3>
           <div className="h-72 w-full">
             {employersByCountry.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={employersByCountry}
-                  layout="vertical"
-                  margin={{ top: 0, right: 0, left: 40, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={true}
-                    vertical={false}
-                    stroke="#f0f0f0"
-                  />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#4b5563", fontSize: 12 }}
-                  />
+                <PieChart>
+                  <Pie
+                    data={employersByCountry}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={4}
+                    dataKey="count"
+                    nameKey="name"
+                    label={({ name, percent }) =>
+                      `${name} (${(percent * 100).toFixed(0)}%)`
+                    }
+                    labelLine={{ strokeWidth: 1, stroke: "#ccc" }}
+                  >
+                    {employersByCountry.map((entry, index) => (
+                      <Cell
+                        key={`cell-emp-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
                   <RechartsTooltip
-                    cursor={{ fill: "transparent" }}
+                    formatter={(value, name) => [value, "Employers"]}
                     contentStyle={{
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontFamily: "NunitoRegular",
                     }}
                   />
-                  <Bar
-                    dataKey="count"
-                    name="Employers"
-                    fill="#16730F"
-                    radius={[0, 4, 4, 0]}
-                    barSize={20}
-                  >
-                    {employersByCountry.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontFamily: "NunitoRegular" }}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-gray-400">

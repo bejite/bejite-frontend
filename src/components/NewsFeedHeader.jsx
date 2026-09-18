@@ -656,6 +656,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
 
   const iconToPathsMap = {
     "home-icon": ["/news-feed", "/post-page"],
+    // pitch: ["/pitch", "/pitches"], // pitch hub temporarily disabled
     CHAT: ["/chats"],
     notifications: ["/notification", "/notifications"],
     connection: ["/connection"],
@@ -680,6 +681,9 @@ const NewsFeedHeader = ({ user: propUser }) => {
       case "home-icon":
         navigate("/news-feed");
         break;
+      // case "pitch":
+      //   navigate("/pitch");
+      //   break;
       case "CHAT":
         navigate("/chats");
         break;
@@ -710,13 +714,14 @@ const NewsFeedHeader = ({ user: propUser }) => {
 
   const menuItems =
     user?.role === "jobseeker"
-      ? ["home-icon", "CHAT", "notifications", "job-vacancy", "connection"]
-      : ["home-icon", "CHAT", "notifications", "recruitment", "connection"];
+      ? ["home-icon", /* "pitch", */ "CHAT", "notifications", "job-vacancy", "connection"]
+      : ["home-icon", /* "pitch", */ "CHAT", "notifications", "recruitment", "connection"];
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   const getNavIconSrc = (name) => {
     if (name === "home-icon") return "/assets/images/home-nav.svg";
+    if (name === "pitch") return "/assets/images/pitch-nav.svg";
     if (name === "invite-friends")
       return "/assets/images/invite-friends-nav.svg";
     if (name === "adpro") return "/assets/images/adpro-nav.svg";
@@ -776,6 +781,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
 
   const getNavLabel = (name) => {
     if (name === "home-icon") return "News Feed";
+    if (name === "pitch") return "Pitches";
     if (name === "invite-friends") return "Invite Friends";
     if (name === "adpro") return "AdPro";
     if (name === "job-vacancy") return "Job Vacancy";
@@ -891,7 +897,11 @@ const NewsFeedHeader = ({ user: propUser }) => {
         >
           <input
             type="text"
-            placeholder="Search people, jobs, posts..."
+            placeholder={
+              location.pathname.startsWith("/pitch")
+                ? "Search Pitch"
+                : "Search people, jobs, posts..."
+            }
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleSearchFocus}

@@ -16,6 +16,7 @@ import {
   BadgeHolder,
   BadgePaymentCallback,
   JobVacancyListing,
+  // PitchPage, // pitch hub temporarily disabled
 } from "../lazyPages.js";
 import MessagesToChatsRedirect from "./MessagesToChatsRedirect.jsx";
 
@@ -27,6 +28,10 @@ export const socialRoutes = (
     <Route path="/j/:jobId" element={<SharedJobRedirect />} />
     <Route path="/a/:campaignId" element={<SharedAdRedirect />} />
     <Route path="/news-feed" element={<Recruitment />} />
+    {/* Pitch hub temporarily disabled
+    <Route path="/pitch" element={<PitchPage />} />
+    <Route path="/pitches" element={<PitchPage />} />
+    */}
     <Route path="/badge" element={<BadgeStatus />} />
     <Route path="/badge/payment-callback" element={<BadgePaymentCallback />} />
     <Route path="/activity-logs" element={<ActivityLog />} />
