@@ -30,7 +30,6 @@ const SubscriptionRetentionPage = () => {
     savedCards = [],
   } = location.state || {};
 
-  const [selectedOffer, setSelectedOffer] = useState(null);
   const [offerAccepted, setOfferAccepted] = useState(false);
   const [offerType, setOfferType] = useState("");
 

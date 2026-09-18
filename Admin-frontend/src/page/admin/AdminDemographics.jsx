@@ -495,7 +495,7 @@ const AdminDemographics = () => {
                     ))}
                   </Pie>
                   <RechartsTooltip
-                    formatter={(value, name) => [value, "Employers"]}
+                    formatter={(value) => [value, "Employers"]}
                     contentStyle={{
                       borderRadius: "8px",
                       border: "none",

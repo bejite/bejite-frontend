@@ -249,7 +249,7 @@ const ASESubscriptionDashboard = () => {
     });
   };
 
-  const handleDeleteCard = async (cardId) => {
+  const _handleDeleteCard = async (cardId) => {
     setDeletingCardId(cardId);
     try {
       await deleteSavedCard(cardId);

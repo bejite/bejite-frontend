@@ -27,7 +27,7 @@ export default function CreatePitchModal({
   const [mediaMode, setMediaMode] = useState("upload");
 
   // Video state
-  const [videoFile, setVideoFile] = useState(null);
+  const [, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
   const [videoDurationText, setVideoDurationText] = useState("4 seconds");
   const [isRecording, setIsRecording] = useState(false);

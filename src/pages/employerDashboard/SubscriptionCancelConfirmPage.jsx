@@ -63,7 +63,6 @@ const SubscriptionCancelConfirmPage = () => {
   const {
     action = "remove_card",
     card = null,
-    subscription = null,
   } = location.state || {};
 
   const [selectedReason, setSelectedReason] = useState("");

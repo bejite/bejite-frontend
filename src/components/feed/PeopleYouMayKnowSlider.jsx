@@ -639,7 +639,7 @@ const PeopleYouMayKnowSlider = ({
   const [localLoading, setLocalLoading] = useState(true);
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const [localConnectionStatuses, setLocalConnectionStatuses] = useState({});
-  const [localDismissedUserIds, setLocalDismissedUserIds] = useState(new Set());
+  const [, setLocalDismissedUserIds] = useState(new Set());
   const [localIsWidgetDismissed, setLocalIsWidgetDismissed] = useState(false);
 
   // Card exit animation state (local to this slider)
@@ -813,7 +813,7 @@ const PeopleYouMayKnowSlider = ({
             return next;
           });
         }, 500);
-      } catch (err) {
+      } catch {
         toast.error("Failed to send request");
         setLocalConnectionStatuses((prev) => {
           const next = { ...prev };
