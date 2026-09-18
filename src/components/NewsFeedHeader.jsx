@@ -656,7 +656,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
 
   const iconToPathsMap = {
     "home-icon": ["/news-feed", "/post-page"],
-    pitch: ["/pitch", "/pitches"],
+    // pitch: ["/pitch", "/pitches"], // pitch hub temporarily disabled
     CHAT: ["/chats"],
     notifications: ["/notification", "/notifications"],
     connection: ["/connection"],
@@ -681,9 +681,9 @@ const NewsFeedHeader = ({ user: propUser }) => {
       case "home-icon":
         navigate("/news-feed");
         break;
-      case "pitch":
-        navigate("/pitch");
-        break;
+      // case "pitch":
+      //   navigate("/pitch");
+      //   break;
       case "CHAT":
         navigate("/chats");
         break;
@@ -714,8 +714,8 @@ const NewsFeedHeader = ({ user: propUser }) => {
 
   const menuItems =
     user?.role === "jobseeker"
-      ? ["home-icon", "pitch", "CHAT", "notifications", "job-vacancy", "connection"]
-      : ["home-icon", "pitch", "CHAT", "notifications", "recruitment", "connection"];
+      ? ["home-icon", /* "pitch", */ "CHAT", "notifications", "job-vacancy", "connection"]
+      : ["home-icon", /* "pitch", */ "CHAT", "notifications", "recruitment", "connection"];
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+// import { ExternalLink } from "lucide-react"; // pitch hub link temporarily disabled
+// import { Link } from "react-router-dom"; // pitch hub link temporarily disabled
 import { toast } from "react-toastify";
 import PitchVideoPlayer from "./PitchVideoPlayer";
 import PitchDetailsCard from "./PitchDetailsCard";
@@ -104,6 +105,7 @@ export default function PitchPreviewModal({
 
       {/* Floating Top Controls */}
       <div className="fixed top-3 sm:top-5 right-3 sm:right-6 z-60 flex items-center gap-2">
+        {/* Pitch hub temporarily disabled
         <Link
           to="/pitch"
           onClick={onClose}
@@ -112,6 +114,7 @@ export default function PitchPreviewModal({
           <span>Open in Pitch Hub</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
+        */}
         <button
           type="button"
           onClick={onClose}

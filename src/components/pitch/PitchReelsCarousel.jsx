@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Video, MoreHorizontal, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Video, MoreHorizontal } from "lucide-react";
+// import { ArrowRight } from "lucide-react"; // pitch hub link temporarily disabled
+// import { Link } from "react-router-dom"; // pitch hub link temporarily disabled
 import PitchReelCard from "./PitchReelCard";
 
 export default function PitchReelsCarousel({
@@ -59,6 +60,7 @@ export default function PitchReelsCarousel({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Pitch hub temporarily disabled
           <Link
             to="/pitch"
             className="flex items-center gap-1 text-xs font-semibold text-[#16730F] hover:text-[#125e0c] hover:underline px-2.5 py-1 rounded-full hover:bg-emerald-50 transition-colors"
@@ -66,6 +68,7 @@ export default function PitchReelsCarousel({
             <span>See all</span>
             <ArrowRight className="w-3 h-3" />
           </Link>
+          */}
           <button
             type="button"
             className="p-1.5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
