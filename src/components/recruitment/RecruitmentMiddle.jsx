@@ -68,9 +68,10 @@ import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
-import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
-import PitchPreviewModal from "../pitch/PitchPreviewModal";
-import { INITIAL_PITCHES } from "../../pages/pitch/pitchData";
+// Pitch hub temporarily disabled in news feed
+// import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
+// import PitchPreviewModal from "../pitch/PitchPreviewModal";
+// import { INITIAL_PITCHES } from "../../pages/pitch/pitchData";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -204,14 +205,13 @@ export default function RecruitmentMiddle() {
 
   const visibleAds = ads.filter((ad) => !dismissedAds.has(ad.id));
 
-  // Pitch Reels preview modal state
-  const [selectedPitchForPreview, setSelectedPitchForPreview] = useState(null);
-  const [isPitchPreviewOpen, setIsPitchPreviewOpen] = useState(false);
-
-  const handleOpenPitchPreview = (pitch) => {
-    setSelectedPitchForPreview(pitch);
-    setIsPitchPreviewOpen(true);
-  };
+  // Pitch hub temporarily disabled in news feed
+  // const [selectedPitchForPreview, setSelectedPitchForPreview] = useState(null);
+  // const [isPitchPreviewOpen, setIsPitchPreviewOpen] = useState(false);
+  // const handleOpenPitchPreview = (pitch) => {
+  //   setSelectedPitchForPreview(pitch);
+  //   setIsPitchPreviewOpen(true);
+  // };
 
   const [posts, setPosts] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
@@ -573,7 +573,7 @@ export default function RecruitmentMiddle() {
               />
               </div>
 
-              {/* Pitch Reels carousel (Facebook-style, shown after 2 posts) */}
+              {/* Pitch hub temporarily disabled in news feed
               {feedMode === "home" &&
                 (index === 1 || (posts.length < 2 && index === posts.length - 1)) && (
                   <PitchReelsCarousel
@@ -581,6 +581,7 @@ export default function RecruitmentMiddle() {
                     onSelectPitch={handleOpenPitchPreview}
                   />
                 )}
+              */}
 
               {/* this is ads so is just dummy for now  */}
               {/* it will display after three posts u can use it */}
@@ -643,13 +644,14 @@ export default function RecruitmentMiddle() {
         }}
       />
 
-      {/* Pitch Preview Modal Popup */}
+      {/* Pitch hub temporarily disabled in news feed
       <PitchPreviewModal
         isOpen={isPitchPreviewOpen}
         onClose={() => setIsPitchPreviewOpen(false)}
         initialPitch={selectedPitchForPreview}
         allPitches={INITIAL_PITCHES}
       />
+      */}
     </main>
   );
 }
