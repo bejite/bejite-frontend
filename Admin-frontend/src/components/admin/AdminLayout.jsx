@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import {
@@ -31,9 +31,6 @@ const AdminLayout = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [bellRing, setBellRing] = useState(false);
   const { notifications, unreadCount } = useAdminInbox();
-
-  const location = useLocation();
-  const isMailboxPage = location.pathname.startsWith("/admin/recruiter-mail");
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -267,11 +264,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main
-          className={`flex-1 overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth bg-gray-50/50 ${
-            isMailboxPage ? "p-0 sm:p-4 lg:p-6" : "p-3 sm:p-4 lg:p-8"
-          }`}
-        >
+        <main className="flex-1 overflow-y-auto nfl-scroll scroll-smooth bg-gray-50/50 p-4 lg:p-8">
           <Outlet />
         </main>
       </div>

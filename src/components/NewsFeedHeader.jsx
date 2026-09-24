@@ -636,7 +636,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
           setNewJobVacancyCount(response.count || 0);
         }
       } catch (err) {
-        console.error("Error fetching new job vacancy count:", err);
+        console.error("Error fetching new job vacancies count:", err);
       }
     };
 
@@ -784,7 +784,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
     if (name === "pitch") return "Pitches";
     if (name === "invite-friends") return "Invite Friends";
     if (name === "adpro") return "AdPro";
-    if (name === "job-vacancy") return "Job Vacancy";
+    if (name === "job-vacancy") return "Job Vacancies";
     if (name === "connection") {
       return isCorporateRecruiter(user) ? "Followers" : "Connections";
     }
