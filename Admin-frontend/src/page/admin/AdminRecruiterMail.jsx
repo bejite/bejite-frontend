@@ -39,11 +39,11 @@ const AdminRecruiterMail = () => {
   const [threads, setThreads] = useState([]);
   const [recruitersDirectory, setRecruitersDirectory] = useState([]);
   const [activeFolder, setActiveFolder] = useState(
-    searchParams.get("folder") || MAIL_FOLDERS.INBOX
+    searchParams.get("folder") || MAIL_FOLDERS.INBOX,
   );
   const [activeCategory, setActiveCategory] = useState(null);
   const [selectedThreadId, setSelectedThreadId] = useState(
-    searchParams.get("threadId") || null
+    searchParams.get("threadId") || null,
   );
   const [selectedThreadIds, setSelectedThreadIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,10 +91,14 @@ const AdminRecruiterMail = () => {
     const composeEmail = searchParams.get("composeTo");
     if (composeEmail && recruitersDirectory.length > 0) {
       const matched = recruitersDirectory.find(
-        (r) => r.email.toLowerCase() === composeEmail.toLowerCase()
+        (r) => r.email.toLowerCase() === composeEmail.toLowerCase(),
       );
       setComposeInitialData({
-        recruiter: matched || { name: composeEmail.split("@")[0], email: composeEmail, company: "Recruiter" },
+        recruiter: matched || {
+          name: composeEmail.split("@")[0],
+          email: composeEmail,
+          company: "Recruiter",
+        },
         subject: searchParams.get("subject") || "",
         body: "",
       });
@@ -112,7 +116,8 @@ const AdminRecruiterMail = () => {
     const handleKeyDown = (e) => {
       const activeEl = document.activeElement;
       const isInput =
-        activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
 
       if (e.key === "c" || e.key === "C") {
         if (!isInput && !isComposeOpen) {
@@ -158,7 +163,11 @@ const AdminRecruiterMail = () => {
       if (t.folder === MAIL_FOLDERS.ARCHIVE) archive++;
       if (t.folder === MAIL_FOLDERS.TRASH) trash++;
 
-      if (t.category && categories[t.category] !== undefined && t.folder !== MAIL_FOLDERS.TRASH) {
+      if (
+        t.category &&
+        categories[t.category] !== undefined &&
+        t.folder !== MAIL_FOLDERS.TRASH
+      ) {
         categories[t.category]++;
       }
     });
@@ -187,7 +196,9 @@ const AdminRecruiterMail = () => {
       if (filterType === "unread" && t.isRead) return false;
       if (filterType === "starred" && !t.isStarred) return false;
       if (filterType === "attachments") {
-        const hasAtt = t.messages?.some((m) => m.attachments && m.attachments.length > 0);
+        const hasAtt = t.messages?.some(
+          (m) => m.attachments && m.attachments.length > 0,
+        );
         if (!hasAtt) return false;
       }
 
@@ -198,9 +209,17 @@ const AdminRecruiterMail = () => {
         const matchEmail = t.recruiter?.email?.toLowerCase().includes(q);
         const matchCompany = t.recruiter?.company?.toLowerCase().includes(q);
         const matchSubject = t.subject?.toLowerCase().includes(q);
-        const matchBody = t.messages?.some((m) => m.body?.toLowerCase().includes(q));
+        const matchBody = t.messages?.some((m) =>
+          m.body?.toLowerCase().includes(q),
+        );
 
-        if (!matchRecruiter && !matchEmail && !matchCompany && !matchSubject && !matchBody) {
+        if (
+          !matchRecruiter &&
+          !matchEmail &&
+          !matchCompany &&
+          !matchSubject &&
+          !matchBody
+        ) {
           return false;
         }
       }
@@ -236,7 +255,7 @@ const AdminRecruiterMail = () => {
   // Thread Operations
   const handleToggleStar = (threadId) => {
     const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, isStarred: !t.isStarred } : t
+      t.id === threadId ? { ...t, isStarred: !t.isStarred } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -244,7 +263,7 @@ const AdminRecruiterMail = () => {
 
   const handleMarkRead = (threadId, isRead) => {
     const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, isRead } : t
+      t.id === threadId ? { ...t, isRead } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -252,7 +271,7 @@ const AdminRecruiterMail = () => {
 
   const handleArchive = (threadId) => {
     const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, folder: MAIL_FOLDERS.ARCHIVE } : t
+      t.id === threadId ? { ...t, folder: MAIL_FOLDERS.ARCHIVE } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -264,7 +283,7 @@ const AdminRecruiterMail = () => {
 
   const handleTrash = (threadId) => {
     const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, folder: MAIL_FOLDERS.TRASH } : t
+      t.id === threadId ? { ...t, folder: MAIL_FOLDERS.TRASH } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -276,7 +295,7 @@ const AdminRecruiterMail = () => {
 
   const handleUpdateCategory = (threadId, category) => {
     const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, category } : t
+      t.id === threadId ? { ...t, category } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -286,7 +305,7 @@ const AdminRecruiterMail = () => {
   const allSelectedState = useMemo(() => {
     if (filteredThreads.length === 0) return "none";
     const selectedInCurrent = filteredThreads.filter((t) =>
-      selectedThreadIds.includes(t.id)
+      selectedThreadIds.includes(t.id),
     );
     if (selectedInCurrent.length === 0) return "none";
     if (selectedInCurrent.length === filteredThreads.length) return "all";
@@ -305,23 +324,25 @@ const AdminRecruiterMail = () => {
     setSelectedThreadIds((prev) =>
       prev.includes(threadId)
         ? prev.filter((id) => id !== threadId)
-        : [...prev, threadId]
+        : [...prev, threadId],
     );
   };
 
   const handleBulkMarkRead = (isRead) => {
     const updated = threads.map((t) =>
-      selectedThreadIds.includes(t.id) ? { ...t, isRead } : t
+      selectedThreadIds.includes(t.id) ? { ...t, isRead } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
     setSelectedThreadIds([]);
-    toast.success(`Marked ${selectedThreadIds.length} threads as ${isRead ? "read" : "unread"}`);
+    toast.success(
+      `Marked ${selectedThreadIds.length} threads as ${isRead ? "read" : "unread"}`,
+    );
   };
 
   const handleBulkStar = () => {
     const updated = threads.map((t) =>
-      selectedThreadIds.includes(t.id) ? { ...t, isStarred: true } : t
+      selectedThreadIds.includes(t.id) ? { ...t, isStarred: true } : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -331,7 +352,9 @@ const AdminRecruiterMail = () => {
 
   const handleBulkArchive = () => {
     const updated = threads.map((t) =>
-      selectedThreadIds.includes(t.id) ? { ...t, folder: MAIL_FOLDERS.ARCHIVE } : t
+      selectedThreadIds.includes(t.id)
+        ? { ...t, folder: MAIL_FOLDERS.ARCHIVE }
+        : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -341,7 +364,9 @@ const AdminRecruiterMail = () => {
 
   const handleBulkTrash = () => {
     const updated = threads.map((t) =>
-      selectedThreadIds.includes(t.id) ? { ...t, folder: MAIL_FOLDERS.TRASH } : t
+      selectedThreadIds.includes(t.id)
+        ? { ...t, folder: MAIL_FOLDERS.TRASH }
+        : t,
     );
     setThreads(updated);
     saveStoredThreads(updated);
@@ -401,8 +426,8 @@ const AdminRecruiterMail = () => {
 
       // Show instant browser notification toast
       toast.success(
-        `🔔 New reply from ${result.thread.recruiter.name} (${result.thread.recruiter.company})!`,
-        { autoClose: 5000 }
+        ` New reply from ${result.thread.recruiter.name} (${result.thread.recruiter.company})!`,
+        { autoClose: 5000 },
       );
 
       // If user is currently looking at this thread, keep it open; otherwise switch to inbox
@@ -415,7 +440,11 @@ const AdminRecruiterMail = () => {
   };
 
   return (
-    <div className="w-full max-w-[1540px] mx-auto flex flex-col h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5.5rem)] lg:h-[calc(100dvh-7.5rem)] font-sans overflow-hidden">
+    <div
+      style={{ fontFamily: "NunitoSemi" }}
+
+      className="w-full max-w-[1540px] mx-auto flex flex-col h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5.5rem)] lg:h-[calc(100dvh-7.5rem)] font-sans overflow-hidden"
+    >
       {/* Top Application Header (Hidden on mobile when reading a thread to give 100% focus to the email) */}
       <div
         className={`bg-white px-3 sm:px-5 py-2 sm:py-3 sm:rounded-2xl shadow-xs border-b sm:border border-slate-200/80 mb-0 sm:mb-3 shrink-0 ${
@@ -441,7 +470,12 @@ const AdminRecruiterMail = () => {
 
           {/* Center Brand Title */}
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-extrabold text-slate-900 tracking-tight">Mailbox</span>
+            <span
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-sm font-extrabold text-slate-900 tracking-tight"
+            >
+              Mailbox
+            </span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
 
@@ -473,7 +507,10 @@ const AdminRecruiterMail = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">
+                <h1
+                  style={{ fontFamily: "NunitoBold" }}
+                  className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight"
+                >
                   Recruiter Mailbox
                 </h1>
                 <span className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80">
@@ -482,7 +519,8 @@ const AdminRecruiterMail = () => {
                 </span>
               </div>
               <p className="text-slate-500 text-xs mt-0.5">
-                Direct personal emailing with recruiters, delivery tracking, and threaded conversations.
+                Direct personal emailing with recruiters, delivery tracking, and
+                threaded conversations.
               </p>
             </div>
           </div>
@@ -494,7 +532,10 @@ const AdminRecruiterMail = () => {
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all shadow-2xs group"
               title="Switch to bulk campaigns builder"
             >
-              <Megaphone size={13} className="text-[#16730F] group-hover:scale-110 transition-transform" />
+              <Megaphone
+                size={13}
+                className="text-[#16730F] group-hover:scale-110 transition-transform"
+              />
               <span>Bulk Outreach</span>
               <ArrowRight size={12} className="text-slate-400" />
             </Link>
@@ -504,18 +545,28 @@ const AdminRecruiterMail = () => {
               className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/80 text-amber-900 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs group"
               title="Simulate receiving a reply from a recruiter"
             >
-              <Sparkles size={13} className="text-amber-600 group-hover:rotate-12 transition-transform" />
+              <Sparkles
+                size={13}
+                className="text-amber-600 group-hover:rotate-12 transition-transform"
+              />
               <span>Test Inbound Reply</span>
             </button>
 
             <button
               onClick={() => {
-                setComposeInitialData({ recruiter: null, subject: "", body: "" });
+                setComposeInitialData({
+                  recruiter: null,
+                  subject: "",
+                  body: "",
+                });
                 setIsComposeOpen(true);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#16730F] to-[#10540b] hover:from-[#13610d] hover:to-[#0c4008] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer group"
             >
-              <Send size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              <Send
+                size={13}
+                className="group-hover:translate-x-0.5 transition-transform"
+              />
               <span>Compose</span>
             </button>
           </div>
@@ -602,7 +653,11 @@ const AdminRecruiterMail = () => {
                 onTrash={handleTrash}
                 searchQuery={searchQuery}
                 onOpenCompose={() => {
-                  setComposeInitialData({ recruiter: null, subject: "", body: "" });
+                  setComposeInitialData({
+                    recruiter: null,
+                    subject: "",
+                    body: "",
+                  });
                   setIsComposeOpen(true);
                 }}
               />
