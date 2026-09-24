@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { sanitizeHtml } from "../../../utils/sanitizeHtml";
 
 const CampaignAnalyticsDrawer = ({
   selectedCampaign = null,
@@ -109,7 +110,7 @@ const CampaignAnalyticsDrawer = ({
             <div
               className="text-xs text-gray-600 leading-relaxed prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{
-                __html: selectedCampaign.body || "",
+                __html: sanitizeHtml(selectedCampaign.body || ""),
               }}
             />
             {selectedCampaign.ctaText && selectedCampaign.ctaLink ? (

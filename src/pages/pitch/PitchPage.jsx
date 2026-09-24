@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import CreatePitchModal from "../../components/pitch/CreatePitchModal";
 import PitchSidebar from "../../components/pitch/PitchSidebar";
@@ -9,115 +10,257 @@ import PitchEmptyState from "../../components/pitch/PitchEmptyState";
 import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
+import { CATEGORIES } from "./pitchData";
 import {
-  INITIAL_PITCHES,
-  INITIAL_USER_ACTIVE_PITCHES,
-  INITIAL_DRAFTS,
-  CATEGORIES,
-} from "./pitchData";
+  getPitchFeed,
+  getMyPitches,
+  getPitch,
+  likePitch,
+  unlikePitch,
+  sharePitch,
+  viewPitch,
+  recordPitchCta,
+  deletePitch,
+  apiErrorMessage,
+} from "../../services/pitchesApi";
 
 export default function PitchPage() {
   const reduxUser = useSelector((state) => state.auth?.user);
   const localUser = getUser();
   const currentUser = reduxUser || localUser || {};
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [pitches, setPitches] = useState(INITIAL_PITCHES);
-  const [userActivePitches, setUserActivePitches] = useState(INITIAL_USER_ACTIVE_PITCHES);
-  const [drafts, setDrafts] = useState(INITIAL_DRAFTS);
+  const [pitches, setPitches] = useState([]);
+  const [userActivePitches, setUserActivePitches] = useState([]);
+  const [drafts, setDrafts] = useState([]);
+  const [loadingFeed, setLoadingFeed] = useState(true);
+  const [loadingMine, setLoadingMine] = useState(false);
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState("discover"); // 'discover' | 'my-pitches'
-  const [myPitchesSubTab, setMyPitchesSubTab] = useState("active"); // 'active' | 'drafts'
+  const [activeTab, setActiveTab] = useState("discover");
+  const [myPitchesSubTab, setMyPitchesSubTab] = useState("active");
   const [activeCategory, setActiveCategory] = useState("For You");
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
 
-  // Create Pitch modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
 
-  // Filtered pitches for Discover feed
-  const filteredPitches = pitches.filter((p) => {
-    if (activeCategory === "For You") return true;
-    return p.category === activeCategory;
-  });
+  const deepLinkIdRef = useRef(searchParams.get("id"));
+  const viewedPitchIdsRef = useRef(new Set());
 
-  const currentPitch = filteredPitches[currentPitchIndex] || filteredPitches[0] || null;
+  const currentPitch = pitches[currentPitchIndex] || pitches[0] || null;
+
+  const recordViewOnce = useCallback((pitchId) => {
+    if (!pitchId) return;
+    const key = String(pitchId);
+    if (viewedPitchIdsRef.current.has(key)) return;
+    viewedPitchIdsRef.current.add(key);
+    viewPitch(pitchId).catch(() => {
+      viewedPitchIdsRef.current.delete(key);
+    });
+  }, []);
+
+  const loadFeed = useCallback(async (category = activeCategory) => {
+    setLoadingFeed(true);
+    try {
+      const deepLinkId = deepLinkIdRef.current;
+      const { pitches: feed } = await getPitchFeed(30, { category });
+
+      if (deepLinkId) {
+        const inFeed = feed.find((p) => String(p.id) === String(deepLinkId));
+        if (inFeed) {
+          setPitches([inFeed, ...feed.filter((p) => String(p.id) !== String(deepLinkId))]);
+          setCurrentPitchIndex(0);
+        } else {
+          try {
+            const linked = await getPitch(deepLinkId);
+            setPitches(linked ? [linked, ...feed] : feed);
+            setCurrentPitchIndex(0);
+          } catch {
+            setPitches(feed);
+            setCurrentPitchIndex(0);
+          }
+        }
+        deepLinkIdRef.current = null;
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            if (!next.has("id")) return prev;
+            next.delete("id");
+            return next;
+          },
+          { replace: true }
+        );
+      } else {
+        setPitches(feed);
+        setCurrentPitchIndex(0);
+      }
+    } catch (error) {
+      console.error("loadFeed:", error);
+      toast.error(apiErrorMessage(error, "Failed to load pitches"));
+      setPitches([]);
+    } finally {
+      setLoadingFeed(false);
+    }
+  }, [activeCategory, setSearchParams]);
+
+  const loadMine = useCallback(async () => {
+    setLoadingMine(true);
+    try {
+      const [active, draftList] = await Promise.all([
+        getMyPitches("active"),
+        getMyPitches("drafts"),
+      ]);
+      setUserActivePitches(active);
+      setDrafts(draftList);
+    } catch (error) {
+      console.error("loadMine:", error);
+      toast.error(apiErrorMessage(error, "Failed to load your pitches"));
+    } finally {
+      setLoadingMine(false);
+    }
+  }, []);
 
   useEffect(() => {
-    setCurrentPitchIndex(0);
-  }, [activeCategory, activeTab]);
+    if (activeTab === "discover") {
+      loadFeed(activeCategory);
+    }
+  }, [activeTab, activeCategory, loadFeed]);
 
-  // ── Handlers ──
+  useEffect(() => {
+    if (activeTab === "my-pitches") {
+      loadMine();
+    }
+  }, [activeTab, loadMine]);
+
+  useEffect(() => {
+    if (currentPitch?.id && activeTab === "discover") {
+      recordViewOnce(currentPitch.id);
+    }
+  }, [currentPitch?.id, activeTab, recordViewOnce]);
 
   const handlePrevPitch = () => {
-    if (filteredPitches.length <= 1) return;
-    setCurrentPitchIndex((prev) => (prev > 0 ? prev - 1 : filteredPitches.length - 1));
+    if (pitches.length <= 1) return;
+    setCurrentPitchIndex((prev) => (prev > 0 ? prev - 1 : pitches.length - 1));
   };
 
   const handleNextPitch = () => {
-    if (filteredPitches.length <= 1) return;
-    setCurrentPitchIndex((prev) => (prev < filteredPitches.length - 1 ? prev + 1 : 0));
+    if (pitches.length <= 1) return;
+    setCurrentPitchIndex((prev) => (prev < pitches.length - 1 ? prev + 1 : 0));
   };
 
-  const handleToggleLike = (pitchId) => {
+  const handleToggleLike = async (pitchId) => {
+    const target = pitches.find((p) => p.id === pitchId);
+    if (!target) return;
+
+    const wasLiked = Boolean(target.isLiked);
     setPitches((prev) =>
-      prev.map((p) => {
-        if (p.id === pitchId) {
-          const isLiked = !p.isLiked;
-          return {
-            ...p,
-            isLiked,
-            likes: isLiked ? p.likes + 1 : Math.max(0, p.likes - 1),
-          };
-        }
-        return p;
-      })
+      prev.map((p) =>
+        p.id === pitchId
+          ? {
+              ...p,
+              isLiked: !wasLiked,
+              likes: wasLiked ? Math.max(0, p.likes - 1) : p.likes + 1,
+            }
+          : p
+      )
     );
-  };
 
-  const handleShare = (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Pitch link copied to clipboard!");
-    } else {
-      toast.info(`Pitch link: ${shareUrl}`);
+    try {
+      const result = wasLiked ? await unlikePitch(pitchId) : await likePitch(pitchId);
+      if (result?.likes != null) {
+        setPitches((prev) =>
+          prev.map((p) =>
+            p.id === pitchId
+              ? { ...p, likes: result.likes, isLiked: result.isLiked }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      setPitches((prev) =>
+        prev.map((p) =>
+          p.id === pitchId
+            ? {
+                ...p,
+                isLiked: wasLiked,
+                likes: wasLiked ? p.likes + 1 : Math.max(0, p.likes - 1),
+              }
+            : p
+        )
+      );
+      toast.error(apiErrorMessage(error, "Could not update like"));
     }
   };
 
-  const handleHireMe = (pitch) => {
-    toast.success(`Hiring inquiry sent to ${pitch.creator.name}!`);
+  const handleShare = async (pitch) => {
+    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+      const result = await sharePitch(pitch.id);
+      setPitches((prev) =>
+        prev.map((p) =>
+          p.id === pitch.id
+            ? { ...p, shares: result?.shares ?? p.shares + 1 }
+            : p
+        )
+      );
+      toast.success("Pitch link copied to clipboard!");
+    } catch (error) {
+      toast.info(`Pitch link: ${shareUrl}`);
+      console.error("sharePitch:", error);
+    }
   };
 
-  const handlePitchCreated = (newPitch) => {
-    setPitches([newPitch, ...pitches]);
+  const handleHireMe = async (pitch) => {
+    try {
+      const result = await recordPitchCta(pitch.id);
+      setPitches((prev) =>
+        prev.map((p) =>
+          p.id === pitch.id
+            ? { ...p, ctaCount: result?.ctaCount ?? p.ctaCount }
+            : p
+        )
+      );
+      if (result?.alreadyRecorded || result?.counted === false) {
+        toast.info("You already sent interest on this pitch.");
+      } else {
+        toast.success(
+          `${pitch.creator?.name || "Creator"} was notified of your interest.`
+        );
+      }
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Could not send inquiry"));
+    }
+  };
 
-    const activeEntry = {
-      id: newPitch.id,
-      type: newPitch.type,
-      typeBadge: newPitch.typeBadge || "INTRO",
-      industry: newPitch.category || "UIUX Design",
-      publishedTime: "Published today",
-      expiresIn: "Expires in 24h 0m",
-      headline: newPitch.headline,
-      audience: "Recruiters + Hiring Managers",
-      cta: newPitch.cta,
-      views: 0,
-      likes: 0,
-      ctaCount: 0,
-      duration: newPitch.durationText || "0:30",
-      videoUrl: newPitch.videoUrl,
-      creator: newPitch.creator,
-      skills: newPitch.skills,
-      description: newPitch.description,
-    };
-    setUserActivePitches([activeEntry, ...userActivePitches]);
+  const handlePitchCreated = (pitch, meta = {}) => {
+    if (!pitch) return;
+    if (meta.isDraft) {
+      setDrafts((prev) => {
+        const without = prev.filter((d) => String(d.id) !== String(pitch.id));
+        return [pitch, ...without];
+      });
+      return;
+    }
+    setPitches((prev) => {
+      const without = prev.filter((p) => String(p.id) !== String(pitch.id));
+      return [pitch, ...without];
+    });
+    setUserActivePitches((prev) => {
+      const without = prev.filter((p) => String(p.id) !== String(pitch.id));
+      return [pitch, ...without];
+    });
+    setDrafts((prev) => prev.filter((d) => String(d.id) !== String(pitch.id)));
+    setCurrentPitchIndex(0);
   };
 
   const handleViewInFeed = () => {
     setActiveTab("discover");
     setActiveCategory("For You");
     setCurrentPitchIndex(0);
+    // loadFeed runs via useEffect when tab/category settle — avoid double fetch
   };
 
   const handleGoToMyPitches = () => {
@@ -128,13 +271,11 @@ export default function PitchPage() {
   const handleViewUserPitch = (userPitch) => {
     setActiveTab("discover");
     setActiveCategory("For You");
-    const foundIdx = pitches.findIndex((p) => p.id === userPitch.id);
-    if (foundIdx >= 0) {
-      setCurrentPitchIndex(foundIdx);
-    } else {
-      setPitches([userPitch, ...pitches]);
-      setCurrentPitchIndex(0);
-    }
+    setPitches((prev) => {
+      const without = prev.filter((p) => String(p.id) !== String(userPitch.id));
+      return [userPitch, ...without];
+    });
+    setCurrentPitchIndex(0);
   };
 
   const handleContinueEditingDraft = (draft) => {
@@ -142,10 +283,50 @@ export default function PitchPage() {
     setIsCreateModalOpen(true);
   };
 
-  const handleDeleteDraft = (draftId) => {
-    setDrafts(drafts.filter((d) => d.id !== draftId));
-    localStorage.removeItem("bejite_pitch_draft");
-    toast.info("Draft removed");
+  const handleEditActivePitch = (pitch) => {
+    setEditingDraft(pitch);
+    setIsCreateModalOpen(true);
+  };
+
+  const removePitchEverywhere = (pitchId) => {
+    const id = String(pitchId);
+    setDrafts((prev) => prev.filter((d) => String(d.id) !== id));
+    setUserActivePitches((prev) => prev.filter((p) => String(p.id) !== id));
+    setPitches((prev) => {
+      const next = prev.filter((p) => String(p.id) !== id);
+      setCurrentPitchIndex((idx) =>
+        next.length === 0 ? 0 : Math.min(idx, next.length - 1),
+      );
+      return next;
+    });
+  };
+
+  const handleDeleteDraft = async (draftId) => {
+    if (!window.confirm("Delete this draft? This cannot be undone.")) return;
+    try {
+      await deletePitch(draftId);
+      removePitchEverywhere(draftId);
+      toast.info("Draft removed");
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Failed to delete draft"));
+    }
+  };
+
+  const handleDeleteActivePitch = async (pitchId) => {
+    if (
+      !window.confirm(
+        "Delete this live pitch? It will be removed from the feed and cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await deletePitch(pitchId);
+      removePitchEverywhere(pitchId);
+      toast.info("Pitch deleted");
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Failed to delete pitch"));
+    }
   };
 
   const openCreateModal = () => {
@@ -157,28 +338,33 @@ export default function PitchPage() {
     <NewsFeedLayout showSidebars={false}>
       <div className="max-w-[1440px] w-full mx-auto px-3 sm:px-5 md:px-6 py-3 sm:py-5">
         <div className="flex flex-col lg:flex-row gap-3.5 sm:gap-5 lg:gap-8 items-start">
-          {/* ─── Left Sidebar ─── */}
           <PitchSidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onCreatePitch={openCreateModal}
           />
 
-          {/* ─── Main Content ─── */}
           <main className="flex-1 min-w-0 w-full flex flex-col gap-3.5 sm:gap-4 md:gap-5">
             {activeTab === "my-pitches" ? (
-              <MyPitchesView
-                myPitchesSubTab={myPitchesSubTab}
-                onSubTabChange={setMyPitchesSubTab}
-                userActivePitches={userActivePitches}
-                drafts={drafts}
-                onViewUserPitch={handleViewUserPitch}
-                onContinueEditingDraft={handleContinueEditingDraft}
-                onDeleteDraft={handleDeleteDraft}
-              />
+              loadingMine ? (
+                <div className="py-16 text-center text-sm text-gray-500">
+                  Loading your pitches…
+                </div>
+              ) : (
+                <MyPitchesView
+                  myPitchesSubTab={myPitchesSubTab}
+                  onSubTabChange={setMyPitchesSubTab}
+                  userActivePitches={userActivePitches}
+                  drafts={drafts}
+                  onViewUserPitch={handleViewUserPitch}
+                  onContinueEditingDraft={handleContinueEditingDraft}
+                  onDeleteDraft={handleDeleteDraft}
+                  onEditActivePitch={handleEditActivePitch}
+                  onDeleteActivePitch={handleDeleteActivePitch}
+                />
+              )
             ) : (
               <>
-                {/* Header Title */}
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1A3E32] tracking-tight">
                     Bejite Pitch
@@ -189,7 +375,6 @@ export default function PitchPage() {
                   </p>
                 </div>
 
-                {/* Category Filter Pills */}
                 <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 nfl-scroll -mx-1 px-1 scroll-smooth">
                   {CATEGORIES.map((cat) => {
                     const IconComponent = cat.icon;
@@ -212,13 +397,16 @@ export default function PitchPage() {
                   })}
                 </div>
 
-                {/* Showcase Stage */}
-                {currentPitch ? (
+                {loadingFeed ? (
+                  <div className="py-16 text-center text-sm text-gray-500">
+                    Loading pitches…
+                  </div>
+                ) : currentPitch ? (
                   <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4 sm:gap-6 lg:gap-8 mt-1 sm:mt-2 w-full">
                     <PitchVideoPlayer
                       pitch={currentPitch}
-                      hasPrev={filteredPitches.length > 1}
-                      hasNext={filteredPitches.length > 1}
+                      hasPrev={pitches.length > 1}
+                      hasNext={pitches.length > 1}
                       onPrev={handlePrevPitch}
                       onNext={handleNextPitch}
                     />
@@ -239,7 +427,6 @@ export default function PitchPage() {
         </div>
       </div>
 
-      {/* Multi-Step Create Pitch Modal */}
       <CreatePitchModal
         isOpen={isCreateModalOpen}
         onClose={() => {

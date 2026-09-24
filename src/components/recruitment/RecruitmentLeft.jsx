@@ -11,6 +11,7 @@ import * as connectionsApi from "../../services/connectionsApi";
 import { profileAvatarSrc } from "../../utils/profilePhotoUrl";
 import { pickAuthorProfilePhoto } from "../../utils/profileImageUtils";
 import { formatDisplayPersonName } from "../../utils/personDisplayName";
+import { useMilestoneBirthdayCount } from "../../hooks/useMilestoneBirthdayCount";
 
 const ADPRO_NAV_ITEM = {
   icon: "/assets/images/adpro-sidebar.svg",
@@ -78,6 +79,8 @@ const getGradientClass = (index, person) => {
 export default function RecruitmentLeft() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { count: milestoneBirthdayCount, label: milestoneBirthdayLabel } =
+    useMilestoneBirthdayCount();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [networkPool, setNetworkPool] = useState([]);
@@ -279,15 +282,22 @@ export default function RecruitmentLeft() {
               className="flex items-center space-x-3 cursor-pointer w-full p-2 hover:bg-[#15600b] rounded-lg transition-colors duration-200"
               onClick={() => handleNavClick(label)}
             >
-              {typeof Icon === "string" ? (
-                <img
-                  src={Icon}
-                  alt={label}
-                  className={`${iconClassName || "w-5 h-5"} shrink-0 object-contain`}
-                />
-              ) : (
-                <Icon className="text-[#F5F5F5] w-5 h-5 shrink-0" size={16} />
-              )}
+              <div className="relative shrink-0">
+                {typeof Icon === "string" ? (
+                  <img
+                    src={Icon}
+                    alt={label}
+                    className={`${iconClassName || "w-5 h-5"} shrink-0 object-contain`}
+                  />
+                ) : (
+                  <Icon className="text-[#F5F5F5] w-5 h-5 shrink-0" size={16} />
+                )}
+                {label === "Milestones" && milestoneBirthdayCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 z-10 bg-red-500 text-white font-bold rounded-full inline-flex items-center justify-center leading-none shadow-sm h-5 min-w-5 px-1 text-[10px]">
+                    {milestoneBirthdayLabel}
+                  </span>
+                )}
+              </div>
               <span className="text-[#F5F5F5] font-bold">{label}</span>
             </div>
           ))}

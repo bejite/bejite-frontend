@@ -27,6 +27,7 @@ import {
   trackPartnerEventClick,
 } from "../../services/verifiedBadgeApi";
 import { getUser, mergeAuthUsers } from "../../utils/tokenManager";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import { getVerifiedBadgeLabel, userIsRecruiter } from "../../utils/verifiedBadge";
 
 const CATEGORY_STYLES = {
@@ -363,8 +364,9 @@ function MonthlyReportsPanel({ reports, selectedReport, loading, onOpen }) {
             <div
               className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 prose prose-sm max-w-none text-gray-700"
               dangerouslySetInnerHTML={{
-                __html:
+                __html: sanitizeHtml(
                   selectedReport.contentHtml || selectedReport.content_html,
+                ),
               }}
             />
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { FaArrowLeft, FaPhone, FaVideo, FaBars } from 'react-icons/fa';
+import { FaArrowLeft, /* FaPhone, FaVideo, */ FaBars } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import messagingService from '../../services/messagingService';
 import { API_URL } from '../../config';
@@ -363,12 +363,12 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition shadow-sm" title="Call">
+          {/* <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition shadow-sm" title="Call">
             <FaPhone className="text-xs sm:text-sm" />
           </button>
           <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition shadow-sm" title="Video call">
             <FaVideo className="text-xs sm:text-sm" />
-          </button>
+          </button> */}
           <button 
             onClick={onShowChatInfo}
             className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors p-1.5 ml-1"

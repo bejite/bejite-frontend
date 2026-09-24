@@ -5,7 +5,9 @@ import { toast } from "react-toastify";
 import BirthdayBanner from "./BirthdayBanner";
 import TodayBirthdaysHighlight from "./TodayBirthdaysHighlight";
 import BirthdayCard from "./BirthdayCard";
-import BirthdayCardSkeleton from "./BirthdayCardSkeleton";
+import BirthdayCardSkeleton, {
+  BirthdayTabsSkeleton,
+} from "./BirthdayCardSkeleton";
 import BirthdayTabs from "./BirthdayTabs";
 import BirthdayWishModal from "./BirthdayWishModal";
 import BirthdayPagination from "./BirthdayPagination";
@@ -39,6 +41,7 @@ export default function BirthdaysMiddle() {
 
   const [selectedUserForModal, setSelectedUserForModal] = useState(null);
   const [customMessage, setCustomMessage] = useState("");
+  const [sendingWish, setSendingWish] = useState(false);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -110,6 +113,7 @@ export default function BirthdaysMiddle() {
   };
 
   const handleOpenWishModal = (user) => {
+    if (sendingWish) return;
     setSelectedUserForModal(user);
     const first = String(user.name || "")
       .split(" ")
@@ -123,18 +127,20 @@ export default function BirthdaysMiddle() {
 
   const handleSendCustomWish = async (e) => {
     e.preventDefault();
-    if (!selectedUserForModal || !customMessage.trim()) return;
+    if (!selectedUserForModal || !customMessage.trim() || sendingWish) return;
 
     const user = selectedUserForModal;
-    const ok = await sendWish(
-      user.id,
-      user.name,
-      customMessage.trim(),
-      { successToast: `Personal wish sent to ${user.name}! 🎂` },
-    );
-    if (ok) {
-      setSelectedUserForModal(null);
-      setCustomMessage("");
+    setSendingWish(true);
+    try {
+      const ok = await sendWish(user.id, user.name, customMessage.trim(), {
+        successToast: `Personal wish sent to ${user.name}! 🎂`,
+      });
+      if (ok) {
+        setSelectedUserForModal(null);
+        setCustomMessage("");
+      }
+    } finally {
+      setSendingWish(false);
     }
   };
 
@@ -176,6 +182,7 @@ export default function BirthdaysMiddle() {
   }, [filteredList, currentPage, pageSize]);
 
   const handleTabChange = (tabId) => {
+    if (loading) return;
     setActiveTab(tabId);
     setCurrentPage(1);
   };
@@ -202,11 +209,14 @@ export default function BirthdaysMiddle() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#F5F5F5] w-full min-w-0 pb-12">
+    <div
+      className="min-h-[100dvh] bg-[#F5F5F5] w-full min-w-0 pb-12"
+      aria-busy={loading}
+    >
       <div className="w-full min-w-0 max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <BirthdayBanner />
 
-        {activeTab !== "recent" && (
+        {!loading && activeTab !== "recent" && (
           <TodayBirthdaysHighlight
             todayList={todayList}
             onNavigateProfile={(id) => navigate(`/user-profile/${id}`)}
@@ -222,20 +232,29 @@ export default function BirthdaysMiddle() {
               placeholder="Search by name or role..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="w-full border-2 border-[#16730F] p-2.5 pl-4 pr-10 rounded-xl focus:outline-none text-sm bg-white shadow-xs"
+              disabled={loading}
+              className="w-full border-2 border-[#16730F] p-2.5 pl-4 pr-10 rounded-xl focus:outline-none text-sm bg-white shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             />
             <FaSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#1A3E32] h-4 w-4 pointer-events-none" />
           </div>
         </div>
 
-        <BirthdayTabs
-          tabs={tabsConfig}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+        {loading ? (
+          <BirthdayTabsSkeleton />
+        ) : (
+          <BirthdayTabs
+            tabs={tabsConfig}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        )}
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            role="status"
+            aria-label="Loading birthdays"
+          >
             {Array.from({ length: pageSize }).map((_, idx) => (
               <BirthdayCardSkeleton key={idx} />
             ))}
@@ -266,20 +285,26 @@ export default function BirthdaysMiddle() {
           </div>
         )}
 
-        <BirthdayPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalCount={filteredList.length}
-          onPageChange={handlePageChange}
-        />
+        {!loading && (
+          <BirthdayPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalCount={filteredList.length}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
 
       <BirthdayWishModal
         selectedUser={selectedUserForModal}
         customMessage={customMessage}
         setCustomMessage={setCustomMessage}
-        onClose={() => setSelectedUserForModal(null)}
+        sending={sendingWish}
+        onClose={() => {
+          if (sendingWish) return;
+          setSelectedUserForModal(null);
+        }}
         onSubmit={handleSendCustomWish}
       />
     </div>

@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import UserList from "../../components/UserList";
 import { discoverRecruitersForSignup } from "../../services/signupApi";
-import axiosPublic from "../../services/axiosPublic";
+import axiosInstance from "../../utils/axiosInstance";
 import * as connectionsApi from "../../services/connectionsApi";
 import * as followsApi from "../../services/followsApi";
 import { getProfileImageUrl } from "../../utils/profileImageUtils";
+import { getAccessToken } from "../../utils/tokenManager";
 import {
   SIGNUP_BTN_DISABLED,
   SIGNUP_BTN_ENABLED,
@@ -111,8 +112,13 @@ const JobConnection = () => {
     setLoading(true);
 
     try {
-      const response = await axiosPublic.post("/auth/complete-signup", {
-        email,
+      if (!getAccessToken()) {
+        toast.error("Session expired. Please verify your email again.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axiosInstance.post("/auth/complete-signup", {
         role: role?.toLowerCase(),
         mode: mode,
         followings: addedUsers,

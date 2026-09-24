@@ -62,7 +62,7 @@ export const clearAuthData = () => {
 
 // Check if user is authenticated (access or refresh token present)
 export const isAuthenticated = () => {
-  return !!(getAccessToken() || getRefreshToken());
+  return hasValidAccessToken() || Boolean(getRefreshToken());
 };
 
 /** Sync localStorage tokens/user into Redux (dynamic import avoids circular deps). */
@@ -79,18 +79,66 @@ export function isOAuthCallbackPath(pathname, search = '') {
     return (
       params.has('accessToken') ||
       params.has('refreshToken') ||
-      params.has('token')
+      params.has('token') ||
+      params.has('code')
     );
   }
   return false;
 }
 
 /**
- * Persist access/refresh tokens and user object from OAuth redirect query params.
- * @returns {{ accessToken: string|null, refreshToken: string|null, captured: boolean }}
+ * Exchange one-time OAuth handoff code for tokens (POST).
+ * @param {string} code
  */
-export function captureOAuthSessionFromUrl(search) {
+export async function exchangeOAuthCode(code) {
+  const { data } = await axios.post(
+    `${API_URL}/auth/oauth/exchange`,
+    { code },
+    { withCredentials: true, timeout: 12_000 },
+  );
+  if (data?.accessToken) {
+    storeTokens(data.accessToken, data.refreshToken);
+  }
+  if (data?.user) {
+    const existing = getUser() || {};
+    storeUser(
+      mergeAuthUsers(existing, {
+        ...data.user,
+        profileCompleted:
+          data.profileCompleted === true || data.user.profileCompleted === true,
+      }),
+    );
+  }
+  await dispatchHydrateAuth();
+  return data;
+}
+
+/**
+ * Persist access/refresh tokens and user object from OAuth redirect query params.
+ * Prefer `code` handoff; legacy query tokens still supported then stripped from URL.
+ * @returns {Promise<{ accessToken: string|null, refreshToken: string|null, captured: boolean }>}
+ */
+export async function captureOAuthSessionFromUrl(search) {
   const params = new URLSearchParams(search);
+  const handoffCode = params.get('code');
+
+  if (handoffCode) {
+    try {
+      const data = await exchangeOAuthCode(handoffCode);
+      stripAuthParamsFromUrl();
+      return {
+        accessToken: data?.accessToken || null,
+        refreshToken: data?.refreshToken || null,
+        captured: Boolean(data?.accessToken || data?.refreshToken),
+      };
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.warn('[captureOAuthSessionFromUrl] code exchange failed', err);
+      }
+      return { accessToken: null, refreshToken: null, captured: false };
+    }
+  }
+
   const accessToken = params.get('token') || params.get('accessToken');
   const refreshToken = params.get('refreshToken');
   const userParam = params.get('user');
@@ -121,11 +169,33 @@ export function captureOAuthSessionFromUrl(search) {
     }
   }
 
+  if (accessToken || refreshToken) {
+    stripAuthParamsFromUrl();
+  }
+
   return {
     accessToken,
     refreshToken,
     captured: Boolean(accessToken || refreshToken),
   };
+}
+
+/** Remove sensitive query params from the address bar without navigation. */
+export function stripAuthParamsFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    [
+      'token',
+      'accessToken',
+      'refreshToken',
+      'user',
+      'code',
+      'twoFactorToken',
+    ].forEach((key) => url.searchParams.delete(key));
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Re-fetch profile from GET /auth/me when tokens exist but user blob is missing/sparse. */
@@ -177,11 +247,14 @@ export const refreshAccessToken = async () => {
         throw new Error('No refresh token');
       }
 
-      const { data } = await axios.get(`${API_URL}/auth/refresh`, {
-        params: { refreshToken },
-        withCredentials: true,
-        timeout: 12_000,
-      });
+      const { data } = await axios.post(
+        `${API_URL}/auth/refresh`,
+        { refreshToken },
+        {
+          withCredentials: true,
+          timeout: 12_000,
+        },
+      );
 
       if (data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
