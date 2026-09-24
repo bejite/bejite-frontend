@@ -10,6 +10,7 @@ import { markAllNotificationsRead, markNotificationRead } from '../../services/n
 import { trackPartnerEventClick } from '../../services/verifiedBadgeApi'
 import { getUser } from '../../utils/tokenManager'
 import { getRecruiterIdUploadPath } from '../../utils/recruiterProfilePaths'
+import { classifyNavigationTarget } from '../../utils/safeNavigate'
 
 const NOTIFICATIONS_PAGE_SIZE = 20
 const INVITATIONS_PAGE_SIZE = 50
@@ -268,14 +269,16 @@ const Notifications = () => {
 
     if (notification.type === 'platform_announcement') {
       const url = parsedData?.url || notification.link
-      if (url && String(url).startsWith('http')) {
-        window.location.href = url
-        return
-      }
       if (url) {
-        const path = String(url).replace(/^https?:\/\/[^/]+/, '') || '/notifications'
-        navigate(path)
-        return
+        const target = classifyNavigationTarget(url)
+        if (target.kind === 'external') {
+          window.location.href = target.url
+          return
+        }
+        if (target.kind === 'internal') {
+          navigate(target.path)
+          return
+        }
       }
       return
     }

@@ -67,13 +67,14 @@ import { normalizeHashtag } from "../../utils/postBodyFormat";
 import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
+import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
 import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
 import PitchPreviewModal from "../pitch/PitchPreviewModal";
-import { INITIAL_PITCHES } from "../../pages/pitch/pitchData";
+import { getPitchFeed } from "../../services/pitchesApi";
 
 const FEED_PAGE_SIZE = 20;
 
-const mergeFeedPosts = (existing, incoming) => {
+ const mergeFeedPosts = (existing, incoming) => {
   const keyOf = (p) => p.feedItemKey || p.id;
   const seen = new Set(existing.map(keyOf));
   const merged = [...existing];
@@ -206,6 +207,7 @@ export default function RecruitmentMiddle() {
   // Pitch Reels preview modal state
   const [selectedPitchForPreview, setSelectedPitchForPreview] = useState(null);
   const [isPitchPreviewOpen, setIsPitchPreviewOpen] = useState(false);
+  const [feedPitches, setFeedPitches] = useState([]);
 
   const handleOpenPitchPreview = (pitch) => {
     setSelectedPitchForPreview(pitch);
@@ -236,6 +238,39 @@ export default function RecruitmentMiddle() {
     void location.pathname;
     return mergeAuthUsers(getUser() || {}, reduxUser);
   }, [reduxUser, location.pathname]);
+
+  const isCorporateViewer = useMemo(
+    () => isCorporateRecruiter(mergedUser),
+    [mergedUser],
+  );
+
+  /** Pitch reels in newsfeed: recruiters, employers, and jobseekers */
+  const canSeePitchCarousel = useMemo(() => {
+    const role = String(mergedUser?.role || "").toLowerCase();
+    return role === "recruiter" || role === "employer" || role === "jobseeker";
+  }, [mergedUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!canSeePitchCarousel || feedMode !== "home") {
+      setFeedPitches([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+    (async () => {
+      try {
+        const { pitches } = await getPitchFeed(12, { category: "For You" });
+        if (!cancelled) setFeedPitches(pitches);
+      } catch (error) {
+        console.warn("Failed to load pitch reels:", error?.message || error);
+        if (!cancelled) setFeedPitches([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canSeePitchCarousel, feedMode, mergedUser?.id]);
 
   const currentUserImage = useMemo(() => {
     void location.pathname;
@@ -539,10 +574,20 @@ export default function RecruitmentMiddle() {
       ) : error ? (
         <div className="text-center py-8 text-red-500">{error}</div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          {feedMode === "saved"
-            ? "No saved posts yet. Save posts from your feed to see them here."
-            : "No posts yet. Be the first to post!"}
+        <div className="flex flex-col gap-4">
+          {feedMode === "home" &&
+            canSeePitchCarousel &&
+            feedPitches.length > 0 && (
+              <PitchReelsCarousel
+                pitches={feedPitches}
+                onSelectPitch={handleOpenPitchPreview}
+              />
+            )}
+          <div className="text-center py-8 text-gray-500">
+            {feedMode === "saved"
+              ? "No saved posts yet. Save posts from your feed to see them here."
+              : "No posts yet. Be the first to post!"}
+          </div>
         </div>
       ) : (
         <PeopleSuggestionsProvider
@@ -567,11 +612,13 @@ export default function RecruitmentMiddle() {
               />
               </div>
 
-              {/* Pitch Reels carousel (Facebook-style, shown after 2 posts) */}
+              {/* Pitch Reels — after 2nd post (or last if fewer) */}
               {feedMode === "home" &&
+                canSeePitchCarousel &&
+                feedPitches.length > 0 &&
                 (index === 1 || (posts.length < 2 && index === posts.length - 1)) && (
                   <PitchReelsCarousel
-                    pitches={INITIAL_PITCHES}
+                    pitches={feedPitches}
                     onSelectPitch={handleOpenPitchPreview}
                   />
                 )}
@@ -589,8 +636,9 @@ export default function RecruitmentMiddle() {
                 />
               )}
 
-              {/* People You May Know slider (Facebook-style, shown after every 4 posts) */}
+              {/* People You May Know — not for corporate (follow-only accounts) */}
               {feedMode === "home" &&
+                !isCorporateViewer &&
                 (((index + 1) % 4 === 0) ||
                   (posts.length < 4 && index === posts.length - 1)) && (
                   <PeopleYouMayKnowSlider
@@ -641,7 +689,7 @@ export default function RecruitmentMiddle() {
         isOpen={isPitchPreviewOpen}
         onClose={() => setIsPitchPreviewOpen(false)}
         initialPitch={selectedPitchForPreview}
-        allPitches={INITIAL_PITCHES}
+        allPitches={feedPitches}
       />
     </main>
   );

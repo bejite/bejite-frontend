@@ -87,6 +87,7 @@ export const JobExtendCallback = lazy(() => import("../pages/employerDashboard/J
 export const JobApplications = lazy(() => import("../pages/employerDashboard/JobApplications.jsx"));
 export const RecruitWithASE = lazy(() => import("../pages/employerDashboard/RecruitWithASE.jsx"));
 export const RepostJob = lazy(() => import("../pages/employerDashboard/RepostJob.jsx"));
+export const EditJob = lazy(() => import("../pages/employerDashboard/EditJob.jsx"));
 export const JobVacancyListing = lazy(() => import("../pages/jobseekerSignup/Jobs/JobVacancyListing.jsx"));
 export const AdProDashboard = lazy(() => import("../pages/ads/AdProDashboard.jsx"));
 export const CampaignReports = lazy(() => import("../pages/ads/CampaignReports.jsx"));

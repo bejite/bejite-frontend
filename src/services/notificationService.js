@@ -1,6 +1,17 @@
 import axiosInstance from "../utils/axiosInstance";
 import { notifyNotificationsUnreadUpdated } from "../utils/headerBadgeEvents";
 
+function buildTypesQuery(types) {
+  const params = new URLSearchParams();
+  if (Array.isArray(types) && types.length > 0) {
+    params.set("types", types.join(","));
+  } else if (typeof types === "string" && types.trim()) {
+    params.set("types", types.trim());
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export async function fetchNotifications({ page = 1, limit = 20, unreadOnly = false } = {}) {
   const params = new URLSearchParams({
     page: String(page),
@@ -12,9 +23,11 @@ export async function fetchNotifications({ page = 1, limit = 20, unreadOnly = fa
   return data;
 }
 
-export async function fetchUnreadNotificationCount() {
-  const { data } = await axiosInstance.get("/api/notifications/unread-count");
-  return data?.unread_count ?? 0;
+export async function fetchUnreadNotificationCount({ types } = {}) {
+  const { data } = await axiosInstance.get(
+    `/api/notifications/unread-count${buildTypesQuery(types)}`,
+  );
+  return Number(data?.unread_count) || 0;
 }
 
 export async function markNotificationRead(notificationId) {
@@ -25,9 +38,13 @@ export async function markNotificationRead(notificationId) {
   return data;
 }
 
-export async function markAllNotificationsRead() {
-  const { data } = await axiosInstance.put("/api/notifications/read-all");
-  notifyNotificationsUnreadUpdated({ clearedAll: true });
+export async function markAllNotificationsRead({ types } = {}) {
+  const { data } = await axiosInstance.put(
+    `/api/notifications/read-all${buildTypesQuery(types)}`,
+  );
+  notifyNotificationsUnreadUpdated(
+    types ? { clearedTypes: types } : { clearedAll: true },
+  );
   return data;
 }
 
@@ -37,7 +54,10 @@ export async function fetchNotificationPreferences() {
 }
 
 export async function updateNotificationPreferences(body) {
-  const { data } = await axiosInstance.patch("/api/notifications/preferences", body);
+  const { data } = await axiosInstance.patch(
+    "/api/notifications/preferences",
+    body,
+  );
   return data;
 }
 

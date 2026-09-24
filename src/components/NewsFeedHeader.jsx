@@ -59,11 +59,14 @@ import NotificationDropdown from "./notifications/NotificationDropdown";
 import { onNotificationNew } from "../services/socketClient";
 import { Network } from "lucide-react";
 import { toast } from "react-toastify";
+import { useMilestoneBirthdayCount } from "../hooks/useMilestoneBirthdayCount";
 
 const NewsFeedHeader = ({ user: propUser }) => {
   useSyncProfilePhoto();
   const navigate = useNavigate();
   const location = useLocation();
+  const { count: milestoneBirthdayCount, label: milestoneBirthdayLabel } =
+    useMilestoneBirthdayCount();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1259,11 +1262,16 @@ const NewsFeedHeader = ({ user: propUser }) => {
                     setIsSidebarOpen(false);
                   }}
                 >
-                  <div className="rounded-[30px] p-1.5 border-2 border-[#16730F]">
+                  <div className="relative rounded-[30px] p-1.5 border-2 border-[#16730F]">
                     <Network
                       className="text-[#16730F] w-2.5 h-2.5 shrink-0 "
                       size={16}
                     />
+                    {milestoneBirthdayCount > 0 && (
+                      <span className="absolute -top-1 -right-1 z-10 bg-red-500 text-white font-bold rounded-full inline-flex items-center justify-center leading-none shadow-sm h-4 min-w-4 px-0.5 text-[9px]">
+                        {milestoneBirthdayLabel}
+                      </span>
+                    )}
                   </div>
                   <span className="font-medium text-sm text-[#1A3E32]">
                     Milestones

@@ -78,6 +78,11 @@ export const getEmployerInterviewInvitations = async (params = {}) => {
   return response.data;
 };
 
+export const getEmployerJob = async (jobId) => {
+  const response = await axiosInstance.get(`/api/employer/jobs/${jobId}`);
+  return response.data;
+};
+
 export const updateEmployerJob = async (jobId, jobData) => {
   const response = await axiosInstance.patch(
     `/api/employer/jobs/${jobId}`,
@@ -184,6 +189,7 @@ export const getJobAuditLogs = async (jobId, params = {}) => {
 export default {
   getEmployerDashboard,
   createEmployerJob,
+  getEmployerJob,
   updateEmployerJob,
   closeEmployerJob,
   deleteEmployerJob,

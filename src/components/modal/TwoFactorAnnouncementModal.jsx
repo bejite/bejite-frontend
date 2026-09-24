@@ -17,10 +17,11 @@ import { toast } from "react-toastify";
 
 function checkIsMobile() {
   if (typeof window === "undefined") return false;
-  return (
-    window.innerWidth < 640 ||
-    (window.matchMedia ? window.matchMedia("(max-width: 639px)").matches : false)
-  );
+  try {
+    return window.matchMedia("(max-width: 1023px)").matches;
+  } catch {
+    return false;
+  }
 }
 
 function isFeatureTourActive() {
@@ -49,7 +50,9 @@ export default function TwoFactorAnnouncementModal({
   const lottieContainerRef = useRef(null);
   const animInstanceRef = useRef(null);
 
-  const tryOpen = () => {
+  const openAnnouncement = () => {
+    const mobile = checkIsMobile();
+    setIsMobile(mobile);
     if (isFeatureTourActive()) {
       pendingOpenRef.current = true;
       setIsOpen(false);
@@ -57,7 +60,7 @@ export default function TwoFactorAnnouncementModal({
     }
     pendingOpenRef.current = false;
     setIsOpen(true);
-    setStage(checkIsMobile() ? "details" : "intro");
+    setStage(mobile ? "details" : "intro");
   };
 
   // Window resize listener to keep isMobile in sync
@@ -82,8 +85,10 @@ export default function TwoFactorAnnouncementModal({
         setIsOpen(false);
       } else if (pendingOpenRef.current) {
         pendingOpenRef.current = false;
+        const mobile = checkIsMobile();
+        setIsMobile(mobile);
         setIsOpen(true);
-        setStage(checkIsMobile() ? "details" : "intro");
+        setStage(mobile ? "details" : "intro");
       }
     };
     window.addEventListener("bejite:feature-tour", onTour);
@@ -100,7 +105,7 @@ export default function TwoFactorAnnouncementModal({
     setIsMobile(mobile);
 
     if (forceShow || urlForce) {
-      tryOpen();
+      openAnnouncement();
       return;
     }
 
@@ -135,7 +140,7 @@ export default function TwoFactorAnnouncementModal({
         } else {
           // If 2FA is NOT enabled (false), show the modal for this user
           openTimer = setTimeout(() => {
-            if (!cancelled) tryOpen();
+            if (!cancelled) openAnnouncement();
           }, 600);
         }
       })

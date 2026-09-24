@@ -58,18 +58,21 @@ export default function Step6Review({
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
                     <span className="text-[11px] sm:text-xs font-bold truncate">
-                      {currentUser?.name || "Prisca Osakwe"}
+                      {currentUser?.name || "Your name"}
                     </span>
                     <CheckCircle2 className="w-3 h-3 fill-[#16730F] text-white shrink-0" />
                   </div>
                   <span className="text-[9px] sm:text-[10px] text-gray-300 block truncate">
-                    UI/UX Designer
+                    {currentUser?.title ||
+                      currentUser?.jobTitle ||
+                      currentUser?.job_title ||
+                      "Your title"}
                   </span>
                 </div>
               </div>
 
               <p className="text-[10px] sm:text-[11px] font-bold leading-tight mb-1.5 line-clamp-2">
-                {headline || "Senior UIUX Design/Product Design"}
+                {headline || "Your headline"}
               </p>
 
               <div className="flex flex-wrap gap-1 mb-2">
@@ -87,7 +90,7 @@ export default function Step6Review({
                 type="button"
                 className="w-full py-1.5 sm:py-2 rounded-lg bg-[#16730F] text-white font-bold text-[11px] sm:text-xs shadow-sm"
               >
-                {ctaType}
+                {ctaType || "Call to action"}
               </button>
             </div>
           </div>
@@ -136,10 +139,10 @@ export default function Step6Review({
                 </button>
               </div>
               <p className="font-semibold text-xs text-gray-800 line-clamp-1 mb-0.5">
-                {headline || "Senior UIUX Design/Product Design"}
+                {headline || "No headline yet"}
               </p>
               <p className="text-xs text-gray-500 line-clamp-2 mb-2">
-                {description || "I design functional app and websites"}
+                {description || "No description yet"}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {skills.map((s) => (

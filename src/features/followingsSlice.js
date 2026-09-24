@@ -1,18 +1,26 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { getAccessToken } from "../utils/tokenManager";
 const API_URL = import.meta.env.VITE_API_URL;
 
 
 // Thunk to call the backend complete-signup API
 export const completeSignupThunk = createAsyncThunk(
   "followings/completeSignup",
-  async ({ email, role, mode, followings }, { rejectWithValue }) => {
-    console.log(" completeSignupThunk called with:", { email, role, mode, followings });
+  async ({ role, mode, followings }, { rejectWithValue }) => {
+    console.log(" completeSignupThunk called with:", { role, mode, followings });
 
     try {
+      const token = getAccessToken();
+      if (!token) {
+        return rejectWithValue("Authentication required");
+      }
       const res = await fetch(`${API_URL}/auth/complete-signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role, mode, followings }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role, mode, followings }),
       });
 
       const data = await res.json();

@@ -8,6 +8,7 @@ import {
   FaPlus,
   FaCheckCircle,
   FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import {
@@ -152,9 +153,19 @@ const EmployerDashboard = () => {
               </span>
               <button
                 type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/edit`)}
+                aria-label={`Edit ${job.title}`}
+                title="Edit job"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-[#16730F] hover:bg-green-50 transition-colors"
+              >
+                <FaEdit className="text-xs sm:text-sm" />
+              </button>
+              <button
+                type="button"
                 onClick={() => handleDeleteJob(job)}
                 disabled={isDeleting}
                 aria-label={`Delete ${job.title}`}
+                title="Delete job"
                 className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaTrash className="text-xs sm:text-sm" />
@@ -233,7 +244,7 @@ const EmployerDashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate(`/employer/job/${job.id}/repost`)}
-                className="shrink-0 py-2 px-3 sm:px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-[11px] sm:text-sm font-medium"
+                className="shrink-0 py-2 px-3 sm:px-4 border border-[#16730F] text-[#16730F] rounded-xl hover:bg-green-50 transition-colors text-[11px] sm:text-sm font-medium"
               >
                 Repost
               </button>

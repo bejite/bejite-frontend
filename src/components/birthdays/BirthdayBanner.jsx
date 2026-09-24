@@ -9,16 +9,15 @@ export default function BirthdayBanner() {
         <FaBirthdayCake className="w-36 h-36 sm:w-44 sm:h-44 text-white" />
       </div>
       <div className="relative z-10 max-w-xl">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-semibold tracking-wide mb-2.5">
-          <Gift className="w-4 h-4 text-yellow-300" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-semibold tracking-wide mb-3">
+          <Gift className="w-3.5 h-3.5 text-yellow-300" />
           <span>Network Catch-Ups</span>
         </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-semibold tracking-wide mb-2.5">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Celebrate Network Birthdays
-          </h1>
-          <PartyPopper className="w-4 h-4 text-yellow-300" />
-        </div>
+
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+          <span>Celebrate Network Birthdays</span>
+          <PartyPopper className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300 shrink-0" />
+        </h1>
 
         <p className="mt-1.5 text-xs sm:text-sm text-gray-100/90 font-normal leading-relaxed">
           Never miss a special day! Wish your connections and page followers a

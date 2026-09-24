@@ -21,10 +21,13 @@ import {
   getBadgeStatus,
   getPartnerEvents,
   getEmploymentMetrics,
+  getMonthlyReports,
+  openMonthlyReport,
   registerForPartnerEvent,
   trackPartnerEventClick,
 } from "../../services/verifiedBadgeApi";
 import { getUser, mergeAuthUsers } from "../../utils/tokenManager";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import { getVerifiedBadgeLabel, userIsRecruiter } from "../../utils/verifiedBadge";
 
 const CATEGORY_STYLES = {
@@ -35,9 +38,10 @@ const CATEGORY_STYLES = {
 };
 
 const JOBSEEKER_LINES = [
+  { key: "recruitersSearchedForYou", label: "ASE recruiters", color: "#0F766E" },
+  { key: "profileViewsByRecruiters", label: "Profile views", color: "#16730F" },
+  { key: "applicationsViewedNotReviewed", label: "Viewed, not reviewed", color: "#B45309" },
   { key: "applicationsSubmitted", label: "Applications", color: "#1A3E32" },
-  { key: "applicationsViewedByRecruiter", label: "Recruiter views", color: "#16730F" },
-  { key: "fieldRelatedJobPosts", label: "Related jobs", color: "#B45309" },
 ];
 
 const RECRUITER_LINES = [
@@ -104,6 +108,84 @@ function MetricTile({ label, value }) {
   );
 }
 
+function InsightChip({ label, count }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs bg-[#F3F6F4] text-[#1A3E32] px-2.5 py-1 rounded-lg">
+      <span className="font-medium break-words">{label}</span>
+      {count != null && (
+        <span className="tabular-nums text-gray-500">{count}</span>
+      )}
+    </span>
+  );
+}
+
+function TargetingInsightsPanel({ insights }) {
+  if (!insights) return null;
+  const {
+    engagedProfessionals = 0,
+    topTitles = [],
+    topIndustries = [],
+    topLocations = [],
+    topSkills = [],
+    recommendations = [],
+  } = insights;
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900">
+          How to target needed professionals
+        </h3>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Based on {engagedProfessionals} jobseeker
+          {engagedProfessionals === 1 ? "" : "s"} who viewed or applied to your
+          posts this period.
+        </p>
+      </div>
+
+      {recommendations.length > 0 && (
+        <ul className="space-y-2">
+          {recommendations.map((text) => (
+            <li
+              key={text}
+              className="text-sm text-gray-700 leading-relaxed flex gap-2"
+            >
+              <span className="text-[#16730F] font-bold shrink-0">•</span>
+              <span>{text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[
+          { title: "Top roles", items: topTitles },
+          { title: "Top skills", items: topSkills },
+          { title: "Top industries", items: topIndustries },
+          { title: "Top locations", items: topLocations },
+        ].map((group) =>
+          group.items.length ? (
+            <div key={group.title} className="min-w-0">
+              <p className="text-xs font-medium text-gray-500 mb-1.5">
+                {group.title}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {group.items.map((item) => (
+                  <InsightChip
+                    key={`${group.title}-${item.label}`}
+                    label={item.label}
+                    count={item.count}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null,
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EmploymentMetricsGrid({ metrics, isRecruiter }) {
   if (!metrics) return null;
 
@@ -116,7 +198,7 @@ function EmploymentMetricsGrid({ metrics, isRecruiter }) {
           value={metrics.activeJobPostings ?? 0}
         />
         <MetricTile
-          label="Unique jobseekers (period)"
+          label="Unique jobseekers who viewed posts"
           value={metrics.uniqueJobseekerViews ?? 0}
         />
         <MetricTile
@@ -133,6 +215,18 @@ function EmploymentMetricsGrid({ metrics, isRecruiter }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      <MetricTile
+        label="Recruiters who found you (ASE search)"
+        value={metrics.recruitersSearchedForYou ?? 0}
+      />
+      <MetricTile
+        label="Recruiters who viewed your profile"
+        value={metrics.profileViewsByRecruiters ?? 0}
+      />
+      <MetricTile
+        label="Applications viewed, still not reviewed"
+        value={metrics.applicationsViewedNotReviewed ?? 0}
+      />
       <MetricTile
         label="Applications submitted (period)"
         value={metrics.applicationsSubmitted ?? 0}
@@ -230,6 +324,66 @@ function EmploymentMetricsChart({ series, period, isRecruiter }) {
   );
 }
 
+function MonthlyReportsPanel({ reports, selectedReport, loading, onOpen }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-bold text-gray-900 text-base">Monthly reports</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Saved snapshots of your verified employment metrics. Click a report to
+          open it.
+        </p>
+      </div>
+      {loading && !reports.length ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#1A3E32]" />
+        </div>
+      ) : reports.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No monthly reports yet. They appear after your first report cycle.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {reports.map((report) => (
+              <button
+                key={report.id}
+                type="button"
+                onClick={() => onOpen(report.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                  selectedReport?.id === report.id
+                    ? "bg-[#1A3E32] text-white border-[#1A3E32]"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-[#1A3E32]"
+                }`}
+              >
+                {report.title || `Report #${report.id}`}
+              </button>
+            ))}
+          </div>
+          {(selectedReport?.contentHtml || selectedReport?.content_html) && (
+            <div
+              className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeHtml(
+                  selectedReport.contentHtml || selectedReport.content_html,
+                ),
+              }}
+            />
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function normalizeReport(report) {
+  if (!report) return null;
+  return {
+    ...report,
+    contentHtml: report.contentHtml || report.content_html || "",
+  };
+}
+
 export default function BadgeHolder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -245,6 +399,9 @@ export default function BadgeHolder() {
   const [employmentMetrics, setEmploymentMetrics] = useState(null);
   const [metricsSeries, setMetricsSeries] = useState([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [monthlyReports, setMonthlyReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const badgeRole =
@@ -325,6 +482,45 @@ export default function BadgeHolder() {
       controller.abort();
     };
   }, [badgeStatus?.hasVerifiedBadge, metricsPeriod]);
+
+  useEffect(() => {
+    if (!badgeStatus?.hasVerifiedBadge) return undefined;
+
+    const loadReports = async () => {
+      setReportsLoading(true);
+      try {
+        const reportsRes = await getMonthlyReports();
+        const list = Array.isArray(reportsRes?.reports)
+          ? reportsRes.reports
+          : Array.isArray(reportsRes)
+            ? reportsRes
+            : [];
+        setMonthlyReports(list);
+        // List only on load — open/report-open write happens on explicit click.
+        setSelectedReport(null);
+      } catch (err) {
+        console.error(err);
+        setMonthlyReports([]);
+        setSelectedReport(null);
+      } finally {
+        setReportsLoading(false);
+      }
+    };
+
+    loadReports();
+  }, [badgeStatus?.hasVerifiedBadge]);
+
+  const handleOpenReport = async (reportId) => {
+    try {
+      setReportsLoading(true);
+      const opened = await openMonthlyReport(reportId);
+      setSelectedReport(normalizeReport(opened?.report || opened || null));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -430,6 +626,11 @@ export default function BadgeHolder() {
                     metrics={employmentMetrics}
                     isRecruiter={isRecruiter}
                   />
+                  {isRecruiter && (
+                    <TargetingInsightsPanel
+                      insights={employmentMetrics?.targetingInsights}
+                    />
+                  )}
                   <div className="bg-white border border-gray-100 rounded-2xl p-3 sm:p-4 min-w-0 overflow-hidden relative">
                     <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
                       <div className="min-w-0">
@@ -454,6 +655,13 @@ export default function BadgeHolder() {
                 </>
               )}
             </section>
+
+            <MonthlyReportsPanel
+              reports={monthlyReports}
+              selectedReport={selectedReport}
+              loading={reportsLoading}
+              onOpen={handleOpenReport}
+            />
 
             <section>
               <div className="flex items-center justify-between gap-3 mb-4 min-w-0">

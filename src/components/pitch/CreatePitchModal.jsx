@@ -12,6 +12,24 @@ import Step3Details from "./modal/steps/Step3Details";
 import Step4Audience from "./modal/steps/Step4Audience";
 import Step5Cta from "./modal/steps/Step5Cta";
 import Step6Review from "./modal/steps/Step6Review";
+import {
+  createPitch,
+  updatePitch,
+  uploadPitchMedia,
+  apiErrorMessage,
+} from "../../services/pitchesApi";
+import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
+
+function resolveDurationSeconds(videoEl, durationText, fallbackSeconds) {
+  const fromEl = videoEl?.duration;
+  if (fromEl && Number.isFinite(fromEl) && fromEl > 0) {
+    return Math.round(fromEl);
+  }
+  const match = String(durationText || "").match(/(\d+)\s*seconds?/i);
+  if (match) return parseInt(match[1], 10);
+  if (fallbackSeconds > 0) return fallbackSeconds;
+  return null;
+}
 
 export default function CreatePitchModal({
   isOpen,
@@ -25,11 +43,14 @@ export default function CreatePitchModal({
   const [step, setStep] = useState(1);
   const [pitchType, setPitchType] = useState("skill");
   const [mediaMode, setMediaMode] = useState("upload");
+  const [existingPitchId, setExistingPitchId] = useState(null);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState("");
+  const [uploadedThumbnailUrl, setUploadedThumbnailUrl] = useState("");
 
   // Video state
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  const [videoDurationText, setVideoDurationText] = useState("4 seconds");
+  const [videoDurationText, setVideoDurationText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [cameraActive, setCameraActive] = useState(false);
@@ -37,19 +58,19 @@ export default function CreatePitchModal({
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
 
   // Step 3: Details
-  const [headline, setHeadline] = useState("Senior UIUX Design/Product Design");
-  const [description, setDescription] = useState("I design functional app and websites");
-  const [category, setCategory] = useState("Design");
-  const [skills, setSkills] = useState(["UI/UX Design", "Figma", "UX Research"]);
+  const [headline, setHeadline] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [skills, setSkills] = useState([]);
   const [customSkillInput, setCustomSkillInput] = useState("");
 
   // Step 4: Audience
-  const [selectedAudiences, setSelectedAudiences] = useState(["employers", "recruiters"]);
-  const [selectedIndustries, setSelectedIndustries] = useState(["Technology", "Fintech"]);
-  const [selectedRoles, setSelectedRoles] = useState(["Recruiter", "Hiring Manager"]);
+  const [selectedAudiences, setSelectedAudiences] = useState([]);
+  const [selectedIndustries, setSelectedIndustries] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState([]);
 
   // Step 5: CTA
-  const [ctaType, setCtaType] = useState("Hire Me");
+  const [ctaType, setCtaType] = useState("");
 
   // Modal dialog states
   const [isPublishing, setIsPublishing] = useState(false);
@@ -74,37 +95,69 @@ export default function CreatePitchModal({
       setIsPublishing(false);
 
       if (draftToEdit) {
-        if (draftToEdit.pitchType) setPitchType(draftToEdit.pitchType);
-        if (draftToEdit.headline) setHeadline(draftToEdit.headline);
-        if (draftToEdit.description) setDescription(draftToEdit.description);
-        if (draftToEdit.category) setCategory(draftToEdit.category);
-        if (draftToEdit.skills?.length) setSkills(draftToEdit.skills);
-        if (draftToEdit.selectedAudiences?.length) setSelectedAudiences(draftToEdit.selectedAudiences);
-        if (draftToEdit.selectedIndustries?.length) setSelectedIndustries(draftToEdit.selectedIndustries);
-        if (draftToEdit.selectedRoles?.length) setSelectedRoles(draftToEdit.selectedRoles);
-        if (draftToEdit.ctaType) setCtaType(draftToEdit.ctaType);
-        if (draftToEdit.videoUrl) setVideoUrl(draftToEdit.videoUrl);
-        if (draftToEdit.step) setStep(draftToEdit.step);
+        setExistingPitchId(draftToEdit.id || null);
+        setPitchType(draftToEdit.pitchType || "skill");
+        setHeadline(draftToEdit.headline || "");
+        setDescription(draftToEdit.description || "");
+        setCategory(draftToEdit.category || "");
+        setSkills(
+          Array.isArray(draftToEdit.skills) ? draftToEdit.skills : []
+        );
+        setSelectedAudiences(
+          Array.isArray(draftToEdit.audiences) ? draftToEdit.audiences : []
+        );
+        setSelectedIndustries(
+          Array.isArray(draftToEdit.industries) ? draftToEdit.industries : []
+        );
+        setSelectedRoles(
+          Array.isArray(draftToEdit.targetRoles) ? draftToEdit.targetRoles : []
+        );
+        setCtaType(draftToEdit.cta || "");
+        setStep(draftToEdit.wizardStep || draftToEdit.step || 1);
+        setVideoFile(null);
+        if (draftToEdit.videoUrl) {
+          setVideoUrl(draftToEdit.videoUrl);
+          setUploadedVideoUrl(draftToEdit.videoUrl);
+        } else {
+          setVideoUrl("");
+          setUploadedVideoUrl("");
+        }
+        setUploadedThumbnailUrl(draftToEdit.videoPoster || "");
+        setPublishedPitchData(null);
         return;
       }
 
-      try {
-        const savedDraft = localStorage.getItem("bejite_pitch_draft");
-        if (savedDraft) {
-          const p = JSON.parse(savedDraft);
-          if (p.pitchType) setPitchType(p.pitchType);
-          if (p.headline) setHeadline(p.headline);
-          if (p.description) setDescription(p.description);
-          if (p.category) setCategory(p.category);
-          if (p.skills?.length) setSkills(p.skills);
-          if (p.selectedAudiences?.length) setSelectedAudiences(p.selectedAudiences);
-          if (p.selectedIndustries?.length) setSelectedIndustries(p.selectedIndustries);
-          if (p.selectedRoles?.length) setSelectedRoles(p.selectedRoles);
-          if (p.ctaType) setCtaType(p.ctaType);
+      // Full reset for a brand-new pitch
+      setExistingPitchId(null);
+      setUploadedVideoUrl("");
+      setUploadedThumbnailUrl("");
+      setVideoFile(null);
+      setVideoUrl((prev) => {
+        if (prev && String(prev).startsWith("blob:")) {
+          try {
+            URL.revokeObjectURL(prev);
+          } catch {
+            /* ignore */
+          }
         }
-      } catch (err) {
-        console.error("Failed to load draft:", err);
-      }
+        return "";
+      });
+      setStep(1);
+      setPitchType("skill");
+      setMediaMode("upload");
+      setHeadline("");
+      setDescription("");
+      setCategory("");
+      setSkills([]);
+      setCustomSkillInput("");
+      setSelectedAudiences([]);
+      setSelectedIndustries([]);
+      setSelectedRoles([]);
+      setCtaType("");
+      setVideoDurationText("");
+      setIsPlayingPreview(false);
+      setShowLiveSuccess(false);
+      setPublishedPitchData(null);
     } else {
       stopCamera();
     }
@@ -179,9 +232,19 @@ export default function CreatePitchModal({
 
       recorder.onstop = () => {
         const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        setVideoUrl(url);
+        setVideoUrl((prev) => {
+          if (prev && String(prev).startsWith("blob:")) {
+            try {
+              URL.revokeObjectURL(prev);
+            } catch {
+              /* ignore */
+            }
+          }
+          return URL.createObjectURL(blob);
+        });
         setVideoFile(new File([blob], "recorded_pitch.webm", { type: "video/webm" }));
+        setUploadedVideoUrl("");
+        setUploadedThumbnailUrl("");
         setVideoDurationText(`${recordSeconds || 4} seconds`);
         stopCamera();
       };
@@ -226,21 +289,42 @@ export default function CreatePitchModal({
       return;
     }
 
-    if (file.size > 150 * 1024 * 1024) {
-      toast.error("Video file must be under 150MB.");
+    if (file.size > VIDEO_MAX_BYTES) {
+      toast.error(`Video file must be under ${formatBytesAsMb(VIDEO_MAX_BYTES)}.`);
       return;
     }
 
-    const url = URL.createObjectURL(file);
+    setVideoUrl((prev) => {
+      if (prev && String(prev).startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(prev);
+        } catch {
+          /* ignore */
+        }
+      }
+      return URL.createObjectURL(file);
+    });
     setVideoFile(file);
-    setVideoUrl(url);
+    setUploadedVideoUrl("");
+    setUploadedThumbnailUrl("");
     setVideoDurationText("Ready to stream");
     toast.success("Video loaded successfully!");
   };
 
   const handleReplaceVideo = () => {
-    setVideoUrl("");
+    setVideoUrl((prev) => {
+      if (prev && String(prev).startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(prev);
+        } catch {
+          /* ignore */
+        }
+      }
+      return "";
+    });
     setVideoFile(null);
+    setUploadedVideoUrl("");
+    setUploadedThumbnailUrl("");
     setIsPlayingPreview(false);
     if (mediaMode === "record") startCamera();
   };
@@ -257,35 +341,73 @@ export default function CreatePitchModal({
     }
   };
 
-  const saveCurrentDraft = () => {
-    try {
-      const draft = {
-        id: "draft-" + Date.now(),
-        pitchType,
-        headline,
-        description,
-        category,
-        skills,
-        selectedAudiences,
-        selectedIndustries,
-        selectedRoles,
-        ctaType,
-        videoUrl,
-        step,
-        progressPercent: Math.round((step / 6) * 100),
-        savedAt: new Date().toISOString(),
+  const ensureVideoUploaded = async () => {
+    if (uploadedVideoUrl && !videoFile) {
+      return {
+        url: uploadedVideoUrl,
+        thumbnailUrl: uploadedThumbnailUrl || null,
       };
-      localStorage.setItem("bejite_pitch_draft", JSON.stringify(draft));
-      return draft;
-    } catch (err) {
-      console.error("Failed to save draft:", err);
-      return null;
     }
+    if (!videoFile) return { url: uploadedVideoUrl || null, thumbnailUrl: uploadedThumbnailUrl || null };
+
+    const uploaded = await uploadPitchMedia(videoFile);
+    setUploadedVideoUrl(uploaded.url);
+    setUploadedThumbnailUrl(uploaded.thumbnailUrl || "");
+    setVideoFile(null);
+    if (uploaded.url) setVideoUrl(uploaded.url);
+    return {
+      url: uploaded.url,
+      thumbnailUrl: uploaded.thumbnailUrl || null,
+    };
   };
 
-  const handleSaveDraft = () => {
-    const d = saveCurrentDraft();
-    if (d) toast.success("Draft saved successfully!");
+  const buildPitchPayload = (status, media) => ({
+    pitchType,
+    status,
+    headline: headline.trim(),
+    description: description.trim(),
+    category,
+    skills,
+    audiences: selectedAudiences,
+    industries: selectedIndustries,
+    targetRoles: selectedRoles,
+    cta: ctaType,
+    videoUrl: media?.url || null,
+    videoThumbnailUrl: media?.thumbnailUrl || null,
+    durationSeconds: resolveDurationSeconds(
+      videoPreviewRef.current,
+      videoDurationText,
+      recordSeconds
+    ),
+    wizardStep: step,
+  });
+
+  const persistPitch = async (status) => {
+    const media = await ensureVideoUploaded();
+    if (status === "published" && !media.url) {
+      throw new Error("Please upload or record a video before publishing.");
+    }
+    const payload = buildPitchPayload(status, media);
+    if (existingPitchId) {
+      return updatePitch(existingPitchId, payload);
+    }
+    return createPitch(payload);
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      setIsPublishing(true);
+      const pitch = await persistPitch("draft");
+      if (pitch?.id) setExistingPitchId(pitch.id);
+      onPitchCreated?.(pitch, { isDraft: true });
+      toast.success("Draft saved successfully!");
+      return pitch;
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Failed to save draft"));
+      return null;
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleCloseRequest = () => {
@@ -302,8 +424,9 @@ export default function CreatePitchModal({
     onClose();
   };
 
-  const handleConfirmSaveDraft = () => {
-    handleSaveDraft();
+  const handleConfirmSaveDraft = async () => {
+    const saved = await handleSaveDraft();
+    if (!saved) return;
     setShowLeaveConfirm(false);
     stopCamera();
     onClose();
@@ -353,45 +476,26 @@ export default function CreatePitchModal({
     }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    if (!videoFile && !uploadedVideoUrl && !videoUrl) {
+      toast.error("Please upload or record a video before publishing.");
+      return;
+    }
+
     setIsPublishing(true);
-
-    setTimeout(() => {
-      const currentTypeObj = PITCH_TYPES.find((t) => t.id === pitchType) || PITCH_TYPES[0];
-
-      const newPitch = {
-        id: "pitch-user-" + Date.now(),
-        type: currentTypeObj.fullBadge,
-        typeBadge: currentTypeObj.badge,
-        expiresIn: "Expires in 23h 59m",
-        headline: headline.trim() || "Senior UIUX Design/Product Design",
-        description: description.trim() || "I design functional app and websites",
-        skills: skills.length ? skills : ["UI/UX Design", "Figma", "UX Research"],
-        category: category || "Design",
-        cta: ctaType || "Hire Me",
-        creator: {
-          name: currentUser?.name || "Prisca Osakwe",
-          role: "UI/UX Designer",
-          location: "Lagos, Nigeria (Remote)",
-          availability: "Available Immediately",
-          image: currentUser?.image || "/assets/images/photo_placeholder.png",
-          verified: true,
-        },
-        videoUrl: videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        videoPoster: "",
-        durationText: videoDurationText,
-        likes: 0,
-        shares: 0,
-        isLiked: false,
-        createdAt: new Date().toISOString(),
-      };
-
-      setPublishedPitchData(newPitch);
-      onPitchCreated?.(newPitch);
-      localStorage.removeItem("bejite_pitch_draft");
-      setIsPublishing(false);
+    try {
+      const pitch = await persistPitch("published");
+      if (!pitch) throw new Error("Pitch was not created");
+      setExistingPitchId(pitch.id);
+      setPublishedPitchData(pitch);
+      onPitchCreated?.(pitch, { isDraft: false });
       setShowLiveSuccess(true);
-    }, 1200);
+      toast.success("Pitch is live!");
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Failed to publish pitch"));
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleShareLink = () => {

@@ -282,8 +282,14 @@ export const PeopleSuggestionsProvider = ({
   );
 
   useEffect(() => {
+    // Corporate accounts are follow-only — no connection suggestions in feed.
+    if (isCorporateRecruiter(currentUser)) {
+      setLoading(false);
+      setMasterPool([]);
+      return;
+    }
     fetchPool();
-  }, [fetchPool]);
+  }, [fetchPool, currentUser]);
 
   // Allocate non-overlapping cards for a specific slider segment
   const getSegmentUsers = useCallback(
@@ -633,7 +639,7 @@ const PeopleYouMayKnowSlider = ({
   const [localLoading, setLocalLoading] = useState(true);
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const [localConnectionStatuses, setLocalConnectionStatuses] = useState({});
-  const [localDismissedUserIds, setLocalDismissedUserIds] = useState(new Set());
+  const [, setLocalDismissedUserIds] = useState(new Set());
   const [localIsWidgetDismissed, setLocalIsWidgetDismissed] = useState(false);
 
   // Card exit animation state (local to this slider)
@@ -689,6 +695,11 @@ const PeopleYouMayKnowSlider = ({
   // Standalone mode initialization (fallback if provider is absent)
   useEffect(() => {
     if (isContextMode) return;
+    if (isCorporateRecruiter(currentUser)) {
+      setLocalLoading(false);
+      setLocalUsers([]);
+      return;
+    }
     let isMounted = true;
 
     const fetchStandalone = async () => {
@@ -743,7 +754,7 @@ const PeopleYouMayKnowSlider = ({
     return () => {
       isMounted = false;
     };
-  }, [isContextMode, currentUserId]);
+  }, [isContextMode, currentUserId, currentUser]);
 
   const scroll = (direction) => {
     const el = sliderRef.current;
@@ -802,7 +813,7 @@ const PeopleYouMayKnowSlider = ({
             return next;
           });
         }, 500);
-      } catch (err) {
+      } catch {
         toast.error("Failed to send request");
         setLocalConnectionStatuses((prev) => {
           const next = { ...prev };
@@ -850,6 +861,7 @@ const PeopleYouMayKnowSlider = ({
   };
 
   // If dismissed or if downstream slider has no unique users to show, return null
+  if (isCorporateRecruiter(currentUser)) return null;
   if (isWidgetDismissed) return null;
   if (!loading && users.length === 0 && segmentIndex > 0) {
     return null;
