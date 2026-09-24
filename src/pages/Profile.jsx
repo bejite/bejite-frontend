@@ -872,7 +872,7 @@ const Profile = () => {
               }`}
             >
               <FaFileAlt className="text-xs" />
-              <span>CV & Experience</span>
+              <span>CV & Experiences</span>
             </button>
           )}
 
@@ -902,7 +902,7 @@ const Profile = () => {
               }`}
             >
               <FaNewspaper className="text-xs" />
-              <span>Posts & Activity</span>
+              <span>Posts & Activities</span>
             </button>
           )}
         </div>

@@ -794,7 +794,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
                           }`}
                         >
                           <FaBriefcase className="text-base" />
-                          <span>Job Vacancy</span>
+                          <span>Job Vacancies</span>
                         </button>
                       )}
                     </div>

@@ -112,6 +112,14 @@ input:disabled,
   background: rgba(255, 255, 255, 0.35);
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Nunito Regular */
 @font-face {
   font-family: "NunitoRegular";
@@ -193,7 +201,8 @@ input:disabled,
 .animate-slideUp {
   animation: slideUp 0.3s ease-out;
 }
-.active\\:scale-98:active {
+.active-scale-98:active,
+button:active.scale-98 {
   transform: scale(0.98);
 }
 

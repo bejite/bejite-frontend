@@ -29,6 +29,9 @@ const AdminRecruitment = lazy(() => import("./page/admin/AdminRecruitment"));
 const AdminEmailOutreach = lazy(
   () => import("./page/admin/AdminEmailOutreach"),
 );
+const AdminRecruiterMail = lazy(
+  () => import("./page/admin/AdminRecruiterMail"),
+);
 const AdminEvents = lazy(() => import("./page/admin/AdminEvents"));
 const AdminNotifications = lazy(
   () => import("./page/admin/AdminNotifications"),
@@ -84,6 +87,7 @@ function App() {
                 <Route path="admins" element={<AdminList />} />
                 <Route path="adpro" element={<AdminAdPro />} />
                 <Route path="email-outreach" element={<AdminEmailOutreach />} />
+                <Route path="recruiter-mail" element={<AdminRecruiterMail />} />
                 <Route path="events" element={<AdminEvents />} />
                 <Route path="notifications" element={<AdminNotifications />} />
               </Route>

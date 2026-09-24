@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Mail, Plus } from "lucide-react";
+import { Mail, Plus, Inbox, ArrowRight } from "lucide-react";
 
 import OutreachMetricsDashboard from "../../components/admin/outreach/OutreachMetricsDashboard";
 import CampaignHistoryTable from "../../components/admin/outreach/CampaignHistoryTable";
@@ -341,12 +342,23 @@ const AdminEmailOutreach = () => {
   return (
     <div className="max-w-7xl mx-auto w-full space-y-8 pb-12 font-sans text-gray-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-5">
-        <div className="text-left">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-            <Mail className="text-[#16730F] w-7 h-7" />
-            Email Outreach & Campaigns
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
+        <div className="text-left space-y-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+              <Mail className="text-[#16730F] w-7 h-7" />
+              Email Outreach & Campaigns
+            </h1>
+            <Link
+              to="/admin/recruiter-mail"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#16730F] rounded-full text-xs font-bold transition-all shadow-2xs"
+              title="Open 1-on-1 Gmail-style Recruiter Mailbox"
+            >
+              <Inbox size={13} />
+              <span>Looking for 1-on-1 Mailbox? </span>
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+          <p className="text-gray-500 text-sm">
             Build, schedule, and analyze bulk email to Bejite members or to
             people who are not yet on the platform.
           </p>

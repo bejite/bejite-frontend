@@ -161,7 +161,7 @@ export default function PitchPage() {
           <PitchSidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onCreatePitch={openCreateModal}
+            onCreatePitch={openCreateModal} 
           />
 
           {/* ─── Main Content ─── */}

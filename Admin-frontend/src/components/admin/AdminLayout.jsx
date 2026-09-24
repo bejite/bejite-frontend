@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import {
@@ -14,6 +14,7 @@ import {
   Shield,
   Megaphone,
   Mail,
+  Inbox,
   Calendar,
   Bell,
 } from "lucide-react";
@@ -23,12 +24,16 @@ import {
 } from "../../constants/adminPermissions";
 import NotificationDropdown from "./NotificationDropdown";
 import { useAdminInbox } from "../../context/AdminInboxContext";
+import { getStoredThreads, MAIL_FOLDERS } from "../../services/recruiterMailService";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [bellRing, setBellRing] = useState(false);
   const { notifications, unreadCount } = useAdminInbox();
+
+  const location = useLocation();
+  const isMailboxPage = location.pathname.startsWith("/admin/recruiter-mail");
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -45,6 +50,16 @@ const AdminLayout = () => {
     setTimeout(() => setBellRing(false), 800);
   }, []);
 
+  // Compute unread recruiter mail count
+  const recruiterMailUnread = (() => {
+    try {
+      const threads = getStoredThreads();
+      return threads.filter((t) => t.folder === MAIL_FOLDERS.INBOX && !t.isRead).length;
+    } catch (e) {
+      return 0;
+    }
+  })();
+
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Demographics", path: "/admin/demographics", icon: Users },
@@ -56,6 +71,12 @@ const AdminLayout = () => {
     { name: "Jobs List", path: "/admin/jobs", icon: Briefcase },
     { name: "AdPro Review", path: "/admin/adpro", icon: Megaphone },
     { name: "Email Outreach", path: "/admin/email-outreach", icon: Mail },
+    {
+      name: "Mailbox",
+      path: "/admin/recruiter-mail",
+      icon: Inbox,
+      badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
+    },
     { name: "Events Manager", path: "/admin/events", icon: Calendar },
     {
       name: "Notifications",
@@ -246,7 +267,11 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto nfl-scroll scroll-smooth bg-gray-50/50 p-4 lg:p-8">
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth bg-gray-50/50 ${
+            isMailboxPage ? "p-0 sm:p-4 lg:p-6" : "p-3 sm:p-4 lg:p-8"
+          }`}
+        >
           <Outlet />
         </main>
       </div>
