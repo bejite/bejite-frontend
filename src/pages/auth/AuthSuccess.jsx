@@ -6,7 +6,12 @@ import { toast } from 'react-toastify';
 import Loader from '../../components/ui/Loader';
 import axiosInstance from '../../utils/axiosInstance';
 import { hydrateAuth, verifyTwoFactorLogin } from '../../features/auth/authSlice';
-import { storeUser } from '../../utils/tokenManager';
+import {
+  storeUser,
+  exchangeOAuthCode,
+  stripAuthParamsFromUrl,
+  storeTokens,
+} from '../../utils/tokenManager';
 import TwoFactorCodeForm from '../../components/auth/TwoFactorCodeForm';
 import { requestTwoFactorRecovery } from '../../services/twoFactorApi';
 
@@ -35,6 +40,65 @@ const AuthSuccess = () => {
   useEffect(() => {
     let cancelled = false;
 
+    const finishWithUser = async (sessionUser, profileCompletedParam) => {
+      let user = {
+        ...sessionUser,
+        profileCompleted:
+          profileCompletedParam === 'true' ||
+          sessionUser.profileCompleted === true,
+      };
+
+      if (needsAuthMeHydration(user)) {
+        try {
+          const { data } = await axiosInstance.get('/auth/me');
+          if (cancelled) return;
+          const me = data?.user ?? data;
+          if (me && typeof me === 'object') {
+            user = {
+              ...user,
+              ...me,
+              id: me.id ?? me.userId ?? user.id ?? me.sub ?? null,
+              profileCompleted:
+                me.profileCompleted ?? user.profileCompleted,
+            };
+          }
+        } catch (e) {
+          if (!cancelled) {
+            console.warn(
+              '[AuthSuccess] GET /auth/me failed; continuing with OAuth payload',
+              e?.message || e,
+            );
+          }
+        }
+      }
+
+      if (cancelled) return;
+
+      storeUser(user);
+      dispatch(hydrateAuth());
+      stripAuthParamsFromUrl();
+
+      const isVerified = user.verified || user.isEmailVerified;
+      const hasCompletedSignup =
+        user.role !== null && user.role !== undefined;
+
+      if (!isVerified) {
+        toast.warning('Please verify your email to continue.');
+        setTimeout(() => navigate('/auth/email-sent'), 1000);
+      } else if (!hasCompletedSignup) {
+        toast.info('Please complete your profile setup.');
+        setTimeout(() => {
+          const email = user.email || '';
+          navigate(
+            `/complete-signup?email=${encodeURIComponent(email)}&status=verified`,
+          );
+        }, 1000);
+      } else {
+        toast.success('Welcome back!');
+        setTimeout(() => navigate('/news-feed'), 1000);
+      }
+    };
+
     const run = async () => {
       const params = new URLSearchParams(location.search);
       const challengeParam = params.get('challenge');
@@ -45,20 +109,40 @@ const AuthSuccess = () => {
         setChallengeId(challengeParam || '');
         setTwoFactorToken(challengeToken || '');
         setAwaitingTwoFactor(true);
+        stripAuthParamsFromUrl();
         return;
       }
 
+      const handoffCode = params.get('code');
+      if (handoffCode) {
+        try {
+          const data = await exchangeOAuthCode(handoffCode);
+          if (cancelled) return;
+          const user = data?.user || {};
+          await finishWithUser(
+            user,
+            String(data?.profileCompleted === true),
+          );
+        } catch (err) {
+          console.error('OAuth code exchange failed:', err);
+          toast.error('Authentication failed. Please try logging in again.');
+          setTimeout(() => navigate('/'), 1500);
+        }
+        return;
+      }
+
+      // Legacy query-token support (should be rare after backend handoff)
       const token = params.get('token') || params.get('accessToken');
       const refreshTokenParam = params.get('refreshToken');
       const userParam = params.get('user');
       const profileCompletedParam = params.get('profileCompleted');
 
-      if (refreshTokenParam) {
-        localStorage.setItem('refreshToken', refreshTokenParam);
+      if (refreshTokenParam || token) {
+        storeTokens(token, refreshTokenParam);
       }
 
       if (!token) {
-        console.warn('No token found in URL parameters');
+        console.warn('No token or code found in URL parameters');
         toast.error('Invalid authentication. Please log in.');
         setTimeout(() => navigate('/'), 1500);
         return;
@@ -66,7 +150,6 @@ const AuthSuccess = () => {
 
       try {
         const decodedToken = jwtDecode(token);
-
         let userData;
         if (userParam) {
           try {
@@ -79,71 +162,16 @@ const AuthSuccess = () => {
           userData = decodedToken;
         }
 
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('authToken', token);
-
         const resolvedFromPayload =
           userData?.id ?? userData?.userId ?? userData?.sub ?? null;
 
-        let sessionUser = {
-          ...userData,
-          id: resolvedFromPayload,
-          profileCompleted: profileCompletedParam === 'true',
-        };
-
-        if (needsAuthMeHydration(sessionUser)) {
-          try {
-            const { data } = await axiosInstance.get('/auth/me');
-            if (cancelled) return;
-            const me = data?.user ?? data;
-            if (me && typeof me === 'object') {
-              sessionUser = {
-                ...sessionUser,
-                ...me,
-                id: me.id ?? me.userId ?? sessionUser.id ?? me.sub ?? null,
-                profileCompleted:
-                  me.profileCompleted ?? sessionUser.profileCompleted,
-              };
-            }
-          } catch (e) {
-            if (!cancelled) {
-              console.warn(
-                '[AuthSuccess] GET /auth/me failed; continuing with OAuth payload',
-                e?.message || e,
-              );
-            }
-          }
-        }
-
-        if (cancelled) return;
-
-        storeUser(sessionUser);
-        dispatch(hydrateAuth());
-
-        const isVerified =
-          sessionUser.verified || sessionUser.isEmailVerified;
-        const hasCompletedSignup =
-          sessionUser.role !== null && sessionUser.role !== undefined;
-
-        if (!isVerified) {
-          console.log('User not verified, redirecting to email sent page');
-          toast.warning('Please verify your email to continue.');
-          setTimeout(() => navigate('/auth/email-sent'), 1000);
-        } else if (!hasCompletedSignup) {
-          console.log('User verified but signup incomplete, redirecting to complete signup');
-          toast.info('Please complete your profile setup.');
-          setTimeout(() => {
-            const email = sessionUser.email || '';
-            navigate(
-              `/complete-signup?email=${encodeURIComponent(email)}&status=verified`,
-            );
-          }, 1000);
-        } else {
-          // Land on the app; ProfileCompletionReminder prompts incomplete profiles.
-          console.log('Signup complete, redirecting to news feed');
-          toast.success('Welcome back!');
-          setTimeout(() => navigate('/news-feed'), 1000);
-        }
+        await finishWithUser(
+          {
+            ...userData,
+            id: resolvedFromPayload,
+          },
+          profileCompletedParam,
+        );
       } catch (err) {
         console.error('Token decode failed:', err);
         toast.error('Authentication failed. Please try logging in again.');
@@ -212,10 +240,9 @@ const AuthSuccess = () => {
           <TwoFactorCodeForm
             onSubmit={handleTwoFactorVerify}
             loading={loading}
-            error={errors?.error}
+            error={errors?.twoFactor}
             onRequestRecovery={handleTwoFactorRecovery}
             recoveryLoading={recoveryLoading}
-            onBack={() => navigate('/')}
           />
         </div>
       </div>
@@ -223,11 +250,8 @@ const AuthSuccess = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center">
-      <Loader
-        show={true}
-        description="Registration successful. We're setting up your account…"
-      />
+    <div className="w-screen h-screen flex justify-center items-center bg-white">
+      <Loader />
     </div>
   );
 };

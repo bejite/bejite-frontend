@@ -15,6 +15,7 @@ import {
 } from "../../hooks/usePortaledMenu";
 import { getUser } from "../../utils/tokenManager";
 import { getRecruiterIdUploadPath } from "../../utils/recruiterProfilePaths";
+import { classifyNavigationTarget } from "../../utils/safeNavigate";
 
 function normalizeNotificationPath(path) {
   if (!path || typeof path !== "string") return path;
@@ -134,10 +135,11 @@ export default function NotificationDropdown({
 
     setOpen(false);
     const path = resolveNotificationLink(notification);
-    if (path.startsWith("http")) {
-      window.location.href = path;
-    } else {
-      navigate(path);
+    const target = classifyNavigationTarget(path);
+    if (target.kind === "internal") {
+      navigate(target.path);
+    } else if (target.kind === "external") {
+      window.location.href = target.url;
     }
     onNavigate?.();
   };

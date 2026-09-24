@@ -19,10 +19,16 @@ export default function CompleteSignup() {
 
   const [_, setRole] = useState("");
 
-  // OAuth redirects include tokens in the URL — persist before role selection.
+  // OAuth redirects include a one-time code (or legacy tokens) — persist before role selection.
   useEffect(() => {
-    captureOAuthSessionFromUrl(location.search);
-    dispatch(hydrateAuth());
+    let cancelled = false;
+    (async () => {
+      await captureOAuthSessionFromUrl(location.search);
+      if (!cancelled) dispatch(hydrateAuth());
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, dispatch]);
 
   const handleRoleSelect = (selectedRole) => {

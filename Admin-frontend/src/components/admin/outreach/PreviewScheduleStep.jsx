@@ -1,6 +1,7 @@
 import { Send, Calendar, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import { sendOutreachTestEmail } from "../../../services/emailOutreachAdminApi";
+import { sanitizeHtml } from "../../../utils/sanitizeHtml";
 
 const OUTREACH_CTA_URL = "https://bejite.com/";
 
@@ -40,15 +41,17 @@ const PreviewScheduleStep = ({
   const previewEmail = sampleRecipient?.email || "recipient@bejite.com";
 
   const bodyHtml = {
-    __html: applyPreviewPlaceholders(
-      campaignForm.body ||
-        "<p class='text-gray-400 italic'>Compose your message to see it here.</p>",
-      {
-        firstName,
-        profession,
-        ctaText: campaignForm.ctaText,
-        ctaLink: OUTREACH_CTA_URL,
-      },
+    __html: sanitizeHtml(
+      applyPreviewPlaceholders(
+        campaignForm.body ||
+          "<p class='text-gray-400 italic'>Compose your message to see it here.</p>",
+        {
+          firstName,
+          profession,
+          ctaText: campaignForm.ctaText,
+          ctaLink: OUTREACH_CTA_URL,
+        },
+      ),
     ),
   };
 

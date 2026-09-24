@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import usersData from "../data/usersData";
+import { getAccessToken } from "../utils/tokenManager";
 
 const JobConnection = () => {
   const [addedUsers, setAddedUsers] = useState([]);
@@ -33,10 +34,18 @@ const JobConnection = () => {
     console.log("Submitting followings to API:", addedUsers);
 
     try {
+      const token = getAccessToken();
+      if (!token) {
+        toast.error("Session expired. Please verify your email again.");
+        return;
+      }
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/complete-signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role, mode, followings: addedUsers }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role, mode, followings: addedUsers }),
       });
 
       const data = await res.json();

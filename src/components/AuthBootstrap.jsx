@@ -47,7 +47,7 @@ export default function AuthBootstrap({ children }) {
 
         // OAuth callback pages store tokens from URL — do not refresh with a stale token first.
         if (isOAuthCallbackPath(pathname, search)) {
-          captureOAuthSessionFromUrl(search);
+          await captureOAuthSessionFromUrl(search);
           await dispatchHydrateAuth();
           return;
         }
