@@ -1,5 +1,112 @@
 # Git Work Log
 
+## 2026-09-25 20:30 (WAT) — Integrate DeleteConfirmModal Across All Admin Pages with Delete Actions
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Integrated the reusable `DeleteConfirmModal` (with `GoTrash` icon) into all admin management pages that feature delete actions, replacing inline/custom confirmation modals and silent deletions with a consistent, safe confirmation dialog.
+- **Changed**:
+  - `Admin-frontend/src/page/admin/AdminList.jsx`: Replaced the custom inline modal with `DeleteConfirmModal` for confirming administrator account deletion.
+  - `Admin-frontend/src/page/admin/AdminEmailOutreach.jsx`: Replaced the legacy `DeleteCampaignConfirmModal` with the standard `DeleteConfirmModal` for campaign history deletion.
+  - `Admin-frontend/src/page/admin/AdminEvents.jsx`: Added `DeleteConfirmModal` confirmation flow before deleting partner events from event history.
+- **Conventional type** (for next commit): `feat(admin)`
+
+### Proposed Commit Message
+
+```
+feat(admin): integrate DeleteConfirmModal across all admin pages with delete actions
+
+We standardized delete confirmation dialogs across admin pages by integrating the reusable DeleteConfirmModal featuring the GoTrash icon.
+
+- Use DeleteConfirmModal in AdminList when deleting admin accounts
+- Use DeleteConfirmModal in AdminEmailOutreach when deleting campaigns
+- Use DeleteConfirmModal in AdminEvents when deleting partner events
+- Standardize danger confirmation styles, backdrop blur, and keyboard dismissal
+```
+
+---
+
+## 2026-09-25 20:10 (WAT) — Create Reusable Delete Confirmation Modal with GoTrash
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Created a reusable delete confirmation modal component (`DeleteConfirmModal`) featuring the requested `react-icons/go` `GoTrash` icon, clean accessible backdrop dismissal, customizable warning title and description, and danger confirmation actions. Integrated the modal into the admin mailbox for both single-thread and bulk conversation deletions.
+- **Changed**:
+  - `Admin-frontend/src/components/modal/DeleteConfirmModal.jsx`: Created reusable modal component with `<GoTrash />` icon badge, Escape key dismissal, backdrop click dismissal, loading states, and customizable text props.
+  - `Admin-frontend/src/components/DeleteConfirmModal.jsx`: Re-exported `DeleteConfirmModal` from components root.
+  - `Admin-frontend/src/page/admin/AdminRecruiterMail.jsx`: Integrated `DeleteConfirmModal` to safely confirm single conversation deletion and multi-item bulk deletion.
+- **Conventional type** (for next commit): `feat(components)`
+
+### Proposed Commit Message
+
+```
+feat(components): create reusable delete confirmation modal with GoTrash
+
+We created a reusable DeleteConfirmModal component using react-icons/go GoTrash for confirmation dialogs across admin views.
+
+- Build DeleteConfirmModal with GoTrash icon badge, animated backdrop, and keyboard dismissal
+- Export from components/modal and components root for easy access
+- Connect confirmation modal to single and bulk delete actions in Mailbox
+```
+
+---
+
+## 2026-09-25 20:06 (WAT) — Update Mailbox Route to /admin/mailbox
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Updated the mailbox route from `/admin/recruiter-mail` to `/admin/mailbox`, added an automatic redirect for legacy `/admin/recruiter-mail` URLs to `/admin/mailbox`, updated navigation in `AdminLayout`, updated role permissions in `adminPermissions.js`, and updated cross-links in `AdminEmailOutreach`.
+- **Changed**:
+  - `Admin-frontend/src/App.jsx`: Defined `/admin/mailbox` route using `AdminMailbox` component and configured a redirect from `/admin/recruiter-mail` to `/admin/mailbox`.
+  - `Admin-frontend/src/page/admin/AdminMailbox.jsx`: Created default export for `AdminMailbox`.
+  - `Admin-frontend/src/components/admin/AdminLayout.jsx`: Updated navigation path for Mailbox item to `/admin/mailbox`.
+  - `Admin-frontend/src/constants/adminPermissions.js`: Added `/admin/mailbox` to super_admin and admin allowed paths.
+  - `Admin-frontend/src/page/admin/AdminEmailOutreach.jsx`: Updated link to point to `/admin/mailbox`.
+- **Conventional type** (for next commit): `feat(admin)`
+
+### Proposed Commit Message
+
+```
+feat(admin): update mailbox route to /admin/mailbox
+
+We changed the URL route for the admin mailbox from /admin/recruiter-mail to /admin/mailbox and added an automatic redirect for legacy paths.
+
+- Register /admin/mailbox route in App router
+- Add automatic redirect from /admin/recruiter-mail to /admin/mailbox
+- Update AdminLayout sidebar navigation link to /admin/mailbox
+- Update admin permissions whitelist to include /admin/mailbox
+- Update outreach page cross-link to /admin/mailbox
+```
+
+---
+
+## 2026-09-25 20:03 (WAT) — Transform Recruiter Mail into Clean Universal Admin Mailbox
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Transformed the recruiter-specific mailbox into a clean, simple, universal admin Mailbox for sending, receiving, and managing emails with both Bejite users and external contacts. Removed all recruiter intelligence profiling, fake delivery tracking stats, inbound reply simulation tools, star/archive folders, and category tagging bloat.
+- **Changed**:
+  - `Admin-frontend/src/page/admin/AdminRecruiterMail.jsx`: Renamed header to "Mailbox"; stripped out profile drawer, simulation modal, and category tags; simplified layout to responsive 2-column client (Folders + Messages/Conversation); retained Inbox and Sent folders with unread counts.
+  - `Admin-frontend/src/services/recruiterMailService.js`: Replaced recruiter-specific data models with universal contact email threads; removed open/delivery tracking metrics; cleaned up seed threads with realistic user and external emails; added universal `sendAdminMessage`.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterMailSidebar.jsx`: Streamlined sidebar to primary "Compose Email" action and two essential folders: Inbox (with unread badge) and Sent.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterMailToolbar.jsx`: Replaced category tagging and bulk archive/star controls with clean search bar, select-all checkbox, bulk mark read/unread, bulk delete, and All/Unread filter tabs.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterThreadList.jsx`: Displayed clean sender/recipient initials avatars, contact names, email addresses, subject lines, message snippets, and timestamps; added quick hover actions for delete and mark read/unread.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterThreadView.jsx`: Removed drawer toggle, simulation button, delivery tracking pills, and star/archive actions; provided clean chronological message stream and quick inline reply form with file attachment support.
+  - `Admin-frontend/src/components/admin/recruiterMail/DockedComposer.jsx`: Removed category selector and schedule send; enabled typing any valid external or user email address in the To field with optional autocomplete.
+- **Conventional type** (for next commit): `refactor(admin)`
+
+### Proposed Commit Message
+
+```
+refactor(admin): transform recruiter mail into clean universal admin mailbox
+
+We simplified the admin mailbox into a streamlined email platform for sending and receiving messages with users and external contacts without recruiter-specific bloat.
+
+- Rename view to Mailbox with clean Inbox and Sent folders
+- Allow typing any recipient email address in the compose modal
+- Strip recruiter intelligence drawer, fake open/delivery stats, and simulation modal
+- Remove category tags, archive, starred, and bulk outreach bloat
+- Provide clean email conversation stream with quick inline reply
+```
+
+---
+
 ## 2026-09-25 12:03 (WAT) — Move Pitch Reels Carousel to Top of Newsfeed
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

@@ -70,7 +70,7 @@ const AdminLayout = () => {
     { name: "Email Outreach", path: "/admin/email-outreach", icon: Mail },
     {
       name: "Mailbox",
-      path: "/admin/recruiter-mail",
+      path: "/admin/mailbox",
       icon: Inbox,
       badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
     },

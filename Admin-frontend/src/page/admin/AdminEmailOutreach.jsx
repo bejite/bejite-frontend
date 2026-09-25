@@ -9,7 +9,7 @@ import CampaignAnalyticsDrawer from "../../components/admin/outreach/CampaignAna
 import CampaignBuilderWizard from "../../components/admin/outreach/CampaignBuilderWizard";
 import TemplatePresetsGrid from "../../components/admin/outreach/TemplatePresetsGrid";
 
-import DeleteCampaignConfirmModal from "../../components/admin/outreach/DeleteCampaignConfirmModal";
+import { DeleteConfirmModal } from "../../components/modal/DeleteConfirmModal";
 import TemplateEditorModal from "../../components/admin/outreach/TemplateEditorModal";
 import {
   createOutreachTemplate,
@@ -349,9 +349,9 @@ const AdminEmailOutreach = () => {
               Email Outreach & Campaigns
             </h1>
             <Link
-              to="/admin/recruiter-mail"
+              to="/admin/mailbox"
               className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#16730F] rounded-full text-xs font-bold transition-all shadow-2xs"
-              title="Open 1-on-1 Gmail-style Recruiter Mailbox"
+              title="Open 1-on-1 Mailbox"
             >
               <Inbox size={13} />
               <span>Looking for 1-on-1 Mailbox? </span>
@@ -448,10 +448,13 @@ const AdminEmailOutreach = () => {
         onDuplicate={handleDuplicate}
       />
 
-      <DeleteCampaignConfirmModal
+      <DeleteConfirmModal
         isOpen={!!deletingCampaignId}
         onClose={() => setDeletingCampaignId(null)}
         onConfirm={confirmDeleteCampaign}
+        title="Delete Campaign"
+        message="Are you sure you want to delete this campaign historical record? This action cannot be undone."
+        confirmText="Delete Campaign"
       />
 
       <TemplateEditorModal

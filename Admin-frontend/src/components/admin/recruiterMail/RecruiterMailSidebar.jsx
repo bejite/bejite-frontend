@@ -1,36 +1,20 @@
 import React from "react";
-import {
-  Inbox,
-  Send,
-  Star,
-  FileEdit,
-  Archive,
-  Trash2,
-  Plus,
-  Tag,
-  Sparkles,
-  TrendingUp,
-  X,
-} from "lucide-react";
-import { MAIL_FOLDERS, RECRUITER_CATEGORIES } from "../../../services/recruiterMailService";
+import { Inbox, Send, Plus, X } from "lucide-react";
+import { MAIL_FOLDERS } from "../../../services/recruiterMailService";
 
 export const RecruiterMailSidebar = ({
   isOpenMobile,
   onCloseMobile,
   activeFolder,
   setActiveFolder,
-  activeCategory,
-  setActiveCategory,
   onOpenCompose,
-  counts,
-  onTriggerSimulation,
+  counts = { inboxUnread: 0, sent: 0 },
   isThreadSelected = false,
 }) => {
   const folders = [
     {
       id: MAIL_FOLDERS.INBOX,
       label: "Inbox",
-      description: "Recruiter replies",
       icon: Inbox,
       count: counts.inboxUnread,
       isBadge: true,
@@ -39,42 +23,9 @@ export const RecruiterMailSidebar = ({
     {
       id: MAIL_FOLDERS.SENT,
       label: "Sent",
-      description: "Outreach initiated",
       icon: Send,
       count: counts.sent,
       color: "text-blue-600",
-    },
-    {
-      id: MAIL_FOLDERS.STARRED,
-      label: "Starred",
-      description: "Priority partners",
-      icon: Star,
-      count: counts.starred,
-      color: "text-amber-500",
-    },
-    {
-      id: MAIL_FOLDERS.DRAFTS,
-      label: "Drafts",
-      description: "Unsent messages",
-      icon: FileEdit,
-      count: counts.drafts,
-      color: "text-purple-600",
-    },
-    {
-      id: MAIL_FOLDERS.ARCHIVE,
-      label: "Archive",
-      description: "Resolved threads",
-      icon: Archive,
-      count: counts.archive,
-      color: "text-slate-500",
-    },
-    {
-      id: MAIL_FOLDERS.TRASH,
-      label: "Trash",
-      description: "Deleted",
-      icon: Trash2,
-      count: counts.trash,
-      color: "text-rose-500",
     },
   ];
 
@@ -102,211 +53,73 @@ export const RecruiterMailSidebar = ({
           </span>
           <button
             onClick={onCloseMobile}
-            className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
-            title="Close sidebar"
+            className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Primary Compose Button */}
-        <div className="p-3 sm:p-4 pb-2 shrink-0">
+        {/* Primary Action Button: Compose */}
+        <div className="p-3 sm:p-4 shrink-0">
           <button
             onClick={() => {
               onOpenCompose();
-              onCloseMobile?.();
+              if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-[#16730F] to-[#10540b] text-white font-bold text-sm shadow-md shadow-[#16730F]/20 hover:shadow-lg hover:shadow-[#16730F]/30 hover:from-[#13610d] hover:to-[#0c4008] active:scale-[0.98] transition-all duration-200 cursor-pointer group"
-            id="btn-recruiter-compose"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#16730F] to-[#125e0c] hover:from-[#13610d] hover:to-[#0e4809] text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer group"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="h-6 w-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform duration-300">
-                <Plus size={16} className="text-white" />
-              </div>
-              <span>New Message</span>
-            </div>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-bold bg-white/20 rounded text-emerald-100 group-hover:bg-white/30 transition-colors">
-              C
-            </kbd>
+            <Plus
+              size={18}
+              className="group-hover:rotate-90 transition-transform duration-200"
+            />
+            <span>Compose Email</span>
           </button>
         </div>
 
-        {/* Folders List */}
-        <div className="px-3 py-1 space-y-1 shrink-0">
-          <div className="px-3 py-1 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            <span>Mailbox Folders</span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold normal-case">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live Sync
-            </span>
+        {/* Folders Navigation */}
+        <div className="px-2 sm:px-3 py-1 flex-1">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5">
+            Folders
           </div>
+          <nav className="space-y-1">
+            {folders.map((folder) => {
+              const Icon = folder.icon;
+              const isActive = activeFolder === folder.id;
 
-          {folders.map((f) => {
-            const isActive = activeFolder === f.id && activeCategory === null;
-            const Icon = f.icon;
-            return (
-              <button
-                key={f.id}
-                onClick={() => {
-                  setActiveFolder(f.id);
-                  setActiveCategory(null);
-                  onCloseMobile?.();
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer group ${
-                  isActive
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
-                    : "text-slate-600 hover:bg-white/60 hover:text-slate-900"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`p-1 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-[#16730F]/10 text-[#16730F]"
-                        : `${f.color} bg-slate-100/70 group-hover:bg-white`
-                    }`}
-                  >
+              return (
+                <button
+                  key={folder.id}
+                  onClick={() => {
+                    setActiveFolder(folder.id);
+                    if (onCloseMobile) onCloseMobile();
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-white text-[#16730F] shadow-xs border border-slate-200/80 font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
                     <Icon
-                      size={16}
-                      className={
-                        f.id === MAIL_FOLDERS.STARRED && counts.starred > 0
-                          ? "fill-amber-500 text-amber-500"
-                          : ""
-                      }
+                      size={17}
+                      className={isActive ? "text-[#16730F]" : folder.color}
                     />
+                    <span>{folder.label}</span>
                   </div>
-                  <div className="flex flex-col text-left truncate">
-                    <span className="truncate leading-tight">{f.label}</span>
-                    <span className="text-[10px] text-slate-400 font-normal truncate">
-                      {f.description}
+
+                  {folder.isBadge && folder.count > 0 ? (
+                    <span className="px-2 py-0.5 bg-[#16730F] text-white rounded-full text-[11px] font-bold shadow-2xs">
+                      {folder.count}
                     </span>
-                  </div>
-                </div>
-
-                {f.count > 0 && (
-                  <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                      isActive
-                        ? "bg-[#16730F] text-white"
-                        : f.isBadge
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    {f.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Recruiter Category Filter Tags */}
-        <div className="px-3 py-3 border-t border-slate-200/70 mt-2 space-y-1 shrink-0">
-          <div className="flex items-center justify-between px-3 mb-1.5">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag size={12} />
-              Categories
-            </p>
-            {activeCategory && (
-              <button
-                onClick={() => setActiveCategory(null)}
-                className="text-[11px] text-[#16730F] hover:underline font-bold cursor-pointer"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-          {RECRUITER_CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(isActive ? null : cat.id);
-                  onCloseMobile?.();
-                }}
-                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#16730F] text-white shadow-xs font-bold"
-                    : "text-slate-600 hover:bg-white/60"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      cat.id === "active_hiring"
-                        ? "bg-emerald-500"
-                        : cat.id === "candidate_review"
-                        ? "bg-blue-500"
-                        : cat.id === "partnership"
-                        ? "bg-purple-500"
-                        : "bg-amber-500"
-                    }`}
-                  />
-                  <span>{cat.label}</span>
-                </div>
-                {counts.categories?.[cat.id] > 0 && (
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {counts.categories[cat.id]}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Outreach Insights Performance Card */}
-        <div className="mt-auto p-3 m-3 bg-white rounded-2xl border border-slate-200/80 shadow-2xs shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <div className="p-1 bg-[#16730F]/10 text-[#16730F] rounded-lg">
-                <TrendingUp size={13} />
-              </div>
-              <span className="text-xs font-bold text-slate-800">Recruiter Stats</span>
-            </div>
-            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold border border-emerald-100">
-              Active
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-center mb-2">
-            <div className="bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-              <span className="text-xs font-extrabold text-slate-800 block">86%</span>
-              <span className="text-[9px] text-slate-400 font-medium">Open Rate</span>
-            </div>
-            <div className="bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-              <span className="text-xs font-extrabold text-[#16730F] block">74%</span>
-              <span className="text-[9px] text-slate-400 font-medium">Reply Rate</span>
-            </div>
-          </div>
-
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-1.5">
-            <div className="bg-[#16730F] h-full rounded-full" style={{ width: "74%" }} />
-          </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-400">
-            <span>65 Recruiter threads</span>
-            <span>Goal: 100</span>
-          </div>
-        </div>
-
-        {/* Quick Testing Simulator Trigger */}
-        <div className="p-3 pt-0 shrink-0">
-          <button
-            onClick={() => {
-              onTriggerSimulation();
-              onCloseMobile?.();
-            }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/80 text-amber-900 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs group"
-            title="Simulate receiving a reply from a recruiter in real-time"
-          >
-            <Sparkles size={14} className="text-amber-600 group-hover:rotate-12 transition-transform" />
-            <span>Test Inbound Reply</span>
-          </button>
+                  ) : folder.count > 0 ? (
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {folder.count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </aside>
     </>
