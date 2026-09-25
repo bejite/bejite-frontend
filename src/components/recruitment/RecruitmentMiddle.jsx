@@ -566,6 +566,16 @@ export default function RecruitmentMiddle() {
         </div>
       )}
 
+      {/* Pitch Reels Carousel — at top of feed */}
+      {feedMode === "home" &&
+        canSeePitchCarousel &&
+        feedPitches.length > 0 && (
+          <PitchReelsCarousel
+            pitches={feedPitches}
+            onSelectPitch={handleOpenPitchPreview}
+          />
+        )}
+
       {/* Posts Feed */}
       {loading ? (
         <div className="text-center py-8 text-gray-500">
@@ -574,20 +584,10 @@ export default function RecruitmentMiddle() {
       ) : error ? (
         <div className="text-center py-8 text-red-500">{error}</div>
       ) : posts.length === 0 ? (
-        <div className="flex flex-col gap-4">
-          {feedMode === "home" &&
-            canSeePitchCarousel &&
-            feedPitches.length > 0 && (
-              <PitchReelsCarousel
-                pitches={feedPitches}
-                onSelectPitch={handleOpenPitchPreview}
-              />
-            )}
-          <div className="text-center py-8 text-gray-500">
-            {feedMode === "saved"
-              ? "No saved posts yet. Save posts from your feed to see them here."
-              : "No posts yet. Be the first to post!"}
-          </div>
+        <div className="text-center py-8 text-gray-500">
+          {feedMode === "saved"
+            ? "No saved posts yet. Save posts from your feed to see them here."
+            : "No posts yet. Be the first to post!"}
         </div>
       ) : (
         <PeopleSuggestionsProvider
@@ -611,17 +611,6 @@ export default function RecruitmentMiddle() {
                 onVotePoll={handleVotePoll}
               />
               </div>
-
-              {/* Pitch Reels — after 2nd post (or last if fewer) */}
-              {feedMode === "home" &&
-                canSeePitchCarousel &&
-                feedPitches.length > 0 &&
-                (index === 1 || (posts.length < 2 && index === posts.length - 1)) && (
-                  <PitchReelsCarousel
-                    pitches={feedPitches}
-                    onSelectPitch={handleOpenPitchPreview}
-                  />
-                )}
 
               {/* this is ads so is just dummy for now  */}
               {/* it will display after three posts u can use it */}

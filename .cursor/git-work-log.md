@@ -1,5 +1,80 @@
 # Git Work Log
 
+## 2026-09-25 12:03 (WAT) — Move Pitch Reels Carousel to Top of Newsfeed
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Moved the Pitch Reels carousel from its mid-feed injection point (after post 2) to the top of the newsfeed directly below the "Start a post" creation card and divider line. Removed redundant duplicate carousel rendering from the empty feed state.
+- **Changed**:
+  - `src/components/recruitment/RecruitmentMiddle.jsx`: Rendered `PitchReelsCarousel` at the top of the feed stream right below the divider line; removed mid-feed injection logic (`index === 1`) from `posts.map`; removed duplicate carousel instance from the `posts.length === 0` fallback.
+- **Conventional type** (for next commit): `feat(feed)`
+
+### Proposed Commit Message
+
+```
+feat(feed): move pitch reels carousel to top of newsfeed
+
+We repositioned the Pitch Reels carousel to display at the top of the newsfeed right below the post creation card so users can access 24h reels immediately.
+
+- Move PitchReelsCarousel above the post stream below Start a post and divider line
+- Remove mid-feed injection after the second post in the feed stream
+- Eliminate duplicate carousel rendering in the empty posts fallback
+```
+
+---
+
+## 2026-09-25 10:53 (WAT) — Fix Dropdowns in New Message Composer and Add Category Selector
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Resolved multiple dropdown issues in the New Message (Docked Composer) modal. Fixed CSS `overflow-hidden` on the Send button group that prevented the Schedule Send dropdown from rendering, added outside-click dismissal listeners across all floating menus (Templates, Schedule Send, Recruiter Autocomplete, Category), added a dedicated Mail Category Tag dropdown for new outreach threads, and preserved recipient autocomplete on field click.
+- **Changed**:
+  - `Admin-frontend/src/components/admin/recruiterMail/DockedComposer.jsx`: Separated Send button group wrapper from the Schedule dropdown so the schedule menu is not clipped by `overflow-hidden`; added dedicated Mail Category tag selector row with clean dropdown; bound `toFieldRef`, `categoryMenuRef`, `templatesMenuRef`, and `scheduleMenuRef` to single outside-click listener; passed selected `category` into `onSend`.
+  - `Admin-frontend/src/page/admin/AdminRecruiterMail.jsx`: Forwarded `category` parameter in composer `handleSendMessage` to `sendRecruiterMessage`.
+  - `Admin-frontend/src/services/recruiterMailService.js`: Accepted `category` parameter in `sendRecruiterMessage` and persisted it to the newly initiated conversation thread.
+- **Conventional type** (for next commit): `fix(admin)`
+
+### Proposed Commit Message
+
+```
+fix(admin): fix dropdowns in new message composer and add category selector
+
+We resolved layout clipping and dismissal issues for dropdown menus in the recruiter message composer and added an interactive mail category selector.
+
+- Unclip schedule send dropdown by moving it outside button group overflow bounds
+- Add an interactive category tag dropdown selector when composing new messages
+- Close templates, schedule, category, and autocomplete dropdowns on outside clicks
+- Keep recipient suggestions accessible on click and focus in the To input
+- Persist user-selected category to newly created email outreach threads
+```
+
+---
+
+## 2026-09-25 10:48 (WAT) — Fix Recruiter Mail Category Dropdowns and Add Interactive Category Filtering
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Resolved dropdown clipping and unresponsiveness in the recruiter mailbox category selector. Fixed `overflow-hidden` on thread action bars that blocked desktop and mobile category dropdown menus from displaying, added outside-click dismissal listeners, enabled toggling and clearing categories, integrated bulk category tagging on selected threads, and added a dedicated category filter dropdown directly in the mailbox toolbar.
+- **Changed**:
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterThreadView.jsx`: Removed `overflow-hidden` from action bar header to allow dropdown menus to pop over content; added outside-click listeners for desktop category dropdown and mobile more menu; added category clear button and toggle behavior; styled active category tag on dropdown trigger button.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterMailToolbar.jsx`: Added dedicated Category Filter Dropdown in toolbar tab strip with live counters and checkmarks; added bulk Category/Tag dropdown button for multi-selected email threads; removed `overflow-hidden` so toolbar dropdowns render freely; added click-outside dismissal handlers.
+  - `Admin-frontend/src/components/admin/recruiterMail/RecruiterMailSidebar.jsx`: Allowed toggling active category filter by clicking the selected category pill a second time.
+  - `Admin-frontend/src/page/admin/AdminRecruiterMail.jsx`: Imported `RECRUITER_CATEGORIES`; implemented `handleBulkUpdateCategory`; connected `counts`, `setActiveCategory`, and `onBulkUpdateCategory` to `RecruiterMailToolbar`; updated mobile folder trigger to reflect active category tag.
+- **Conventional type** (for next commit): `fix(admin)`
+
+### Proposed Commit Message
+
+```
+fix(admin): fix mail category dropdowns and add toolbar category filter
+
+We resolved layout clipping on the recruiter mailbox category dropdowns and added dedicated category tagging and filtering controls across the mailbox client.
+
+- Remove overflow clipping on thread action bar so category and more-options dropdowns render properly
+- Add outside-click dismissal and clear/toggle functionality to conversation category menus
+- Introduce a category filter dropdown in the main mailbox toolbar with real-time thread counts
+- Add bulk category tagging dropdown when multiple email threads are selected
+- Allow toggling category filters on and off directly from sidebar and toolbar pills
+```
+
+---
+
 ## 2026-09-24 23:35 (WAT) — Fix Mobile Responsiveness in Simulate Reply Modal and Docked Composer
 
 - **Repo**: `bejite-frontend`
