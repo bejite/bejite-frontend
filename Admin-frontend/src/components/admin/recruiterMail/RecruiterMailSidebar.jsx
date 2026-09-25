@@ -223,7 +223,7 @@ export const RecruiterMailSidebar = ({
               <button
                 key={cat.id}
                 onClick={() => {
-                  setActiveCategory(cat.id);
+                  setActiveCategory(isActive ? null : cat.id);
                   onCloseMobile?.();
                 }}
                 className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${

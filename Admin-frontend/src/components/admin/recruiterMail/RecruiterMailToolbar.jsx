@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Search,
   X,
@@ -13,8 +13,11 @@ import {
   Trash2,
   Paperclip,
   Menu,
+  Tag,
+  ChevronDown,
+  Check,
 } from "lucide-react";
-import { MAIL_FOLDERS } from "../../../services/recruiterMailService";
+import { MAIL_FOLDERS, RECRUITER_CATEGORIES } from "../../../services/recruiterMailService";
 
 export const RecruiterMailToolbar = ({
   searchQuery,
@@ -29,15 +32,45 @@ export const RecruiterMailToolbar = ({
   onBulkStar,
   onBulkArchive,
   onBulkTrash,
+  onBulkUpdateCategory,
   onRefresh,
   isRefreshing,
   activeFolder,
   activeCategory,
+  setActiveCategory,
   totalCount,
   counts,
   onOpenMobileSidebar,
 }) => {
   const hasSelection = selectedThreadIds.length > 0;
+  const [showBulkCategoryMenu, setShowBulkCategoryMenu] = useState(false);
+  const [showFilterCategoryMenu, setShowFilterCategoryMenu] = useState(false);
+
+  const bulkCategoryMenuRef = useRef(null);
+  const filterCategoryMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        bulkCategoryMenuRef.current &&
+        !bulkCategoryMenuRef.current.contains(e.target)
+      ) {
+        setShowBulkCategoryMenu(false);
+      }
+      if (
+        filterCategoryMenuRef.current &&
+        !filterCategoryMenuRef.current.contains(e.target)
+      ) {
+        setShowFilterCategoryMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeCategoryObj = RECRUITER_CATEGORIES.find(
+    (c) => c.id === activeCategory,
+  );
 
   const TABS = [
     { id: "all", label: "All Mail", count: totalCount },
@@ -47,7 +80,7 @@ export const RecruiterMailToolbar = ({
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200/80 shrink-0 select-none w-full max-w-full overflow-hidden">
+    <div className="bg-white border-b border-slate-200/80 shrink-0 select-none w-full max-w-full relative z-20">
       {/* Search Bar, Mobile Folder Trigger, Selection & Bulk Actions */}
       <div className="px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 w-full max-w-full">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
@@ -59,7 +92,9 @@ export const RecruiterMailToolbar = ({
               title="Browse folders & categories"
             >
               <Menu size={14} />
-              <span className="capitalize">{activeFolder || "Folders"}</span>
+              <span className="capitalize">
+                {activeCategoryObj ? activeCategoryObj.label : activeFolder || "Folders"}
+              </span>
             </button>
           )}
 
@@ -87,7 +122,7 @@ export const RecruiterMailToolbar = ({
           </button>
 
           {hasSelection ? (
-            <div className="flex items-center gap-1 pl-1.5 border-l border-slate-200 overflow-x-auto no-scrollbar min-w-0">
+            <div className="flex items-center gap-1 pl-1.5 border-l border-slate-200 overflow-visible min-w-0">
               <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
                 {selectedThreadIds.length} sel
               </span>
@@ -112,6 +147,63 @@ export const RecruiterMailToolbar = ({
               >
                 <Star size={15} />
               </button>
+
+              {/* Bulk Category / Label Dropdown */}
+              <div className="relative shrink-0" ref={bulkCategoryMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkCategoryMenu(!showBulkCategoryMenu)}
+                  className="flex items-center gap-1 px-2 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                  title="Assign category tag"
+                >
+                  <Tag size={14} className="text-slate-500" />
+                  <span className="hidden sm:inline">Tag</span>
+                  <ChevronDown size={11} className="text-slate-400" />
+                </button>
+
+                {showBulkCategoryMenu && (
+                  <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-fadeIn">
+                    <div className="px-3 py-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 mb-1">
+                      <span>Tag {selectedThreadIds.length} {selectedThreadIds.length === 1 ? "thread" : "threads"}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onBulkUpdateCategory?.(null);
+                          setShowBulkCategoryMenu(false);
+                        }}
+                        className="text-[10px] text-rose-600 hover:underline font-bold capitalize cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    {RECRUITER_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          onBulkUpdateCategory?.(cat.id);
+                          setShowBulkCategoryMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer text-left"
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            cat.id === "active_hiring"
+                              ? "bg-emerald-500"
+                              : cat.id === "candidate_review"
+                              ? "bg-blue-500"
+                              : cat.id === "partnership"
+                              ? "bg-purple-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        <span>{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={onBulkArchive}
                 className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer shrink-0"
@@ -154,9 +246,10 @@ export const RecruiterMailToolbar = ({
         </div>
       </div>
 
-      {/* Modern Executive Segmented Tab Control */}
-      <div className="px-3 sm:px-4 py-2 border-t border-slate-100/90 bg-slate-50/50">
-        <div className="flex items-center gap-1 p-1 bg-slate-200/60 rounded-xl overflow-x-auto no-scrollbar w-full max-w-full">
+      {/* Modern Executive Segmented Tab Control + Category Dropdown Filter */}
+      <div className="px-3 sm:px-4 py-2 border-t border-slate-100/90 bg-slate-50/50 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 overflow-visible">
+        {/* Left: Filter Tabs */}
+        <div className="flex items-center gap-1 p-1 bg-slate-200/60 rounded-xl overflow-x-auto no-scrollbar max-w-full">
           {TABS.map((tab) => {
             const isActive = filterType === tab.id;
             const Icon = tab.icon;
@@ -193,6 +286,108 @@ export const RecruiterMailToolbar = ({
               </button>
             );
           })}
+        </div>
+
+        {/* Right: Category Dropdown Filter */}
+        <div className="relative shrink-0" ref={filterCategoryMenuRef}>
+          <button
+            type="button"
+            onClick={() => setShowFilterCategoryMenu(!showFilterCategoryMenu)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              activeCategoryObj
+                ? `${activeCategoryObj.color} font-bold shadow-2xs`
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-2xs"
+            }`}
+            title="Filter by category tag"
+          >
+            <Tag size={13} className={activeCategoryObj ? "" : "text-slate-400"} />
+            <span className="whitespace-nowrap">
+              {activeCategoryObj ? activeCategoryObj.label : "Category"}
+            </span>
+            {activeCategoryObj && counts?.categories?.[activeCategoryObj.id] > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/70">
+                {counts.categories[activeCategoryObj.id]}
+              </span>
+            )}
+            <ChevronDown size={11} className={activeCategoryObj ? "" : "text-slate-400"} />
+          </button>
+
+          {showFilterCategoryMenu && (
+            <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 animate-fadeIn">
+              <div className="px-3 py-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 mb-1">
+                <span>Filter by Category</span>
+                {activeCategory && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory?.(null);
+                      setShowFilterCategoryMenu(false);
+                    }}
+                    className="text-[10px] text-[#16730F] hover:underline font-bold cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              {/* All Categories Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory?.(null);
+                  setShowFilterCategoryMenu(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer ${
+                  !activeCategory ? "text-[#16730F] font-bold bg-emerald-50/50" : "text-slate-700"
+                }`}
+              >
+                <span>All Categories</span>
+                {!activeCategory && <Check size={14} className="text-[#16730F]" />}
+              </button>
+
+              {/* Category Options */}
+              {RECRUITER_CATEGORIES.map((cat) => {
+                const isSelected = activeCategory === cat.id;
+                const catCount = counts?.categories?.[cat.id] || 0;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory?.(isSelected ? null : cat.id);
+                      setShowFilterCategoryMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer ${
+                      isSelected ? "text-[#16730F] font-bold bg-emerald-50/50" : "text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          cat.id === "active_hiring"
+                            ? "bg-emerald-500"
+                            : cat.id === "candidate_review"
+                            ? "bg-blue-500"
+                            : cat.id === "partnership"
+                            ? "bg-purple-500"
+                            : "bg-amber-500"
+                        }`}
+                      />
+                      <span>{cat.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {catCount > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-slate-100 text-slate-600">
+                          {catCount}
+                        </span>
+                      )}
+                      {isSelected && <Check size={14} className="text-[#16730F]" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
   Star,
@@ -58,6 +58,21 @@ export const RecruiterThreadView = ({
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const fileInputRef = useRef(null);
+  const categoryMenuRef = useRef(null);
+  const moreMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target)) {
+        setShowCategoryMenu(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (!thread) return null;
 
@@ -152,7 +167,7 @@ export const RecruiterThreadView = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-white overflow-hidden min-h-0 w-full max-w-full">
       {/* Top Action Bar */}
-      <div className="bg-white/95 backdrop-blur-xs border-b border-slate-200/80 px-3 sm:px-4 py-2 sm:py-2.5 shrink-0 flex items-center justify-between gap-1.5 sm:gap-2 select-none w-full max-w-full overflow-hidden">
+      <div className="bg-white/95 backdrop-blur-xs border-b border-slate-200/80 px-3 sm:px-4 py-2 sm:py-2.5 shrink-0 flex items-center justify-between gap-1.5 sm:gap-2 select-none w-full max-w-full relative z-20">
         {/* Left: Back Button */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <button
@@ -206,36 +221,73 @@ export const RecruiterThreadView = ({
             </button>
 
             {/* Category Dropdown (Desktop) */}
-            <div className="relative">
+            <div className="relative" ref={categoryMenuRef}>
               <button
+                type="button"
                 onClick={() => setShowCategoryMenu(!showCategoryMenu)}
-                className="px-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold ${
+                  currentCategory
+                    ? `${currentCategory.color}`
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
                 title="Assign category tag"
               >
-                <Tag size={13} className="text-slate-400" />
-                <span>Label</span>
-                <ChevronDown size={11} className="text-slate-400" />
+                <Tag size={13} className={currentCategory ? "" : "text-slate-400"} />
+                <span>{currentCategory ? currentCategory.label : "Label"}</span>
+                <ChevronDown size={11} className={currentCategory ? "" : "text-slate-400"} />
               </button>
 
               {showCategoryMenu && (
-                <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-fadeIn">
-                  <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Select Category
-                  </p>
+                <div className="absolute left-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 animate-fadeIn">
+                  <div className="px-3 py-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 mb-1">
+                    <span>Select Category</span>
+                    {thread.category && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onUpdateCategory(thread.id, null);
+                          setShowCategoryMenu(false);
+                          toast.info("Category removed");
+                        }}
+                        className="text-[10px] text-rose-600 hover:underline font-bold capitalize cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   {RECRUITER_CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
+                      type="button"
                       onClick={() => {
-                        onUpdateCategory(thread.id, cat.id);
+                        const newCat = thread.category === cat.id ? null : cat.id;
+                        onUpdateCategory(thread.id, newCat);
                         setShowCategoryMenu(false);
-                        toast.success(`Tagged as ${cat.label}`);
+                        if (newCat) {
+                          toast.success(`Tagged as ${cat.label}`);
+                        } else {
+                          toast.info("Category removed");
+                        }
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer ${
                         thread.category === cat.id ? "text-[#16730F] font-bold bg-emerald-50/50" : "text-slate-700"
                       }`}
                     >
-                      <span>{cat.label}</span>
-                      {thread.category === cat.id && <Check size={14} />}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            cat.id === "active_hiring"
+                              ? "bg-emerald-500"
+                              : cat.id === "candidate_review"
+                              ? "bg-blue-500"
+                              : cat.id === "partnership"
+                              ? "bg-purple-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        <span>{cat.label}</span>
+                      </div>
+                      {thread.category === cat.id && <Check size={14} className="text-[#16730F]" />}
                     </button>
                   ))}
                 </div>
@@ -274,54 +326,91 @@ export const RecruiterThreadView = ({
             </button>
 
             {/* Mobile More Options Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={moreMenuRef}>
               <button
+                type="button"
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg"
+                className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg cursor-pointer"
                 title="More actions"
               >
                 <MoreVertical size={16} />
               </button>
 
               {showMoreMenu && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 animate-fadeIn divide-y divide-slate-100">
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-fadeIn divide-y divide-slate-100">
                   <div className="py-1">
                     <button
+                      type="button"
                       onClick={() => {
                         onMarkUnread(thread.id, false);
                         setShowMoreMenu(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
                     >
                       <Mail size={14} className="text-slate-400" />
                       <span>Mark as Unread</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         onSimulateReply(thread.id);
                         setShowMoreMenu(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-900 bg-amber-50/50 hover:bg-amber-100/60 font-semibold"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-900 bg-amber-50/50 hover:bg-amber-100/60 font-semibold cursor-pointer"
                     >
                       <Sparkles size={14} className="text-amber-600" />
                       <span>Simulate Reply</span>
                     </button>
                   </div>
                   <div className="py-1">
-                    <p className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Assign Label
-                    </p>
+                    <div className="px-3 py-1 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <span>Assign Label</span>
+                      {thread.category && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateCategory(thread.id, null);
+                            setShowMoreMenu(false);
+                            toast.info("Category removed");
+                          }}
+                          className="text-[10px] text-rose-600 hover:underline font-bold capitalize cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                     {RECRUITER_CATEGORIES.map((cat) => (
                       <button
                         key={cat.id}
+                        type="button"
                         onClick={() => {
-                          onUpdateCategory(thread.id, cat.id);
+                          const newCat = thread.category === cat.id ? null : cat.id;
+                          onUpdateCategory(thread.id, newCat);
                           setShowMoreMenu(false);
-                          toast.success(`Tagged as ${cat.label}`);
+                          if (newCat) {
+                            toast.success(`Tagged as ${cat.label}`);
+                          } else {
+                            toast.info("Category removed");
+                          }
                         }}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                        className={`w-full flex items-center justify-between px-3 py-1.5 text-xs cursor-pointer ${
+                          thread.category === cat.id ? "text-[#16730F] font-bold bg-emerald-50/50" : "text-slate-700 hover:bg-slate-50"
+                        }`}
                       >
-                        <span>{cat.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              cat.id === "active_hiring"
+                                ? "bg-emerald-500"
+                                : cat.id === "candidate_review"
+                                ? "bg-blue-500"
+                                : cat.id === "partnership"
+                                ? "bg-purple-500"
+                                : "bg-amber-500"
+                            }`}
+                          />
+                          <span>{cat.label}</span>
+                        </div>
                         {thread.category === cat.id && (
                           <Check size={13} className="text-[#16730F]" />
                         )}

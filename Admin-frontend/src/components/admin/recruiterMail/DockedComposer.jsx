@@ -13,8 +13,10 @@ import {
   FileText,
   Clock,
   ChevronDown,
+  Tag,
+  Check,
 } from "lucide-react";
-import { DEFAULT_TEMPLATES } from "../../../services/recruiterMailService";
+import { DEFAULT_TEMPLATES, RECRUITER_CATEGORIES } from "../../../services/recruiterMailService";
 import { toast } from "react-toastify";
 
 export const DockedComposer = ({
@@ -33,6 +35,8 @@ export const DockedComposer = ({
   const [toInput, setToInput] = useState("");
   const [showRecruiterSuggestions, setShowRecruiterSuggestions] = useState(false);
   const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("active_hiring");
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [showTemplatesMenu, setShowTemplatesMenu] = useState(false);
@@ -43,6 +47,10 @@ export const DockedComposer = ({
 
   const fileInputRef = useRef(null);
   const suggestionsRef = useRef(null);
+  const toFieldRef = useRef(null);
+  const categoryMenuRef = useRef(null);
+  const templatesMenuRef = useRef(null);
+  const scheduleMenuRef = useRef(null);
 
   // Initialize with initial props if provided
   useEffect(() => {
@@ -54,11 +62,20 @@ export const DockedComposer = ({
     if (initialBody) setBody(initialBody);
   }, [initialToRecruiter, initialSubject, initialBody]);
 
-  // Click outside suggestions
+  // Click outside listener for all floating menus
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+      if (toFieldRef.current && !toFieldRef.current.contains(e.target)) {
         setShowRecruiterSuggestions(false);
+      }
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target)) {
+        setShowCategoryMenu(false);
+      }
+      if (templatesMenuRef.current && !templatesMenuRef.current.contains(e.target)) {
+        setShowTemplatesMenu(false);
+      }
+      if (scheduleMenuRef.current && !scheduleMenuRef.current.contains(e.target)) {
+        setShowScheduleMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -159,6 +176,7 @@ export const DockedComposer = ({
         subject: subject.trim(),
         body: body.trim(),
         attachments,
+        category,
         scheduled: isScheduled ? scheduleTime : null,
       });
 
@@ -272,7 +290,7 @@ export const DockedComposer = ({
         {/* Recipients & Meta Fields */}
         <div className="border-b border-slate-100 bg-white">
           {/* TO Field with Autocomplete */}
-          <div className="relative flex items-center px-4 py-2 border-b border-slate-100 text-xs">
+          <div className="relative flex items-center px-4 py-2 border-b border-slate-100 text-xs" ref={toFieldRef}>
             <span className="text-slate-400 font-bold w-12 shrink-0">To:</span>
 
             {selectedRecruiter ? (
@@ -301,6 +319,7 @@ export const DockedComposer = ({
                   setShowRecruiterSuggestions(true);
                 }}
                 onFocus={() => setShowRecruiterSuggestions(true)}
+                onClick={() => setShowRecruiterSuggestions(true)}
                 placeholder="Search recruiter name, company, or type work email..."
                 className="flex-1 py-1 focus:outline-none text-xs text-slate-800 placeholder-slate-400"
               />
@@ -398,6 +417,83 @@ export const DockedComposer = ({
             />
           </div>
 
+          {/* Category Dropdown Row */}
+          <div
+            className="relative flex items-center justify-between px-4 py-2 border-b border-slate-100 text-xs"
+            ref={categoryMenuRef}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-bold w-12 shrink-0 flex items-center gap-1">
+                <Tag size={12} />
+                Tag:
+              </span>
+              {(() => {
+                const currentCat = RECRUITER_CATEGORIES.find((c) => c.id === category);
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                      currentCat ? currentCat.color : "text-slate-700 bg-slate-50 border-slate-200"
+                    }`}
+                    title="Select email category tag"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        category === "active_hiring"
+                          ? "bg-emerald-500"
+                          : category === "candidate_review"
+                          ? "bg-blue-500"
+                          : category === "partnership"
+                          ? "bg-purple-500"
+                          : "bg-amber-500"
+                      }`}
+                    />
+                    <span>{currentCat?.label || "Select Category"}</span>
+                    <ChevronDown size={11} className="text-slate-400 ml-0.5" />
+                  </button>
+                );
+              })()}
+            </div>
+
+            {showCategoryMenu && (
+              <div className="absolute left-16 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-fadeIn">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 mb-1">
+                  Mail Category
+                </div>
+                {RECRUITER_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setCategory(cat.id);
+                      setShowCategoryMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer ${
+                      category === cat.id ? "text-[#16730F] font-bold bg-emerald-50/50" : "text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          cat.id === "active_hiring"
+                            ? "bg-emerald-500"
+                            : cat.id === "candidate_review"
+                            ? "bg-blue-500"
+                            : cat.id === "partnership"
+                            ? "bg-purple-500"
+                            : "bg-amber-500"
+                        }`}
+                      />
+                      <span>{cat.label}</span>
+                    </div>
+                    {category === cat.id && <Check size={14} className="text-[#16730F]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Variable Insertion Pills */}
           <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-slate-50/70 overflow-x-auto no-scrollbar border-b border-slate-100 w-full max-w-full shrink-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 select-none">
@@ -463,33 +559,35 @@ export const DockedComposer = ({
         {/* Bottom Toolbar & Action Buttons */}
         <div className="px-3 sm:px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 w-full select-none">
           <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
-            {/* Send Button Group with Schedule Dropdown */}
-            <div className="relative flex items-center rounded-xl overflow-hidden shadow-2xs shrink-0">
-              <button
-                type="button"
-                onClick={() => handleSend(false)}
-                disabled={isSending}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gradient-to-r from-[#16730F] to-[#10540b] hover:from-[#125e0c] hover:to-[#0c4008] text-white font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isSending ? (
-                  <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Send Message</span>
-                    <span className="sm:hidden">Send</span>
-                    <Send size={13} />
-                  </>
-                )}
-              </button>
+            {/* Send Button Group with Schedule Dropdown (Fixed clipping by keeping dropdown outside overflow-hidden) */}
+            <div className="relative shrink-0" ref={scheduleMenuRef}>
+              <div className="flex items-center rounded-xl overflow-hidden shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => handleSend(false)}
+                  disabled={isSending}
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gradient-to-r from-[#16730F] to-[#10540b] hover:from-[#125e0c] hover:to-[#0c4008] text-white font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSending ? (
+                    <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Send Message</span>
+                      <span className="sm:hidden">Send</span>
+                      <Send size={13} />
+                    </>
+                  )}
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setShowScheduleMenu(!showScheduleMenu)}
-                className="px-1.5 sm:px-2 py-2 bg-[#10540b] hover:bg-[#0c4008] text-white border-l border-white/20 transition-colors cursor-pointer"
-                title="Schedule email"
-              >
-                <ChevronDown size={13} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleMenu(!showScheduleMenu)}
+                  className="px-1.5 sm:px-2 py-2 bg-[#10540b] hover:bg-[#0c4008] text-white border-l border-white/20 transition-colors cursor-pointer"
+                  title="Schedule email"
+                >
+                  <ChevronDown size={13} />
+                </button>
+              </div>
 
               {/* Schedule Menu */}
               {showScheduleMenu && (
@@ -553,7 +651,7 @@ export const DockedComposer = ({
             </button>
 
             {/* Recruiter Template Selector Button */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0" ref={templatesMenuRef}>
               <button
                 type="button"
                 onClick={() => setShowTemplatesMenu(!showTemplatesMenu)}

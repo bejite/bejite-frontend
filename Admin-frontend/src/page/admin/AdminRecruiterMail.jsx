@@ -17,6 +17,7 @@ import {
 
 import {
   MAIL_FOLDERS,
+  RECRUITER_CATEGORIES,
   getStoredThreads,
   saveStoredThreads,
   fetchRecruitersDirectory,
@@ -374,6 +375,21 @@ const AdminRecruiterMail = () => {
     toast.info(`Moved ${selectedThreadIds.length} threads to Trash`);
   };
 
+  const handleBulkUpdateCategory = (category) => {
+    const updated = threads.map((t) =>
+      selectedThreadIds.includes(t.id) ? { ...t, category } : t,
+    );
+    setThreads(updated);
+    saveStoredThreads(updated);
+    const catObj = RECRUITER_CATEGORIES.find((c) => c.id === category);
+    toast.success(
+      category
+        ? `Tagged ${selectedThreadIds.length} threads as ${catObj?.label || category}`
+        : `Removed category from ${selectedThreadIds.length} threads`,
+    );
+    setSelectedThreadIds([]);
+  };
+
   // Send Message from Composer
   const handleSendMessage = async ({
     toEmail,
@@ -382,6 +398,7 @@ const AdminRecruiterMail = () => {
     subject,
     body,
     attachments,
+    category,
   }) => {
     await sendRecruiterMessage({
       toEmail,
@@ -390,6 +407,7 @@ const AdminRecruiterMail = () => {
       subject,
       body,
       attachments,
+      category,
       adminUser: user,
     });
     // Refresh threads
@@ -457,11 +475,15 @@ const AdminRecruiterMail = () => {
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
-            title="Browse folders"
+            title="Browse folders & categories"
           >
             <span className="text-slate-600 font-normal">📁</span>
-            <span className="capitalize">{activeFolder || "Inbox"}</span>
-            {counts.inboxUnread > 0 && activeFolder === MAIL_FOLDERS.INBOX && (
+            <span className="capitalize">
+              {activeCategory
+                ? RECRUITER_CATEGORIES.find((c) => c.id === activeCategory)?.label || activeCategory
+                : activeFolder || "Inbox"}
+            </span>
+            {counts.inboxUnread > 0 && activeFolder === MAIL_FOLDERS.INBOX && !activeCategory && (
               <span className="px-1.5 py-0.2 bg-[#16730F] text-white rounded-full text-[10px] font-bold">
                 {counts.inboxUnread}
               </span>
@@ -628,14 +650,17 @@ const AdminRecruiterMail = () => {
                 onToggleSelectAll={handleToggleSelectAll}
                 allSelectedState={allSelectedState}
                 onBulkMarkRead={handleBulkMarkRead}
-                onBulkMarkUnread={handleBulkMarkRead}
+                onBulkMarkUnread={(isRead) => handleBulkMarkRead(isRead)}
                 onBulkStar={handleBulkStar}
                 onBulkArchive={handleBulkArchive}
                 onBulkTrash={handleBulkTrash}
+                onBulkUpdateCategory={handleBulkUpdateCategory}
                 onRefresh={loadData}
                 isRefreshing={isRefreshing}
                 activeFolder={activeFolder}
                 activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                counts={counts}
                 totalCount={filteredThreads.length}
                 onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
               />

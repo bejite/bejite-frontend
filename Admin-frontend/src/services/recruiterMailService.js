@@ -580,6 +580,7 @@ export const sendRecruiterMessage = async ({
   subject,
   body,
   attachments = [],
+  category = "active_hiring",
   adminUser = null,
 }) => {
   const threads = getStoredThreads();
@@ -625,7 +626,7 @@ export const sendRecruiterMessage = async ({
       id: newThreadId,
       recruiter: newRecruiter,
       subject,
-      category: "active_hiring",
+      category: category || "active_hiring",
       folder: MAIL_FOLDERS.SENT,
       isStarred: false,
       isRead: true,
