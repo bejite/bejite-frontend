@@ -1,3 +1,4 @@
+// Mailbox (1-on-1 recruiter mail) temporarily disabled via App.jsx / AdminLayout.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";

@@ -21,7 +21,7 @@ export const RecruiterThreadView = ({
   onMarkUnread,
   onSendReply,
   isSendingReply = false,
-  adminUser,
+  adminUser: _adminUser,
 }) => {
   const [replyBody, setReplyBody] = useState("");
   const [replyAttachments, setReplyAttachments] = useState([]);

@@ -34,7 +34,7 @@ export const SimulateReplyModal = ({
   };
 
   const currentThreadId = selectedThreadId || activeThreads[0]?.id;
-  const currentThread = activeThreads.find((t) => t.id === currentThreadId);
+  // const currentThread = activeThreads.find((t) => t.id === currentThreadId);
 
   const handleSubmit = (e) => {
     e.preventDefault();

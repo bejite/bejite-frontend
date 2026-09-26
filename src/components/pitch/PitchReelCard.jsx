@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Play, MoreVertical, CheckCircle } from "lucide-react";
+import { Play, CheckCircle } from "lucide-react";
 
 export default function PitchReelCard({ pitch, onSelectPitch }) {
   const videoRef = useRef(null);
@@ -73,23 +73,9 @@ export default function PitchReelCard({ pitch, onSelectPitch }) {
           <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-green-500 border border-white" />
         </div>
 
-        {/* Badge & More menu */}
-        <div className="flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-black/45 backdrop-blur-md text-white border border-white/20">
-            {pitch.typeBadge || pitch.type?.split(" ")[0] || "PITCH"}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectPitch(pitch);
-            }}
-            className="p-1 rounded-full bg-black/30 hover:bg-black/60 text-white transition-colors"
-            aria-label="Options"
-          >
-            <MoreVertical className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-black/45 backdrop-blur-md text-white border border-white/20">
+          {pitch.typeBadge || pitch.type?.split(" ")[0] || "PITCH"}
+        </span>
       </div>
 
       {/* Center Play Icon (Fades out when hovered and playing) */}

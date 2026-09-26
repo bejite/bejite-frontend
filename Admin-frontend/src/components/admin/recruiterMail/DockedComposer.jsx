@@ -16,7 +16,7 @@ export const DockedComposer = ({
   onClose,
   onSend,
   recruitersDirectory = [],
-  adminUser,
+  adminUser: _adminUser,
   initialToRecruiter = null,
   initialSubject = "",
   initialBody = "",
