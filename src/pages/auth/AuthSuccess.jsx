@@ -8,7 +8,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import { hydrateAuth, verifyTwoFactorLogin } from '../../features/auth/authSlice';
 import {
   storeUser,
-  exchangeOAuthCode,
+  getUser,
   stripAuthParamsFromUrl,
   storeTokens,
 } from '../../utils/tokenManager';
@@ -115,19 +115,13 @@ const AuthSuccess = () => {
 
       const handoffCode = params.get('code');
       if (handoffCode) {
-        try {
-          const data = await exchangeOAuthCode(handoffCode);
-          if (cancelled) return;
-          const user = data?.user || {};
-          await finishWithUser(
-            user,
-            String(data?.profileCompleted === true),
-          );
-        } catch (err) {
-          console.error('OAuth code exchange failed:', err);
-          toast.error('Authentication failed. Please try logging in again.');
-          setTimeout(() => navigate('/'), 1500);
-        }
+        // AuthBootstrap (mounted at the app root) already exchanged this
+        // code and stored the tokens/user before this page ever mounted.
+        // Do not exchange it again here, a one-time code can only be
+        // redeemed once, a second attempt always fails.
+        if (cancelled) return;
+        const user = getUser() || {};
+        await finishWithUser(user, String(user.profileCompleted === true));
         return;
       }
 
