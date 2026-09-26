@@ -23,6 +23,8 @@ const ROLE_ALLOWED_PATHS = {
     "/admin/jobs",
     "/admin/adpro",
     "/admin/email-outreach",
+    // "/admin/mailbox", // Mailbox temporarily disabled
+    // "/admin/recruiter-mail",
     "/admin/events",
     "/admin/notifications",
   ],
@@ -33,6 +35,8 @@ const ROLE_ALLOWED_PATHS = {
     "/admin/recruitment",
     "/admin/adpro",
     "/admin/email-outreach",
+    // "/admin/mailbox", // Mailbox temporarily disabled
+    // "/admin/recruiter-mail",
     "/admin/events",
     "/admin/notifications",
   ],

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+// import { Link } from "react-router-dom"; // Mailbox link temporarily disabled
 import { toast } from "react-toastify";
 import { Mail, Plus } from "lucide-react";
+// import { Mail, Plus, Inbox, ArrowRight } from "lucide-react";
 
 import OutreachMetricsDashboard from "../../components/admin/outreach/OutreachMetricsDashboard";
 import CampaignHistoryTable from "../../components/admin/outreach/CampaignHistoryTable";
@@ -8,7 +10,7 @@ import CampaignAnalyticsDrawer from "../../components/admin/outreach/CampaignAna
 import CampaignBuilderWizard from "../../components/admin/outreach/CampaignBuilderWizard";
 import TemplatePresetsGrid from "../../components/admin/outreach/TemplatePresetsGrid";
 
-import DeleteCampaignConfirmModal from "../../components/admin/outreach/DeleteCampaignConfirmModal";
+import { DeleteConfirmModal } from "../../components/modal/DeleteConfirmModal";
 import TemplateEditorModal from "../../components/admin/outreach/TemplateEditorModal";
 import {
   createOutreachTemplate,
@@ -339,14 +341,27 @@ const AdminEmailOutreach = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto w-full space-y-8 pb-12 font-sans text-gray-800">
+    <div className="max-w-7xl mx-auto w-full space-y-8 pb-12 font-nunito-semi text-gray-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-5">
-        <div className="text-left">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-            <Mail className="text-[#16730F] w-7 h-7" />
-            Email Outreach & Campaigns
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
+        <div className="text-left space-y-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+              <Mail className="text-[#16730F] w-7 h-7" />
+              Email Outreach & Campaigns
+            </h1>
+            {/* Mailbox temporarily disabled
+            <Link
+              to="/admin/mailbox"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#16730F] rounded-full text-xs font-bold transition-all shadow-2xs"
+              title="Open 1-on-1 Mailbox"
+            >
+              <Inbox size={13} />
+              <span>Looking for 1-on-1 Mailbox? </span>
+              <ArrowRight size={12} />
+            </Link>
+            */}
+          </div>
+          <p className="text-gray-500 text-sm">
             Build, schedule, and analyze bulk email to Bejite members or to
             people who are not yet on the platform.
           </p>
@@ -436,10 +451,13 @@ const AdminEmailOutreach = () => {
         onDuplicate={handleDuplicate}
       />
 
-      <DeleteCampaignConfirmModal
+      <DeleteConfirmModal
         isOpen={!!deletingCampaignId}
         onClose={() => setDeletingCampaignId(null)}
         onConfirm={confirmDeleteCampaign}
+        title="Delete Campaign"
+        message="Are you sure you want to delete this campaign historical record? This action cannot be undone."
+        confirmText="Delete Campaign"
       />
 
       <TemplateEditorModal

@@ -341,7 +341,7 @@ export default function PitchPage() {
           <PitchSidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onCreatePitch={openCreateModal}
+            onCreatePitch={openCreateModal} 
           />
 
           <main className="flex-1 min-w-0 w-full flex flex-col gap-3.5 sm:gap-4 md:gap-5">

@@ -14,6 +14,7 @@ import {
   Shield,
   Megaphone,
   Mail,
+  // Inbox, // Mailbox temporarily disabled
   Calendar,
   Bell,
 } from "lucide-react";
@@ -23,6 +24,8 @@ import {
 } from "../../constants/adminPermissions";
 import NotificationDropdown from "./NotificationDropdown";
 import { useAdminInbox } from "../../context/AdminInboxContext";
+// Mailbox temporarily disabled
+// import { getStoredThreads, MAIL_FOLDERS } from "../../services/recruiterMailService";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,6 +48,16 @@ const AdminLayout = () => {
     setTimeout(() => setBellRing(false), 800);
   }, []);
 
+  // Mailbox temporarily disabled
+  // const recruiterMailUnread = (() => {
+  //   try {
+  //     const threads = getStoredThreads();
+  //     return threads.filter((t) => t.folder === MAIL_FOLDERS.INBOX && !t.isRead).length;
+  //   } catch (e) {
+  //     return 0;
+  //   }
+  // })();
+
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Demographics", path: "/admin/demographics", icon: Users },
@@ -56,6 +69,13 @@ const AdminLayout = () => {
     { name: "Jobs List", path: "/admin/jobs", icon: Briefcase },
     { name: "AdPro Review", path: "/admin/adpro", icon: Megaphone },
     { name: "Email Outreach", path: "/admin/email-outreach", icon: Mail },
+    // Mailbox temporarily disabled
+    // {
+    //   name: "Mailbox",
+    //   path: "/admin/mailbox",
+    //   icon: Inbox,
+    //   badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
+    // },
     { name: "Events Manager", path: "/admin/events", icon: Calendar },
     {
       name: "Notifications",
@@ -72,7 +92,7 @@ const AdminLayout = () => {
     "Admin";
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-nunito-semi">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div

@@ -21,6 +21,7 @@ import {
   ADMIN_ROLE_LABELS,
   getAdminRoleLabel,
 } from "../../constants/adminPermissions";
+import { DeleteConfirmModal } from "../../components/modal/DeleteConfirmModal";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]{3,50}$/;
 
@@ -560,35 +561,23 @@ const AdminList = () => {
         </div>
       )}
 
-      {adminToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-bold text-gray-800">Delete Admin</h2>
-            <p className="text-gray-600 mt-2">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold">{adminToDelete.username}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setAdminToDelete(null)}
-                className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAdmin}
-                disabled={submitting}
-                className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-70"
-              >
-                {submitting ? "Deleting..." : "Delete Admin"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={Boolean(adminToDelete)}
+        onClose={() => setAdminToDelete(null)}
+        onConfirm={handleDeleteAdmin}
+        title="Delete Admin"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">
+              {adminToDelete?.username}
+            </span>
+            ? This action cannot be undone.
+          </>
+        }
+        confirmText="Delete Admin"
+        isLoading={submitting}
+      />
     </div>
   );
 };

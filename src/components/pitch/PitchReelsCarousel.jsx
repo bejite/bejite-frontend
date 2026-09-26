@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Video, MoreHorizontal, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Video, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import PitchReelCard from "./PitchReelCard";
 
@@ -58,22 +58,13 @@ export default function PitchReelsCarousel({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <Link
-            to="/pitch"
-            className="flex items-center gap-1 text-xs font-semibold text-[#16730F] hover:text-[#125e0c] hover:underline px-2.5 py-1 rounded-full hover:bg-emerald-50 transition-colors"
-          >
-            <span>See all</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
-          <button
-            type="button"
-            className="p-1.5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-            aria-label="Options"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
-        </div>
+        <Link
+          to="/pitch"
+          className="flex items-center gap-1 text-xs font-semibold text-[#16730F] hover:text-[#125e0c] hover:underline px-2.5 py-1 rounded-full hover:bg-emerald-50 transition-colors"
+        >
+          <span>See all</span>
+          <ArrowRight className="w-3 h-3" />
+        </Link>
       </div>
 
       {/* Carousel Track & Arrow buttons */}

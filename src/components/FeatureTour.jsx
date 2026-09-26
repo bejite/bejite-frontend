@@ -121,7 +121,7 @@ function buildSteps(role) {
     isJobseeker
       ? {
           id: "job-vacancy",
-          title: "Job Vacancy",
+          title: "Job Vacancies",
           body: "Browse open roles, filter by what you want, and apply in a few taps.",
           target: "job-vacancy",
           mobileNav: true,

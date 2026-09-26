@@ -162,10 +162,7 @@ const AdminDashboard = () => {
         ["Total Users", overview.totalUsers ?? 0],
         ["Weekly Signups", overview.weeklySignups ?? 0],
         ["Active Job Postings (Recruiters)", overview.activeJobPostings ?? 0],
-        [
-          "Active Jobseeker Job Posts",
-          overview.activeJobseekerJobPosts ?? 0,
-        ],
+        ["Active Jobseeker Job Posts", overview.activeJobseekerJobPosts ?? 0],
         ["Active Jobs (Total)", overview.activeJobs ?? 0],
         ["Total Applications", overview.totalApplications ?? 0],
         ["Exported At", exportedAt],
@@ -186,10 +183,7 @@ const AdminDashboard = () => {
     sections.push(
       rowsToCsv([
         ["Date", "New Users"],
-        ...(userMetrics?.signupsTrend || []).map((r) => [
-          r.date,
-          r.count ?? 0,
-        ]),
+        ...(userMetrics?.signupsTrend || []).map((r) => [r.date, r.count ?? 0]),
       ]),
     );
 
@@ -250,10 +244,17 @@ const AdminDashboard = () => {
     <div
       className="max-w-7xl mx-auto w-full space-y-8"
       data-testid="admin-dashboard"
+      style={{ fontFamily: "NunitoSemi" }}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <h1
+            style={{ fontFamily: "NunitoBold" }}
+
+            className="text-2xl font-bold text-gray-800"
+          >
+            Dashboard
+          </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Platform overview and engagement metrics
           </p>
@@ -280,6 +281,8 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <span
+              style={{ fontFamily: "NunitoBold" }}
+
               className="text-gray-500 font-medium"
               data-testid="admin-kpi-total-users"
             >
@@ -295,7 +298,10 @@ const AdminDashboard = () => {
             </h3>
             <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
               <TrendingUp size={14} className="text-green-500" />
-              <span className="text-green-500 font-medium">
+              <span
+                style={{ fontFamily: "NunitoBold" }}
+                className="text-green-500 font-medium"
+              >
                 {overview?.weeklySignups}
               </span>{" "}
               this week
@@ -305,7 +311,12 @@ const AdminDashboard = () => {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="text-gray-500 font-medium">Job Postings</span>
+            <span
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-gray-500 font-medium"
+            >
+              Job Postings
+            </span>
             <div className="p-2 bg-green-50 text-green-600 rounded-lg">
               <Briefcase size={20} />
             </div>
@@ -322,7 +333,10 @@ const AdminDashboard = () => {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="text-gray-500 font-medium">
+            <span
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-gray-500 font-medium"
+            >
               Job Posts
             </span>
             <div className="p-2 bg-teal-50 text-teal-600 rounded-lg">
@@ -333,15 +347,16 @@ const AdminDashboard = () => {
             <h3 className="text-3xl font-bold text-gray-800">
               {(overview?.activeJobseekerJobPosts ?? 0).toLocaleString()}
             </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Jobseekers job posts
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Jobseekers job posts</p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="text-gray-500 font-medium">
+            <span
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-gray-500 font-medium"
+            >
               Total Applications
             </span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
@@ -363,7 +378,10 @@ const AdminDashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-6">
             <BarChart2 className="text-gray-400" size={20} />
-            <h3 className="text-lg font-bold text-gray-800">
+            <h3
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-lg font-bold text-gray-800"
+            >
               User Growth ({periodLabel})
             </h3>
           </div>
@@ -423,7 +441,12 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-6">
             <BarChart2 className="text-gray-400" size={20} />
-            <h3 className="text-lg font-bold text-gray-800">User Roles</h3>
+            <h3
+              style={{ fontFamily: "NunitoBold" }}
+              className="text-lg font-bold text-gray-800"
+            >
+              User Roles
+            </h3>
           </div>
           <div className="h-64 w-full">
             {userMetrics?.roles?.length > 0 ? (
@@ -485,7 +508,10 @@ const AdminDashboard = () => {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 mb-6">
           <Activity className="text-gray-400" size={20} />
-          <h3 className="text-lg font-bold text-gray-800">
+          <h3
+            style={{ fontFamily: "NunitoBold" }}
+            className="text-lg font-bold text-gray-800"
+          >
             Active Users — DAU &amp; MAU ({periodLabel})
           </h3>
         </div>
@@ -560,7 +586,10 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Sectors */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+          <h3
+            style={{ fontFamily: "NunitoBold" }}
+            className="text-lg font-bold text-gray-800 mb-6"
+          >
             Top Candidate Sectors (by Jobseekers)
           </h3>
           <div className="h-80 w-full">
@@ -622,7 +651,10 @@ const AdminDashboard = () => {
 
         {/* Top Job Titles Applied */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+          <h3
+            style={{ fontFamily: "NunitoBold" }}
+            className="text-lg font-bold text-gray-800 mb-6"
+          >
             Top Job Titles Applied
           </h3>
           <div className="h-64 w-full">
