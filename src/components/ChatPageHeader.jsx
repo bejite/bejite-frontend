@@ -23,7 +23,8 @@ export default function ChatPageHeader({ config }) {
         <img
           src="/assets/images/logo.png"
           alt="Logo"
-          className="h-10 md:h-14 lg:h-16"
+          className="h-10 md:h-14 lg:h-16 cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => navigate('/news-feed')}
         />
         <div className="flex items-center gap-10">
           <div className="flex justify-between gap-2">

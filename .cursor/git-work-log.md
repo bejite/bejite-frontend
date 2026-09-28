@@ -1,5 +1,65 @@
 # Git Work Log
 
+## 2026-09-28 11:20 (WAT) — Universal DeleteModal Integration and Edit Profile Back/Logo Navigation Flow
+
+- **Repo**: `bejite-frontend`
+- **Summary**: Replaced native browser alerts and confirms with the customized `DeleteModal` popup across the entire application on both job seeker and recruiter sides. Updated the profile editing flow so that "Go back" steps backward sequentially until Step 1, where it exits to the news feed home (`/news-feed`), made "Go back" only visible and active during profile editing mode (`isEditMode`), and made clicking the Bejite logo from any screen navigate directly to `/news-feed`.
+- **Changed**:
+  - `src/components/modal/DeleteModal.jsx` & `src/components/DeleteModal.jsx`: Created reusable delete confirmation modal with trash badge, cancel/delete actions, and loading spinners.
+  - `src/components/PostCommentsSection.jsx`: Replaced `window.confirm` with `DeleteModal` for single and recursive comment deletion.
+  - `src/components/recruitment/RecruitmentMiddle.jsx` & `src/components/feed/PostCard.jsx`: Integrated `DeleteModal` for feed and recruitment post deletion.
+  - `src/pages/ActivityLog.jsx`: Integrated `DeleteModal` for activity log post deletion.
+  - `src/pages/employerDashboard/EmployerDashboard.jsx`: Integrated `DeleteModal` for job vacancy deletion.
+  - `src/pages/employerDashboard/RecruitmentManagement.jsx`: Integrated `DeleteModal` for pipeline stage deletion.
+  - `src/pages/ads/AdProDashboard.jsx`: Replaced `window.confirm` and native alerts with `DeleteModal` and toast messages.
+  - `src/pages/pitch/PitchPage.jsx`: Replaced `window.confirm` with `DeleteModal` for pitch reel and draft deletion.
+  - `src/components/recruterchats/chats-middle.jsx` & `src/components/recruterchats/chats-left.jsx`: Integrated `DeleteModal` for message and conversation deletion.
+  - `src/pages/jobseekerSignup/cvBuilder/Education.jsx`, `Skills.jsx`, `WorkHistory.jsx`, `Certificate.jsx`: Integrated `DeleteModal` for CV entry removal; passed `isEditMode` to `NavigationButtons`.
+  - `src/components/NavigationButtons.jsx`: Added `isEditMode` awareness so "Go back" only renders during edit profile flows and is hidden during initial onboarding.
+  - `src/pages/jobseekerSignup/cvBuilder/Bio.jsx`, `Certificate.jsx`, `Link.jsx`, `JobType.jsx`: Explicitly routed back step 1 to `/news-feed` and passed `isEditMode`.
+  - `src/pages/corporate/BasicDetails.jsx`, `ProfileSetup.jsx`, `CompanyDetails.jsx`, `Location.jsx`, `Verify.jsx`, `UploadDoc.jsx`: Updated recruiter corporate flow to pass `isEditMode` and exit to `/news-feed` on step 1 back.
+  - `src/pages/individual/BasicDetails.jsx`, `ProfileSetup.jsx`, `Location.jsx`, `Verify.jsx`, `SelectId.jsx`, `UploadDoc.jsx`: Updated recruiter individual flow to pass `isEditMode` and exit to `/news-feed` on step 1 back.
+  - `src/components/Header.jsx`, `PaymentPageHeader.jsx`, `AboutPageHeader.jsx`, `ChatPageHeader.jsx`, `NewsFeedHeader.jsx`, `onboardingLayout.jsx`, `JobConnection.jsx`, `JobSeekerOpt.jsx`, `EmployerOpt.jsx`, `Resume.jsx`: Ensured clicking the Bejite logo navigates directly to `/news-feed`.
+- **Conventional type** (for next commit): `feat(ux)`
+
+### Proposed Commit Message
+
+```
+feat(ux): replace alerts with DeleteModal and refine edit profile navigation
+
+We replaced all native confirm dialogs with a customized DeleteModal popup across job seeker and recruiter pages, and refined navigation when editing profiles.
+
+- Replace browser confirm dialogs with DeleteModal in comments, posts, chats, activity log, ads, vacancies, stages, and CV builder entries
+- Show 'Go back' navigation button exclusively during edit profile mode, hiding it during initial signup onboarding
+- Step backward through profile editing steps sequentially until Step 1, which exits directly to the news feed
+- Make the Bejite logo clickable across all layouts and headers to return directly to /news-feed
+```
+
+---
+
+
+## 2026-09-28 09:55 (WAT) — Move Pitches Carousel to Top and Convert Create Post to Button Bar
+
+- **Repo**: `bejite-frontend`
+- **Summary**: Relocated the Pitches (24h Reels) carousel to the very top of the News Feed (like Instagram and Facebook stories/reels), and converted the create post section from a large input pill into a sleek button bar with user avatar, "+ Create Post" action button, and preserved Image, Video, and Poll buttons.
+- **Changed**:
+  - `src/components/recruitment/RecruitmentMiddle.jsx`: Moved `PitchReelsCarousel` to the top of `<main>`, replaced the two-row create post card with a single compact button bar with avatar and "+ Create Post" button, and retained the Image, Video, and Poll buttons.
+- **Conventional type** (for next commit): `feat(feed)`
+
+### Proposed Commit Message
+
+```
+feat(feed): move pitches carousel to top and convert create post to button bar
+
+We moved the Pitches (24h Reels) carousel to the top of the news feed and streamlined the create post section into a compact button bar.
+
+- Place PitchReelsCarousel at the very top of the feed layout (like Facebook/Instagram stories)
+- Replace the large 'Start a post' input pill with a modern '+ Create Post' button
+- Keep the Image, Video, and Poll action buttons alongside the avatar and create button
+```
+
+---
+
 ## 2026-09-25 20:30 (WAT) — Integrate DeleteConfirmModal Across All Admin Pages with Delete Actions
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

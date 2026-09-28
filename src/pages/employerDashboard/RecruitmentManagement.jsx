@@ -12,6 +12,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import DeleteModal from "../../components/modal/DeleteModal";
 import RecruitmentStatCard from "../../components/recruitment-management/RecruitmentStatCard";
 import RecruitmentFilterBar from "../../components/recruitment-management/RecruitmentFilterBar";
 import RecruitmentListTable from "../../components/recruitment-management/RecruitmentListTable";
@@ -256,6 +257,8 @@ export default function RecruitmentManagement() {
   const [editingPipelineStage, setEditingPipelineStage] = useState(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [stageToDeleteState, setStageToDeleteState] = useState(null);
+  const [deletingStage, setDeletingStage] = useState(false);
   const [feedbackCandidate, setFeedbackCandidate] = useState(null);
   const [bulkFeedbackCandidates, setBulkFeedbackCandidates] = useState([]);
   const [feedbackSaving, setFeedbackSaving] = useState(false);
@@ -765,7 +768,7 @@ export default function RecruitmentManagement() {
     }
   };
 
-  const handleDeletePipelineStage = async (stageToDelete) => {
+  const handleDeletePipelineStage = (stageToDelete) => {
     if (!selectedExercise?.id || !stageToDelete?.id) return;
 
     const fullStage =
@@ -773,13 +776,13 @@ export default function RecruitmentManagement() {
         (s) => String(s.id) === String(stageToDelete.id),
       ) || stageToDelete;
 
-    const candidateCount = Number(fullStage.count ?? stageToDelete.count) || 0;
-    const confirmMsg =
-      candidateCount > 0
-        ? `Delete stage "${fullStage.name}"?\n\n${candidateCount} candidate(s) on this stage will be unassigned from the pipeline. This cannot be undone.`
-        : `Delete stage "${fullStage.name}"? This cannot be undone.`;
+    setStageToDeleteState(fullStage);
+  };
 
-    if (!window.confirm(confirmMsg)) return;
+  const handleConfirmDeleteStage = async () => {
+    if (!stageToDeleteState || !selectedExercise?.id) return;
+    const fullStage = stageToDeleteState;
+    setDeletingStage(true);
 
     try {
       const response = await deletePipelineStage(
@@ -791,11 +794,14 @@ export default function RecruitmentManagement() {
       }
       applyStagesToSelected(response.data?.stages || []);
       toast.info(`Stage "${fullStage.name}" deleted`);
+      setStageToDeleteState(null);
       await loadDetail(selectedExercise.id, selectedExercise);
     } catch (err) {
       toast.error(
         err.response?.data?.message || err.message || "Failed to delete stage",
       );
+    } finally {
+      setDeletingStage(false);
     }
   };
 
@@ -1761,6 +1767,22 @@ export default function RecruitmentManagement() {
           }
           view={selectedExercise ? "detail" : "list"}
           onEnsureCandidatesTab={() => setActiveTab("candidates")}
+        />
+
+        <DeleteModal
+          isOpen={Boolean(stageToDeleteState)}
+          onClose={() => setStageToDeleteState(null)}
+          onConfirm={handleConfirmDeleteStage}
+          title="Delete Pipeline Stage"
+          message={
+            stageToDeleteState
+              ? Number(stageToDeleteState.count) > 0
+                ? `Delete stage "${stageToDeleteState.name}"? ${stageToDeleteState.count} candidate(s) on this stage will be unassigned from the pipeline. This action cannot be undone.`
+                : `Are you sure you want to delete stage "${stageToDeleteState.name}"? This action cannot be undone.`
+              : "Are you sure you want to delete this stage?"
+          }
+          confirmText="Delete Stage"
+          isLoading={deletingStage}
         />
       </div>
     </NewsFeedLayout>

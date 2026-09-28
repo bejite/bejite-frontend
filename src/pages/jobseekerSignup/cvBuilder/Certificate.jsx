@@ -13,6 +13,7 @@ import useAuth from "../../../hooks/useAuth";
 import useLocalStorage from "../../../hooks/useLocalStorage";
 import { useCreateCertificate } from "../../../services/certificateService";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
+import DeleteModal from "../../../components/modal/DeleteModal";
 import FormLabel from "../../../components/forms/FormLabel";
 import axiosInstance from "../../../utils/axiosInstance";
 import {
@@ -90,6 +91,8 @@ function Certificate() {
   const [savedCertificates, setSavedCertificates] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [certToDelete, setCertToDelete] = useState(null);
+  const [deletingCert, setDeletingCert] = useState(false);
   const { postCertficateData, uploadCertificateFile } = useCreateCertificate();
 
   const { email, firstName, lastName, role, mode, followings } =
@@ -416,8 +419,8 @@ function Certificate() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDelete(cert, index)}
-                  className="text-white text-xl"
+                  onClick={() => setCertToDelete({ cert, index })}
+                  className="text-white text-xl cursor-pointer hover:text-red-300 transition-colors"
                   aria-label="Delete certificate"
                 >
                   <FaTrash />
@@ -430,6 +433,7 @@ function Certificate() {
         <NavigationButtons
           isFormComplete={canProceed && !isSaving}
           isLoading={isSaving}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));
@@ -450,6 +454,39 @@ function Certificate() {
           }}
         />
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(certToDelete)}
+        onClose={() => setCertToDelete(null)}
+        onConfirm={async () => {
+          if (!certToDelete) return;
+          const { cert, index } = certToDelete;
+          setDeletingCert(true);
+          try {
+            if (cert.id && userId) {
+              await axiosInstance.delete(
+                `/api/cv-builder/certificates/${userId}/${cert.id}`,
+              );
+            }
+            setSavedCertificates((prev) => prev.filter((_, idx) => idx !== index));
+            toast.success("Certificate removed");
+            setCertToDelete(null);
+          } catch (error) {
+            console.error(error);
+            toast.error("Failed to delete certificate");
+          } finally {
+            setDeletingCert(false);
+          }
+        }}
+        title="Delete Certificate"
+        message={
+          certToDelete?.cert?.certName
+            ? `Are you sure you want to delete "${certToDelete.cert.certName}"? This action cannot be undone.`
+            : "Are you sure you want to delete this certificate? This action cannot be undone."
+        }
+        confirmText="Delete"
+        isLoading={deletingCert}
+      />
     </OnboardingLayout>
   );
 }

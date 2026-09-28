@@ -14,15 +14,30 @@ const NavigationButtons = ({
   onSkip,
   nextLabel = "Next",
   isLoading = false,
-}) => (
-  <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-10 px-4 gap-4 mb-12 font-nunito-semi">
-    <button
-      className="flex items-center justify-center cursor-pointer w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-xl transition-colors font-semibold"
-      onClick={onBack}
-    >
-      <FaArrowLeft className="mr-2 text-sm" />
-      Go back
-    </button>
+  showBack,
+  isEditMode,
+}) => {
+  const shouldShowBack =
+    typeof showBack === "boolean"
+      ? showBack
+      : isEditMode !== undefined
+        ? Boolean(isEditMode)
+        : Boolean(onBack);
+
+  return (
+    <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-10 px-4 gap-4 mb-12 font-nunito-semi">
+      {shouldShowBack ? (
+        <button
+          type="button"
+          className="flex items-center justify-center cursor-pointer w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-xl transition-colors font-semibold"
+          onClick={onBack}
+        >
+          <FaArrowLeft className="mr-2 text-sm" />
+          Go back
+        </button>
+      ) : (
+        <div className="hidden sm:block" />
+      )}
 
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
       {showSkip && onSkip && (
@@ -54,6 +69,7 @@ const NavigationButtons = ({
       </button>
     </div>
   </div>
-);
+  );
+};
 
 export default NavigationButtons;

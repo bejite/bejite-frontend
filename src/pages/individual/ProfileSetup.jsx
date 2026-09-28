@@ -221,6 +221,7 @@ const ProfileSetup = () => {
         showSkip
         onSkip={handleSkip}
         isFormComplete={isFormComplete && !submitting}
+        isEditMode={isEditMode}
         onBack={() => {
           if (isEditMode) {
             navigate(getPath(currentStep - 1));

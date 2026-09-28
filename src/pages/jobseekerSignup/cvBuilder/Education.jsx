@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import Loader from "../../../components/ui/Loader";
 import axiosInstance from "../../../utils/axiosInstance";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
+import DeleteModal from "../../../components/modal/DeleteModal";
 import FormLabel from "../../../components/forms/FormLabel";
 import { AutocompleteInput } from "../../../components/forms/AutocompleteInput";
 import {
@@ -37,6 +38,8 @@ function Education() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentStep, isEditMode, cvData, getPath } = useOutletContext();
+  const [eduToDelete, setEduToDelete] = useState(null);
+  const [deletingEdu, setDeletingEdu] = useState(false);
 
   const handleStepClick = (path) => {
     navigate(path);
@@ -364,22 +367,10 @@ function Education() {
                   className="relative bg-white rounded-lg border border-gray-200 p-4 hover:border-gray-300 transition-colors"
                 >
                   <button
-                    onClick={async () => {
-                      if (item.id) {
-                        try {
-                          await axiosInstance.delete(
-                            `/api/cv-builder/education/${user?.id}/${item.id}`
-                          );
-                          toast.success("Education deleted successfully!");
-                        } catch (error) {
-                          console.error("Error deleting education:", error);
-                          toast.error("Failed to delete education");
-                          return;
-                        }
-                      }
-                      setAllEducation((prev) => prev.filter((_, i) => i !== idx));
-                    }}
-                    className="absolute top-3 right-3 p-1 text-gray-300 hover:text-red-500 transition-colors"
+                    type="button"
+                    onClick={() => setEduToDelete({ item, idx })}
+                    className="absolute top-3 right-3 p-1 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
+                    aria-label="Delete education"
                   >
                     <FaTrash className="text-xs" />
                   </button>
@@ -410,6 +401,7 @@ function Education() {
 
         <NavigationButtons
           isFormComplete={true}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));
@@ -493,6 +485,39 @@ function Education() {
 
         <Loader show={isLoading} />
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(eduToDelete)}
+        onClose={() => setEduToDelete(null)}
+        onConfirm={async () => {
+          if (!eduToDelete) return;
+          const { item, idx } = eduToDelete;
+          setDeletingEdu(true);
+          try {
+            if (item.id) {
+              await axiosInstance.delete(
+                `/api/cv-builder/education/${user?.id}/${item.id}`
+              );
+              toast.success("Education deleted successfully!");
+            }
+            setAllEducation((prev) => prev.filter((_, i) => i !== idx));
+            setEduToDelete(null);
+          } catch (error) {
+            console.error("Error deleting education:", error);
+            toast.error("Failed to delete education");
+          } finally {
+            setDeletingEdu(false);
+          }
+        }}
+        title="Delete Education"
+        message={
+          eduToDelete?.item?.institutionName
+            ? `Are you sure you want to delete "${eduToDelete.item.institutionName}"? This action cannot be undone.`
+            : "Are you sure you want to delete this education entry? This action cannot be undone."
+        }
+        confirmText="Delete"
+        isLoading={deletingEdu}
+      />
     </OnboardingLayout>
   );
 }

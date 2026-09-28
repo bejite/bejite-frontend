@@ -68,8 +68,10 @@ import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
+import { Plus } from "lucide-react";
 import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
 import PitchPreviewModal from "../pitch/PitchPreviewModal";
+import DeleteModal from "../modal/DeleteModal";
 import { getPitchFeed } from "../../services/pitchesApi";
 
 const FEED_PAGE_SIZE = 20;
@@ -479,62 +481,18 @@ export default function RecruitmentMiddle() {
   };
 
   return (
-    <main className="w-full px-2 py-6 space-y-8 bg-[#F5F5F5]" data-testid="news-feed">
-      {/* Create Post Button */}
-      <div className="max-w-3xl p-6 mx-auto bg-white shadow rounded-2xl">
-        <div
-          className="flex items-center gap-3 cursor-pointer"
-          data-testid="news-feed-start-post"
-          onClick={() => openCreateModal("post")}
-        >
-          <img
-            src={currentUserImage}
-            alt="profile"
-            className="rounded-full w-12 h-12 object-cover object-center"
+    <main className="w-full px-2 py-6 space-y-6 bg-[#F5F5F5]" data-testid="news-feed">
+      {/* Pitch Reels Carousel — at very top of feed (like Instagram & Facebook stories/reels) */}
+      {feedMode === "home" &&
+        canSeePitchCarousel &&
+        feedPitches.length > 0 && (
+          <PitchReelsCarousel
+            pitches={feedPitches}
+            onSelectPitch={handleOpenPitchPreview}
           />
-          <div className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-500 hover:bg-gray-200 transition-colors">
-            Start a post
-          </div>
-        </div>
-        <div className="flex items-center justify-around mt-3 pt-3 border-t border-[#A9A9A9]">
-          <button
-            onClick={() => openCreateModal("post")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/gallery.svg"
-              alt="Image"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Image</span>
-          </button>
-          <button
-            onClick={() => openCreateModal("post")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/video-square.png"
-              alt="Video"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Video</span>
-          </button>
-          <button
-            onClick={() => openCreateModal("poll")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/Amount_Icon_UIA.svg"
-              alt="Poll"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Poll</span>
-          </button>
-        </div>
-      </div>
+        )}
 
-      <hr className="border-t-2 border-[#16730F]" />
-
+      {/* Saved / Hashtag Filter Headers */}
       {feedHashtag && (
         <div className="max-w-3xl mx-auto flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm">
           <h2 className="text-lg font-semibold text-[#1A3E32]">
@@ -566,15 +524,67 @@ export default function RecruitmentMiddle() {
         </div>
       )}
 
-      {/* Pitch Reels Carousel — at top of feed */}
-      {feedMode === "home" &&
-        canSeePitchCarousel &&
-        feedPitches.length > 0 && (
-          <PitchReelsCarousel
-            pitches={feedPitches}
-            onSelectPitch={handleOpenPitchPreview}
-          />
-        )}
+      {/* Create Post Bar — Compact button bar (no text input box) */}
+      {feedMode === "home" && (
+        <div className="max-w-3xl p-4 sm:p-5 mx-auto bg-white shadow rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={currentUserImage}
+              alt="profile"
+              onClick={() => openCreateModal("post")}
+              className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+            />
+            <button
+              type="button"
+              data-testid="news-feed-start-post"
+              onClick={() => openCreateModal("post")}
+              className="flex items-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Create Post</span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-end gap-1 sm:gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => openCreateModal("post")}
+              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <img
+                src="/assets/images/gallery.svg"
+                alt="Image"
+                className="w-5 h-5 object-contain"
+              />
+              <span className="text-sm font-medium">Image</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openCreateModal("post")}
+              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <img
+                src="/assets/images/video-square.png"
+                alt="Video"
+                className="w-5 h-5 object-contain"
+              />
+              <span className="text-sm font-medium">Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openCreateModal("poll")}
+              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <img
+                src="/assets/images/Amount_Icon_UIA.svg"
+                alt="Poll"
+                className="w-5 h-5 object-contain"
+              />
+              <span className="text-sm font-medium">Poll</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Posts Feed */}
       {loading ? (
@@ -743,6 +753,8 @@ const RecruitmentPostCard = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -898,13 +910,19 @@ const RecruitmentPostCard = ({
     setShowEditModal(true);
   };
 
-  const handleDeleteClick = async () => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        await onDelete(post.id);
-      } catch (err) {
-        console.error("Error deleting post:", err);
-      }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(post.id);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1237,6 +1255,16 @@ const RecruitmentPostCard = ({
         onShare={onShare}
         onRepost={onRepost}
         currentUserId={currentUserId}
+      />
+
+      <DeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        isLoading={isDeleting}
       />
     </div>
   );

@@ -11,6 +11,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import DeleteModal from "../../components/modal/DeleteModal";
 import {
   getEmployerDashboard,
   deleteEmployerJob,
@@ -29,6 +30,7 @@ const EmployerDashboard = () => {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingJobId, setDeletingJobId] = useState(null);
+  const [jobToDelete, setJobToDelete] = useState(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -73,12 +75,13 @@ const EmployerDashboard = () => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleDeleteJob = async (job) => {
-    const confirmed = window.confirm(
-      `Delete "${job.title}"? This will permanently remove the job and all applications. This cannot be undone.`,
-    );
-    if (!confirmed) return;
+  const handleDeleteJob = (job) => {
+    setJobToDelete(job);
+  };
 
+  const handleConfirmDeleteJob = async () => {
+    if (!jobToDelete) return;
+    const job = jobToDelete;
     setDeletingJobId(job.id);
     setError(null);
 
@@ -101,6 +104,7 @@ const EmployerDashboard = () => {
           current.totalApplications - (job.applications || 0),
         ),
       }));
+      setJobToDelete(null);
     } catch (err) {
       console.error("Delete job error:", err);
       setError(
@@ -409,6 +413,20 @@ const EmployerDashboard = () => {
           </div>
         </div>
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(jobToDelete)}
+        onClose={() => setJobToDelete(null)}
+        onConfirm={handleConfirmDeleteJob}
+        title="Delete Job Vacancy"
+        message={
+          jobToDelete
+            ? `Are you sure you want to delete "${jobToDelete.title}"? This will permanently remove the job and all associated applications. This action cannot be undone.`
+            : "Are you sure you want to delete this job?"
+        }
+        confirmText="Delete Job"
+        isLoading={Boolean(deletingJobId)}
+      />
     </NewsFeedLayout>
   );
 };

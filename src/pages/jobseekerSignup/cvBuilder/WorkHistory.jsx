@@ -18,6 +18,7 @@ import {
 import { FaPlus, FaChevronDown, FaTrash, FaCheck, FaBriefcase, FaBuilding, FaCalendarAlt } from "react-icons/fa";
 import Loader from "../../../components/ui/Loader";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
+import DeleteModal from "../../../components/modal/DeleteModal";
 import { InputWithIcon } from "../../../components/forms/InputIcon";
 import FormLabel from "../../../components/forms/FormLabel";
 import { JOB_TITLES } from "../../../data/teamData";
@@ -170,6 +171,8 @@ function WorkHistory() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentStep, isEditMode, cvData, getPath } = useOutletContext();
+  const [historyToDelete, setHistoryToDelete] = useState(null);
+  const [deletingHistory, setDeletingHistory] = useState(false);
 
   // Redux state
   const { entries: allWorkHistory, loading: isLoading, dataLoaded } = useSelector(
@@ -496,21 +499,7 @@ function WorkHistory() {
                     type="button"
                     title="Delete work history entry"
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 hover:border-red-200 transition-all cursor-pointer"
-                    onClick={async () => {
-                      if (item.id) {
-                        const result = await dispatch(
-                          deleteWorkHistory({ userId: user?.id, entryId: item.id })
-                        );
-                        if (deleteWorkHistory.fulfilled.match(result)) {
-                          toast.success("Work history deleted successfully!");
-                        } else {
-                          toast.error("Failed to delete work history");
-                          return;
-                        }
-                      } else {
-                        dispatch(removeEntryByIndex(idx));
-                      }
-                    }}
+                    onClick={() => setHistoryToDelete({ item, idx })}
                   >
                     <FaTrash className="text-sm" />
                     <span>Delete</span>
@@ -522,6 +511,7 @@ function WorkHistory() {
 
         <NavigationButtons
           isFormComplete={true}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));
@@ -584,6 +574,45 @@ function WorkHistory() {
 
         <Loader show={isLoading || isSavingEntry} />
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(historyToDelete)}
+        onClose={() => setHistoryToDelete(null)}
+        onConfirm={async () => {
+          if (!historyToDelete) return;
+          const { item, idx } = historyToDelete;
+          setDeletingHistory(true);
+          try {
+            if (item.id) {
+              const result = await dispatch(
+                deleteWorkHistory({ userId: user?.id, entryId: item.id })
+              );
+              if (deleteWorkHistory.fulfilled.match(result)) {
+                toast.success("Work history deleted successfully!");
+              } else {
+                toast.error("Failed to delete work history");
+                return;
+              }
+            } else {
+              dispatch(removeEntryByIndex(idx));
+            }
+            setHistoryToDelete(null);
+          } catch (err) {
+            console.error("Error deleting work history:", err);
+            toast.error("Failed to delete work history");
+          } finally {
+            setDeletingHistory(false);
+          }
+        }}
+        title="Delete Work History"
+        message={
+          historyToDelete?.item?.jobTitle
+            ? `Are you sure you want to delete "${historyToDelete.item.jobTitle}"? This action cannot be undone.`
+            : "Are you sure you want to delete this work history entry? This action cannot be undone."
+        }
+        confirmText="Delete"
+        isLoading={deletingHistory}
+      />
     </OnboardingLayout>
   );
 }

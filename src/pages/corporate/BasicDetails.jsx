@@ -274,14 +274,19 @@ const CoperateBasicDetails = () => {
         // showSkip={true}
         // onSkip={handleSkip}
         isFormComplete={isFormComplete}
+        isEditMode={isEditMode}
         onBack={() => {
-          if (isEditMode && currentStep > 1) {
-            navigate(getPath(currentStep - 1));
+          if (isEditMode) {
+            if (currentStep > 1) {
+              navigate(getPath(currentStep - 1));
+            } else {
+              navigate("/news-feed");
+            }
             return;
           }
           navigateBack(
             navigate,
-            isEditMode ? "/news-feed" : "/employer-option",
+            "/employer-option",
           );
         }}
         onNext={handleNextStep}

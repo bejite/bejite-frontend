@@ -11,6 +11,7 @@ import { formatChatDayLabel, formatChatMessageTime, groupMessagesByDay } from '.
 import { formatDisplayPersonName } from '../../utils/personDisplayName';
 import { toQuotePreview } from '../../utils/chatQuote';
 import { notifyChatConversationUpdated } from '../../utils/headerBadgeEvents';
+import DeleteModal from '../modal/DeleteModal';
 
 function messagesFingerprint(msgs) {
   return (msgs || [])
@@ -38,6 +39,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const currentUser = useSelector((state) => state.auth.user);
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -218,9 +221,15 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = (messageId) => {
     if (!messageId) return;
-    if (!window.confirm('Delete this message?')) return;
+    setMessageToDelete(messageId);
+  };
+
+  const handleConfirmDeleteMessage = async () => {
+    if (!messageToDelete) return;
+    const messageId = messageToDelete;
+    setDeletingMessage(true);
 
     try {
       await messagingService.deleteMessage(messageId);
@@ -230,6 +239,7 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
       if (replyTo?.id === messageId) {
         setReplyTo(null);
       }
+      setMessageToDelete(null);
       await fetchMessages(selectedChat.id, true);
       notifyChatConversationUpdated();
     } catch (error) {
@@ -238,6 +248,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
         error?.response?.data?.message ||
         'Failed to delete message';
       toast.error(msg);
+    } finally {
+      setDeletingMessage(false);
     }
   };
 
@@ -479,6 +491,16 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
       Select a conversation to send messages
     </div>
   )}
+
+  <DeleteModal
+    isOpen={Boolean(messageToDelete)}
+    onClose={() => setMessageToDelete(null)}
+    onConfirm={handleConfirmDeleteMessage}
+    title="Delete Message"
+    message="Are you sure you want to delete this message? This action cannot be undone."
+    confirmText="Delete"
+    isLoading={deletingMessage}
+  />
 </main>
   );
 }

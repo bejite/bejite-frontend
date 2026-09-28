@@ -323,6 +323,7 @@ function Link() {
 
         <NavigationButtons
           isFormComplete={true}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));

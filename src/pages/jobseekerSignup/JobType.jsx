@@ -485,6 +485,7 @@ function JobType() {
         <NavigationButtons
           isFormComplete={allFilled}
           isLoading={isSubmitting}
+          isEditMode={Boolean(isEditMode)}
           nextLabel={isEditMode ? "Save changes" : "Finish profile"}
           onBack={() => {
             if (isEditMode && typeof getPath === "function") {
