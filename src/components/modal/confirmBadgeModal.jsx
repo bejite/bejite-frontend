@@ -301,11 +301,33 @@ export function ConfirmModal({
   description,
   confirmLabel,
   danger,
+  icon,
+  iconBg,
+  iconColor,
   onClose,
   onConfirm,
   children,
   isLoading = false,
 }) {
+  const IconComponent = icon;
+
+  const renderIcon = () => {
+    if (React.isValidElement(icon)) {
+      return icon;
+    }
+    if (IconComponent) {
+      return (
+        <IconComponent
+          className={`w-6 h-6 ${iconColor || (danger ? "text-red-500" : "text-[#1A3E32]")}`}
+        />
+      );
+    }
+    if (danger) {
+      return <AlertTriangle className="w-6 h-6 text-red-500" />;
+    }
+    return <Shield className="w-6 h-6 text-[#1A3E32]" />;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -322,13 +344,11 @@ export function ConfirmModal({
         className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
       >
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${danger ? "bg-red-100" : "bg-[#1A3E32]/10"}`}
+          className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
+            iconBg || (danger ? "bg-red-100" : "bg-[#1A3E32]/10")
+          }`}
         >
-          {danger ? (
-            <AlertTriangle className="w-6 h-6 text-red-500" />
-          ) : (
-            <Shield className="w-6 h-6 text-[#1A3E32]" />
-          )}
+          {renderIcon()}
         </div>
         <div className="text-center">
           <h3 className="font-bold text-gray-900 text-base">{title}</h3>

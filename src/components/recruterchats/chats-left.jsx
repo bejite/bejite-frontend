@@ -6,6 +6,7 @@ import { formatConversationPreview } from '../../utils/conversationPreview';
 import { formatDisplayPersonName } from '../../utils/personDisplayName';
 import DisplayNameWithBadge from '../DisplayNameWithBadge';
 import { CHAT_CONVERSATION_UPDATED } from '../../utils/headerBadgeEvents';
+import DeleteModal from '../modal/DeleteModal';
 
 const CONVERSATION_UPDATED = CHAT_CONVERSATION_UPDATED;
 const PAGE_SIZE = 20;
@@ -38,6 +39,7 @@ function ChatsLeft({ onSelectChat, selectedChat, onConversationHidden, isVisible
   const [isSearching, setIsSearching] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [hidingId, setHidingId] = useState(null);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
 
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
@@ -181,14 +183,15 @@ function ChatsLeft({ onSelectChat, selectedChat, onConversationHidden, isVisible
     }
   };
 
-  const handleHideConversation = async (event, conversation) => {
+  const handleHideConversation = (event, conversation) => {
     event.stopPropagation();
+    setConversationToDelete(conversation);
+  };
+
+  const handleConfirmHideConversation = async () => {
+    if (!conversationToDelete) return;
+    const conversation = conversationToDelete;
     const id = String(conversation.id);
-    const name = formatDisplayPersonName(conversation.other_user, 'this chat');
-    const confirmed = window.confirm(
-      `Remove ${name} from your chat list? Messages are kept and will reappear if you message each other again.`,
-    );
-    if (!confirmed) return;
 
     try {
       setHidingId(id);
@@ -196,6 +199,7 @@ function ChatsLeft({ onSelectChat, selectedChat, onConversationHidden, isVisible
       hiddenIdsRef.current.add(id);
       setConversations((prev) => prev.filter((c) => String(c.id) !== id));
       onConversationHidden?.(id);
+      setConversationToDelete(null);
     } catch (err) {
       console.error('Error hiding conversation:', err);
       setError(err.response?.data?.error || 'Failed to remove conversation');
@@ -401,6 +405,20 @@ function ChatsLeft({ onSelectChat, selectedChat, onConversationHidden, isVisible
           )}
         </div>
       </div>
+
+      <DeleteModal
+        isOpen={Boolean(conversationToDelete)}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={handleConfirmHideConversation}
+        title="Remove Conversation"
+        message={
+          conversationToDelete
+            ? `Remove ${formatDisplayPersonName(conversationToDelete.other_user, 'this chat')} from your chat list? Messages are kept and will reappear if you message each other again.`
+            : "Remove this conversation?"
+        }
+        confirmText="Remove"
+        isLoading={Boolean(hidingId)}
+      />
     </div>
   );
 }

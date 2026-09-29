@@ -70,7 +70,12 @@ import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
 import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
 import PitchPreviewModal from "../pitch/PitchPreviewModal";
+import DeleteModal from "../modal/DeleteModal";
 import { getPitchFeed } from "../../services/pitchesApi";
+import {
+  OPEN_CREATE_POST,
+  consumePendingCreatePost,
+} from "../../utils/createPostEvents";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -197,6 +202,13 @@ export default function RecruitmentMiddle() {
     setModalMode(mode);
     setShowModal(true);
   };
+
+  useEffect(() => {
+    const open = () => openCreateModal("post");
+    window.addEventListener(OPEN_CREATE_POST, open);
+    if (consumePendingCreatePost()) open();
+    return () => window.removeEventListener(OPEN_CREATE_POST, open);
+  }, []);
 
   const handleDismissAd = (adId) => {
     setDismissedAds((prev) => new Set([...prev, adId]));
@@ -479,62 +491,18 @@ export default function RecruitmentMiddle() {
   };
 
   return (
-    <main className="w-full px-2 py-6 space-y-8 bg-[#F5F5F5]" data-testid="news-feed">
-      {/* Create Post Button */}
-      <div className="max-w-3xl p-6 mx-auto bg-white shadow rounded-2xl">
-        <div
-          className="flex items-center gap-3 cursor-pointer"
-          data-testid="news-feed-start-post"
-          onClick={() => openCreateModal("post")}
-        >
-          <img
-            src={currentUserImage}
-            alt="profile"
-            className="rounded-full w-12 h-12 object-cover object-center"
+    <main className="w-full px-2 py-6 space-y-6 bg-[#F5F5F5]" data-testid="news-feed">
+      {/* Pitch Reels Carousel */}
+      {feedMode === "home" &&
+        canSeePitchCarousel &&
+        feedPitches.length > 0 && (
+          <PitchReelsCarousel
+            pitches={feedPitches}
+            onSelectPitch={handleOpenPitchPreview}
           />
-          <div className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-500 hover:bg-gray-200 transition-colors">
-            Start a post
-          </div>
-        </div>
-        <div className="flex items-center justify-around mt-3 pt-3 border-t border-[#A9A9A9]">
-          <button
-            onClick={() => openCreateModal("post")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/gallery.svg"
-              alt="Image"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Image</span>
-          </button>
-          <button
-            onClick={() => openCreateModal("post")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/video-square.png"
-              alt="Video"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Video</span>
-          </button>
-          <button
-            onClick={() => openCreateModal("poll")}
-            className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <img
-              src="/assets/images/Amount_Icon_UIA.svg"
-              alt="Poll"
-              className="w-5 h-5"
-            />
-            <span className="text-sm">Poll</span>
-          </button>
-        </div>
-      </div>
+        )}
 
-      <hr className="border-t-2 border-[#16730F]" />
-
+      {/* Saved / Hashtag Filter Headers */}
       {feedHashtag && (
         <div className="max-w-3xl mx-auto flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm">
           <h2 className="text-lg font-semibold text-[#1A3E32]">
@@ -565,16 +533,6 @@ export default function RecruitmentMiddle() {
           </button>
         </div>
       )}
-
-      {/* Pitch Reels Carousel — at top of feed */}
-      {feedMode === "home" &&
-        canSeePitchCarousel &&
-        feedPitches.length > 0 && (
-          <PitchReelsCarousel
-            pitches={feedPitches}
-            onSelectPitch={handleOpenPitchPreview}
-          />
-        )}
 
       {/* Posts Feed */}
       {loading ? (
@@ -743,6 +701,8 @@ const RecruitmentPostCard = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -898,13 +858,19 @@ const RecruitmentPostCard = ({
     setShowEditModal(true);
   };
 
-  const handleDeleteClick = async () => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        await onDelete(post.id);
-      } catch (err) {
-        console.error("Error deleting post:", err);
-      }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(post.id);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1237,6 +1203,16 @@ const RecruitmentPostCard = ({
         onShare={onShare}
         onRepost={onRepost}
         currentUserId={currentUserId}
+      />
+
+      <DeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        isLoading={isDeleting}
       />
     </div>
   );

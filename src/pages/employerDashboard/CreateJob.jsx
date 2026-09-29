@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import {
   createEmployerJob,
@@ -78,6 +79,7 @@ const CreateJob = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const errorRef = useRef(null);
   const [recruitmentExercises, setRecruitmentExercises] = useState([]);
   const [recruitmentsLoading, setRecruitmentsLoading] = useState(false);
 
@@ -143,10 +145,18 @@ const CreateJob = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      toast.error(validationError);
+      requestAnimationFrame(() => {
+        errorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
       return;
     }
     setError(null);
     setShowPreview(true);
+    window.scrollTo({ top: 0, behavior: "auto" });
   };
 
   const handleSubmit = async (e) => {
@@ -242,7 +252,10 @@ const CreateJob = () => {
       <NewsFeedLayout showSidebars={false}>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <button
-            onClick={() => setShowPreview(false)}
+            onClick={() => {
+              setShowPreview(false);
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }}
             className="flex items-center gap-2 text-gray-600 hover:text-[#16730F] mb-6"
           >
             <FaArrowLeft />
@@ -357,7 +370,10 @@ const CreateJob = () => {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowPreview(false)}
+                  onClick={() => {
+                    setShowPreview(false);
+                    window.scrollTo({ top: 0, behavior: "auto" });
+                  }}
                   className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
                 >
                   Edit
@@ -435,7 +451,10 @@ const CreateJob = () => {
 
             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
               {error && !showPreview && (
-                <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+                <div
+                  ref={errorRef}
+                  className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700"
+                >
                   {error}
                 </div>
               )}
@@ -842,6 +861,12 @@ const CreateJob = () => {
                   )}
                 </div>
               </div>
+
+              {error && (
+                <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button

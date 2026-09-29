@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import DeleteModal from "../../components/modal/DeleteModal";
+import { toast } from "react-toastify";
 import CampaignStatusBadge from "../../components/Ads/CampaignStatusBadge";
 import MetricCard from "../../components/Ads/MetricCard";
 import CampaignChart from "../../components/Ads/CampaignChart";
@@ -113,6 +115,8 @@ export default function AdProDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [campaignToDelete, setCampaignToDelete] = useState(null);
+  const [deletingCampaign, setDeletingCampaign] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -236,25 +240,31 @@ export default function AdProDashboard() {
     }
   };
 
-  const handleDeleteCampaign = async (campaignId) => {
+  const handleDeleteCampaign = (campaignId) => {
     setOpenMenuId(null);
-    if (!window.confirm("Are you sure you want to delete this campaign?")) {
-      return;
-    }
+    setCampaignToDelete(campaignId);
+  };
 
+  const handleConfirmDeleteCampaign = async () => {
+    if (!campaignToDelete) return;
+    setDeletingCampaign(true);
     try {
-      const response = await deleteAdProCampaign(campaignId);
+      const response = await deleteAdProCampaign(campaignToDelete);
       if (!response?.success) {
         throw new Error(response?.message || "Failed to delete campaign");
       }
+      toast.success("Campaign deleted successfully");
+      setCampaignToDelete(null);
       await loadDashboard();
     } catch (err) {
       console.error("Delete campaign error:", err);
-      alert(
+      toast.error(
         err.response?.data?.message ||
           err.message ||
           "Failed to delete campaign",
       );
+    } finally {
+      setDeletingCampaign(false);
     }
   };
 
@@ -580,6 +590,16 @@ export default function AdProDashboard() {
         onClose={() => setIsFilterOpen(false)}
         onApply={handleApplyFilter}
         currentFilter={statusFilter}
+      />
+
+      <DeleteModal
+        isOpen={Boolean(campaignToDelete)}
+        onClose={() => setCampaignToDelete(null)}
+        onConfirm={handleConfirmDeleteCampaign}
+        title="Delete Campaign"
+        message="Are you sure you want to delete this campaign? This action cannot be undone."
+        confirmText="Delete Campaign"
+        isLoading={deletingCampaign}
       />
 
       <ScrollToTop />

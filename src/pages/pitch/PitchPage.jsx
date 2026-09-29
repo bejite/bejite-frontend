@@ -7,6 +7,7 @@ import PitchVideoPlayer from "../../components/pitch/PitchVideoPlayer";
 import PitchDetailsCard from "../../components/pitch/PitchDetailsCard";
 import MyPitchesView from "../../components/pitch/MyPitchesView";
 import PitchEmptyState from "../../components/pitch/PitchEmptyState";
+import DeleteModal from "../../components/modal/DeleteModal";
 import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
@@ -43,6 +44,8 @@ export default function PitchPage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingPitch, setDeletingPitch] = useState(false);
 
   const deepLinkIdRef = useRef(searchParams.get("id"));
   const viewedPitchIdsRef = useRef(new Set());
@@ -301,31 +304,32 @@ export default function PitchPage() {
     });
   };
 
-  const handleDeleteDraft = async (draftId) => {
-    if (!window.confirm("Delete this draft? This cannot be undone.")) return;
-    try {
-      await deletePitch(draftId);
-      removePitchEverywhere(draftId);
-      toast.info("Draft removed");
-    } catch (error) {
-      toast.error(apiErrorMessage(error, "Failed to delete draft"));
-    }
+  const handleDeleteDraft = (draftId) => {
+    setDeleteTarget({ id: draftId, type: "draft" });
   };
 
-  const handleDeleteActivePitch = async (pitchId) => {
-    if (
-      !window.confirm(
-        "Delete this live pitch? It will be removed from the feed and cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  const handleDeleteActivePitch = (pitchId) => {
+    setDeleteTarget({ id: pitchId, type: "active" });
+  };
+
+  const handleConfirmDeletePitch = async () => {
+    if (!deleteTarget) return;
+    setDeletingPitch(true);
+    const { id, type } = deleteTarget;
     try {
-      await deletePitch(pitchId);
-      removePitchEverywhere(pitchId);
-      toast.info("Pitch deleted");
+      await deletePitch(id);
+      removePitchEverywhere(id);
+      toast.info(type === "draft" ? "Draft removed" : "Pitch deleted");
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Failed to delete pitch"));
+      toast.error(
+        apiErrorMessage(
+          error,
+          type === "draft" ? "Failed to delete draft" : "Failed to delete pitch",
+        ),
+      );
+    } finally {
+      setDeletingPitch(false);
     }
   };
 
@@ -438,6 +442,20 @@ export default function PitchPage() {
         onGoToMyPitches={handleGoToMyPitches}
         currentUser={currentUser}
         draftToEdit={editingDraft}
+      />
+
+      <DeleteModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDeletePitch}
+        title={deleteTarget?.type === "draft" ? "Delete Draft" : "Delete Pitch"}
+        message={
+          deleteTarget?.type === "draft"
+            ? "Are you sure you want to delete this draft? This action cannot be undone."
+            : "Are you sure you want to delete this live pitch? It will be permanently removed from your profile and the feed."
+        }
+        confirmText="Delete"
+        isLoading={deletingPitch}
       />
     </NewsFeedLayout>
   );

@@ -455,6 +455,9 @@ export default function AccountSettings() {
             title="Log Out"
             description="Are you sure you want to log out of your Bejite account?"
             confirmLabel="Log Out"
+            icon={LogOut}
+            iconBg="bg-[#EAF5E9]"
+            iconColor="text-[#16730F]"
             onClose={() => setModal(null)}
             onConfirm={handleLogout}
           />

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaImage, FaVideo, FaTimes, FaClock } from "react-icons/fa";
+import { FaImage, FaVideo, FaTimes, FaClock, FaPoll } from "react-icons/fa";
 import { uploadMedia } from "../services/postsApi";
 import { apiErrorMessage, getUploadSizeError } from "../utils/uploadLimits";
 import EmojiPickerButton from "./common/EmojiPickerButton";
@@ -38,7 +38,7 @@ const PostCreationModal = ({
   editingPost = null,
 }) => {
   const isEditing = Boolean(editingPost?.id);
-  const isPollMode = !isEditing && initialMode === "poll";
+  const [isPollMode, setIsPollMode] = useState(!isEditing && initialMode === "poll");
   const [postBody, setPostBody] = useState("");
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
@@ -70,6 +70,7 @@ const PostCreationModal = ({
     setScheduleDate(defaults.date);
     setScheduleTime(defaults.time);
     setPostMode("now");
+    setIsPollMode(!isEditing && initialMode === "poll");
     setPollQuestion("");
     setPollOptions(["", ""]);
     setPollDurationDays(7);
@@ -86,7 +87,7 @@ const PostCreationModal = ({
       setMediaFiles([]);
       setVisibility(initialVisibility);
     }
-  }, [isOpen, initialMode, editingPost, initialVisibility]);
+  }, [isOpen, initialMode, editingPost, initialVisibility, isEditing]);
 
   if (!isOpen) return null;
 
@@ -249,6 +250,7 @@ const PostCreationModal = ({
 
   const handleClose = () => {
     const nextDefault = getDefaultSchedule();
+    setIsPollMode(false);
     setPostBody("");
     setMediaFiles([]);
     setPollQuestion("");
@@ -288,9 +290,18 @@ const PostCreationModal = ({
           {isPollMode ? (
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#1A3E32]">
-                  Poll question
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-[#1A3E32]">
+                    Poll question
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPollMode(false)}
+                    className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <FaTimes className="text-xs" /> Remove Poll
+                  </button>
+                </div>
                 <div>
                   <input
                     type="text"
@@ -463,31 +474,53 @@ const PostCreationModal = ({
         </div>
 
         <div className="p-4 border-t border-[#A9A9A9]">
-          {!isPollMode && (
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
+            {!isPollMode ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingMedia}
+                  className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                >
+                  <FaImage className="text-lg" />
+                  <span className="text-sm">Add Image</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingMedia}
+                  className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                >
+                  <FaVideo className="text-lg" />
+                  <span className="text-sm">Add Video</span>
+                </button>
+                {!isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPollMode(true)}
+                    disabled={uploadingMedia}
+                    className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                  >
+                    <FaPoll className="text-lg" />
+                    <span className="text-sm">Add Poll</span>
+                  </button>
+                )}
+                {uploadingMedia && (
+                  <span className="text-sm text-gray-500">Uploading...</span>
+                )}
+              </>
+            ) : (
               <button
                 type="button"
-                onClick={() => imageInputRef.current?.click()}
-                disabled={uploadingMedia}
-                className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50"
+                onClick={() => setIsPollMode(false)}
+                className="flex items-center gap-2 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
               >
-                <FaImage className="text-lg" />
-                <span className="text-sm">Add Image</span>
+                <FaTimes className="text-sm" />
+                <span>Remove Poll</span>
               </button>
-              <button
-                type="button"
-                onClick={() => videoInputRef.current?.click()}
-                disabled={uploadingMedia}
-                className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50"
-              >
-                <FaVideo className="text-lg" />
-                <span className="text-sm">Add Video</span>
-              </button>
-              {uploadingMedia && (
-                <span className="text-sm text-gray-500">Uploading...</span>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
           {!isPollMode && (
             <>

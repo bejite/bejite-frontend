@@ -222,6 +222,7 @@ const UploadDoc = () => {
 
       <NavigationButtons
         isFormComplete={isFormComplete}
+        isEditMode={isEditMode}
         onBack={() => {
           if (isEditMode) {
             navigate(getPath(5));

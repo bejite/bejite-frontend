@@ -43,7 +43,7 @@ export default function PitchReelCard({ pitch, onSelectPitch }) {
       onClick={() => onSelectPitch(pitch)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative w-[150px] xs:w-[165px] sm:w-[185px] h-[260px] xs:h-[285px] sm:h-[310px] shrink-0 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer select-none group bg-gray-900 border border-gray-200/80 hover:-translate-y-1"
+      className="relative w-[150px] xs:w-[165px] sm:w-[185px] h-[260px] xs:h-[285px] sm:h-[250px] shrink-0 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer select-none group bg-gray-900 border border-gray-200/80 hover:-translate-y-1"
     >
       {/* Video element */}
       <video

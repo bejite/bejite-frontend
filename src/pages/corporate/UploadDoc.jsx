@@ -247,6 +247,7 @@ const CoperateUploadDoc = () => {
       {/* Navigation Buttons */}
       <NavigationButtons
         isFormComplete={isFormComplete}
+        isEditMode={isEditMode}
         showSkip={isIndividual}
         onSkip={() => navigate("/news-feed")}
         nextLabel="Submit"
