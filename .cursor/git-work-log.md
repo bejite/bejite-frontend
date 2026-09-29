@@ -1,5 +1,30 @@
 # Git Work Log
 
+## 2026-09-29 08:15 (WAT) — Move Polls Inside Create Post Modal and Clean Newsfeed Bar
+
+- **Repo**: `bejite-frontend`
+- **Summary**: Removed the side action icons [Image, Video, Poll] from beside "+ Create Post" on the newsfeed bar, and integrated "Add Poll" directly inside the Create Post modal popup alongside "Add Image" and "Add Video" with seamless toggling and removal support.
+- **Changed**:
+  - `src/components/recruitment/RecruitmentMiddle.jsx`: Cleaned up the Create Post bar on the newsfeed by removing the side buttons (Image, Video, Poll) next to "+ Create Post".
+  - `src/components/PostCreationModal.jsx`: Added the `Add Poll` button alongside `Add Image` and `Add Video`, supported toggling to poll creation mode from inside the modal via local state, and provided `Remove Poll` actions to return to standard post mode.
+  - `Admin-frontend/src/components/PostCreationModal.jsx`: Added identical `Add Poll` button and mode toggling inside the admin post creation popup for consistency.
+- **Conventional type** (for next commit): `feat(feed)`
+
+### Proposed Commit Message
+
+```
+feat(feed): move poll creation into modal and clean feed create post bar
+
+We removed the Image, Video, and Poll buttons from beside Create Post on the newsfeed bar and integrated Add Poll directly inside the Create Post popup.
+
+- Remove the side icon buttons (Image, Video, Poll) from the feed Create Post bar
+- Add an 'Add Poll' button next to 'Add Image' and 'Add Video' inside the create post modal
+- Support toggling into poll creation and canceling back to standard post mode without losing composer state
+- Sync PostCreationModal in the admin frontend with the same Add Poll capability
+```
+
+---
+
 ## 2026-09-28 11:20 (WAT) — Universal DeleteModal Integration and Edit Profile Back/Logo Navigation Flow
 
 - **Repo**: `bejite-frontend`

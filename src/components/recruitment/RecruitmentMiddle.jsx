@@ -524,65 +524,24 @@ export default function RecruitmentMiddle() {
         </div>
       )}
 
-      {/* Create Post Bar — Compact button bar (no text input box) */}
+      {/* Create Post Bar */}
       {feedMode === "home" && (
-        <div className="max-w-3xl p-4 sm:p-5 mx-auto bg-white shadow rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <img
-              src={currentUserImage}
-              alt="profile"
-              onClick={() => openCreateModal("post")}
-              className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
-            />
-            <button
-              type="button"
-              data-testid="news-feed-start-post"
-              onClick={() => openCreateModal("post")}
-              className="flex items-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Create Post</span>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-end gap-1 sm:gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => openCreateModal("post")}
-              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
-            >
-              <img
-                src="/assets/images/gallery.svg"
-                alt="Image"
-                className="w-5 h-5 object-contain"
-              />
-              <span className="text-sm font-medium">Image</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => openCreateModal("post")}
-              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
-            >
-              <img
-                src="/assets/images/video-square.png"
-                alt="Video"
-                className="w-5 h-5 object-contain"
-              />
-              <span className="text-sm font-medium">Video</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => openCreateModal("poll")}
-              className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-3 sm:px-4 py-2 rounded-lg transition-colors cursor-pointer"
-            >
-              <img
-                src="/assets/images/Amount_Icon_UIA.svg"
-                alt="Poll"
-                className="w-5 h-5 object-contain"
-              />
-              <span className="text-sm font-medium">Poll</span>
-            </button>
-          </div>
+        <div className="flex justify-between p-4 sm:p-5 mx-auto bg-white shadow rounded-2xl flex items-center gap-3">
+          <img
+            src={currentUserImage}
+            alt="profile"
+            onClick={() => openCreateModal("post")}
+            className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+          />
+          <button
+            type="button"
+            data-testid="news-feed-start-post"
+            onClick={() => openCreateModal("post")}
+            className="flex items-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Create Post</span>
+          </button>
         </div>
       )}
 
