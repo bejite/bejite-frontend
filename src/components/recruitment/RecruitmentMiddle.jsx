@@ -482,7 +482,30 @@ export default function RecruitmentMiddle() {
 
   return (
     <main className="w-full px-2 py-6 space-y-6 bg-[#F5F5F5]" data-testid="news-feed">
-      {/* Pitch Reels Carousel — at very top of feed (like Instagram & Facebook stories/reels) */}
+      {/* Create Post Bar */}
+      {feedMode === "home" && (
+        <div
+           className="ml-auto"  >
+          {/* <img
+            src={currentUserImage}
+            alt="profile"
+            onClick={() => openCreateModal("post")}
+            className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+          /> */}
+          <button
+            type="button"
+            data-testid="news-feed-start-post"
+            onClick={() => openCreateModal("post")}
+            aria-label="Create Post"
+            className="ml-auto mr-[20px] flex items-center justify-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold p-2.5 sm:px-5 sm:py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-5 h-5 sm:w-4 sm:h-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">Create Post</span>
+          </button>
+        </div>
+      )}
+
+      {/* Pitch Reels Carousel */}
       {feedMode === "home" &&
         canSeePitchCarousel &&
         feedPitches.length > 0 && (
@@ -520,27 +543,6 @@ export default function RecruitmentMiddle() {
             className="text-sm text-[#16730F] hover:underline font-medium"
           >
             Back to feed
-          </button>
-        </div>
-      )}
-
-      {/* Create Post Bar */}
-      {feedMode === "home" && (
-        <div className="flex justify-between p-4 sm:p-5 mx-auto bg-white shadow rounded-2xl flex items-center gap-3">
-          <img
-            src={currentUserImage}
-            alt="profile"
-            onClick={() => openCreateModal("post")}
-            className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
-          />
-          <button
-            type="button"
-            data-testid="news-feed-start-post"
-            onClick={() => openCreateModal("post")}
-            className="flex items-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Create Post</span>
           </button>
         </div>
       )}

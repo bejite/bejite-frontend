@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   LogOut,
+  Trash,
   UserX,
   Bell,
   Globe,
@@ -455,6 +456,9 @@ export default function AccountSettings() {
             title="Log Out"
             description="Are you sure you want to log out of your Bejite account?"
             confirmLabel="Log Out"
+            icon={Trash}
+            iconBg="bg-red-50"
+            iconColor="text-red-500"
             onClose={() => setModal(null)}
             onConfirm={handleLogout}
           />
