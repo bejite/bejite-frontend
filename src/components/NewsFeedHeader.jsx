@@ -8,6 +8,7 @@ import React, {
 import { createPortal } from "react-dom";
 import {
   FaSearch,
+  FaPlus,
   FaChevronDown,
   FaUserEdit,
   FaUser,
@@ -60,6 +61,7 @@ import { onNotificationNew } from "../services/socketClient";
 import { Network } from "lucide-react";
 import { toast } from "react-toastify";
 import { useMilestoneBirthdayCount } from "../hooks/useMilestoneBirthdayCount";
+import { requestOpenCreatePost } from "../utils/createPostEvents";
 
 const NewsFeedHeader = ({ user: propUser }) => {
   useSyncProfilePhoto();
@@ -844,6 +846,14 @@ const NewsFeedHeader = ({ user: propUser }) => {
             className="h-8 lg:h-10 cursor-pointer"
           />
           <div className="flex items-center gap-1 lg:hidden">
+            <button
+              type="button"
+              onClick={() => requestOpenCreatePost(navigate)}
+              aria-label="Create Post"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-[#16730F] text-white shadow-sm active:scale-95"
+            >
+              <FaPlus className="h-2.5 w-2.5" />
+            </button>
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen((prev) => !prev)}

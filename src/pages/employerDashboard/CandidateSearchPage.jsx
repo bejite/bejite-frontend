@@ -249,7 +249,7 @@ const CandidateSearchPage = () => {
             {/* Left sidebar — search results (desktop only) */}
             {showResults && isDesktop && (
               <aside
-                className="hidden lg:flex shrink-0 flex-col bg-[#F5F5F5] border-r border-gray-200 lg:w-[min(360px,28vw)] lg:max-w-[400px] overflow-hidden"
+                className="hidden lg:flex shrink-0 min-w-0 flex-col bg-[#F5F5F5] border-r border-gray-200 w-[min(100%,360px)] lg:w-[min(340px,32vw)] lg:max-w-[380px] overflow-hidden"
               >
                 <div
                   ref={resultsScrollRef}

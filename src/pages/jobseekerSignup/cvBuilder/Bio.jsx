@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { navigateBack } from "../../../utils/navigateBack";
 import { useDispatch } from "react-redux";
 import StepTabs from "../../../components/StepTabs";
 import ProgressBar from "../../../components/ProgressBar";

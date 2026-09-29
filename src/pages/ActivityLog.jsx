@@ -1057,8 +1057,7 @@ export default function ActivityLog() {
     if (filter === "job") return [];
     return posts.filter(post => {
       if (search && !post.body?.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === "all") return true;
-      if (filter === "post") return !post.media || post.media.length === 0;
+      if (filter === "all" || filter === "post") return true;
       if (filter === "image") return post.media?.some(m => m.kind === "image");
       if (filter === "video") return post.media?.some(m => m.kind === "video");
       return true;

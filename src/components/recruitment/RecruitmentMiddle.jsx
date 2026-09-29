@@ -68,11 +68,14 @@ import AdCard from "../Ads/AdCard";
 import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
 import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
-import { Plus } from "lucide-react";
 import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
 import PitchPreviewModal from "../pitch/PitchPreviewModal";
 import DeleteModal from "../modal/DeleteModal";
 import { getPitchFeed } from "../../services/pitchesApi";
+import {
+  OPEN_CREATE_POST,
+  consumePendingCreatePost,
+} from "../../utils/createPostEvents";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -199,6 +202,13 @@ export default function RecruitmentMiddle() {
     setModalMode(mode);
     setShowModal(true);
   };
+
+  useEffect(() => {
+    const open = () => openCreateModal("post");
+    window.addEventListener(OPEN_CREATE_POST, open);
+    if (consumePendingCreatePost()) open();
+    return () => window.removeEventListener(OPEN_CREATE_POST, open);
+  }, []);
 
   const handleDismissAd = (adId) => {
     setDismissedAds((prev) => new Set([...prev, adId]));
@@ -482,29 +492,6 @@ export default function RecruitmentMiddle() {
 
   return (
     <main className="w-full px-2 py-6 space-y-6 bg-[#F5F5F5]" data-testid="news-feed">
-      {/* Create Post Bar */}
-      {feedMode === "home" && (
-        <div
-           className="ml-auto"  >
-          {/* <img
-            src={currentUserImage}
-            alt="profile"
-            onClick={() => openCreateModal("post")}
-            className="rounded-full w-11 h-11 object-cover object-center border border-gray-100 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
-          /> */}
-          <button
-            type="button"
-            data-testid="news-feed-start-post"
-            onClick={() => openCreateModal("post")}
-            aria-label="Create Post"
-            className="ml-auto mr-[20px] flex items-center justify-center gap-2 bg-[#16730F] hover:bg-[#125e0c] text-white text-sm font-semibold p-2.5 sm:px-5 sm:py-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-5 h-5 sm:w-4 sm:h-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">Create Post</span>
-          </button>
-        </div>
-      )}
-
       {/* Pitch Reels Carousel */}
       {feedMode === "home" &&
         canSeePitchCarousel &&

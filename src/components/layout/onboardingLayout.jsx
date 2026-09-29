@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StepTabs from "../StepTabs";
 import ProgressBar from "../ProgressBar";
-import { navigateBack } from "../../utils/navigateBack";
 
 const OnboardingLayout = ({
   children,

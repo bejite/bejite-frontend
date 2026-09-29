@@ -250,21 +250,6 @@ function Certificate() {
     }
   };
 
-  const handleDelete = async (cert, index) => {
-    try {
-      if (cert.id && userId) {
-        await axiosInstance.delete(
-          `/api/cv-builder/certificates/${userId}/${cert.id}`,
-        );
-      }
-      setSavedCertificates((prev) => prev.filter((_, idx) => idx !== index));
-      toast.success("Certificate removed");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete certificate");
-    }
-  };
-
   const handleSubmit = async () => {
     if (isFormEmpty) {
       goNext();
