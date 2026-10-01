@@ -1,4 +1,3 @@
-// Mailbox (1-on-1 recruiter mail) temporarily disabled via App.jsx / AdminLayout.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -7,9 +6,10 @@ import { Mail, Send } from "lucide-react";
 
 import {
   MAIL_FOLDERS,
-  getStoredThreads,
-  saveStoredThreads,
-  fetchRecruitersDirectory,
+  listMailboxThreads,
+  searchMailboxContacts,
+  updateMailboxRead,
+  deleteMailboxThreads,
   sendAdminMessage,
 } from "../../services/recruiterMailService";
 
@@ -25,23 +25,31 @@ const AdminRecruiterMail = () => {
   const { user } = useSelector((state) => state.auth);
 
   const [threads, setThreads] = useState([]);
-  const [recruitersDirectory, setRecruitersDirectory] = useState([]);
   const [activeFolder, setActiveFolder] = useState(
     searchParams.get("folder") || MAIL_FOLDERS.INBOX,
   );
-  const [selectedThreadId, setSelectedThreadId] = useState(
-    searchParams.get("threadId") || null,
-  );
+  const selectedThreadId = searchParams.get("threadId") || null;
   const [selectedThreadIds, setSelectedThreadIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all"); // "all" | "unread"
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [composeInitialData, setComposeInitialData] = useState({
-    recruiter: null,
-    subject: "",
-    body: "",
+  const [isRefreshing, setIsRefreshing] = useState(true);
+  const [isComposeOpen, setIsComposeOpen] = useState(() =>
+    Boolean(searchParams.get("composeTo")),
+  );
+  const [composeInitialData, setComposeInitialData] = useState(() => {
+    const composeEmail = searchParams.get("composeTo");
+    if (!composeEmail) {
+      return { recruiter: null, subject: "", body: "" };
+    }
+    return {
+      recruiter: {
+        name: composeEmail.split("@")[0],
+        email: composeEmail,
+      },
+      subject: searchParams.get("subject") || "",
+      body: "",
+    };
   });
 
   const [isSendingReply, setIsSendingReply] = useState(false);
@@ -51,41 +59,40 @@ const AdminRecruiterMail = () => {
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const stored = getStoredThreads();
+      const stored = await listMailboxThreads();
       setThreads(stored);
-      const directory = await fetchRecruitersDirectory();
-      setRecruitersDirectory(directory);
     } catch (err) {
       console.error("Failed to load mailbox data:", err);
+      toast.error(err?.response?.data?.message || "Could not load mailbox");
     } finally {
       setIsRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Deep linking: ?composeTo=<email> or ?threadId=<id>
-  useEffect(() => {
-    const composeEmail = searchParams.get("composeTo");
-    if (composeEmail) {
-      setComposeInitialData({
-        recruiter: {
-          name: composeEmail.split("@")[0],
-          email: composeEmail,
-        },
-        subject: searchParams.get("subject") || "",
-        body: "",
+    let cancelled = false;
+    listMailboxThreads()
+      .then((stored) => {
+        if (!cancelled) setThreads(stored);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Failed to load mailbox data:", err);
+        toast.error(err?.response?.data?.message || "Could not load mailbox");
+      })
+      .finally(() => {
+        if (!cancelled) setIsRefreshing(false);
       });
-      setIsComposeOpen(true);
-    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    const tId = searchParams.get("threadId");
-    if (tId) {
-      setSelectedThreadId(tId);
-    }
-  }, [searchParams]);
+  const handleBackToList = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("threadId");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Keyboard shortcut: Press 'C' to compose, 'Esc' to close/back
   useEffect(() => {
@@ -114,7 +121,7 @@ const AdminRecruiterMail = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isComposeOpen, selectedThreadId]);
+  }, [isComposeOpen, selectedThreadId, handleBackToList]);
 
   // Calculate folder counts
   const counts = useMemo(() => {
@@ -122,8 +129,16 @@ const AdminRecruiterMail = () => {
     let sent = 0;
 
     threads.forEach((t) => {
-      if (t.folder === MAIL_FOLDERS.INBOX && !t.isRead) inboxUnread++;
-      if (t.folder === MAIL_FOLDERS.SENT) sent++;
+      const inInbox =
+        t.inInbox ??
+        (t.folder === MAIL_FOLDERS.INBOX ||
+          t.messages?.some((m) => m.senderType === "contact"));
+      const inSent =
+        t.inSent ??
+        (t.folder === MAIL_FOLDERS.SENT ||
+          t.messages?.some((m) => m.senderType === "admin"));
+      if (inInbox && !t.isRead) inboxUnread++;
+      if (inSent) sent++;
     });
 
     return { inboxUnread, sent };
@@ -132,19 +147,28 @@ const AdminRecruiterMail = () => {
   // Filter threads based on active folder, search, and filterType
   const filteredThreads = useMemo(() => {
     return threads.filter((t) => {
-      // Folder filter
-      if (t.folder !== activeFolder) {
-        return false;
-      }
+      const inInbox =
+        t.inInbox ??
+        (t.folder === MAIL_FOLDERS.INBOX ||
+          t.messages?.some((m) => m.senderType === "contact"));
+      const inSent =
+        t.inSent ??
+        (t.folder === MAIL_FOLDERS.SENT ||
+          t.messages?.some((m) => m.senderType === "admin"));
 
-      // Filter unread
+      if (activeFolder === MAIL_FOLDERS.INBOX && !inInbox) return false;
+      if (activeFolder === MAIL_FOLDERS.SENT && !inSent) return false;
+
       if (filterType === "unread" && t.isRead) return false;
 
-      // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const contactName = (t.contact?.name || t.recruiter?.name || "").toLowerCase();
-        const contactEmail = (t.contact?.email || t.recruiter?.email || "").toLowerCase();
+        const contactEmail = (
+          t.contact?.email ||
+          t.recruiter?.email ||
+          ""
+        ).toLowerCase();
         const matchSubject = t.subject?.toLowerCase().includes(q);
         const matchBody = t.messages?.some((m) =>
           m.body?.toLowerCase().includes(q),
@@ -170,7 +194,6 @@ const AdminRecruiterMail = () => {
 
   // Thread selection
   const handleSelectThread = (thread) => {
-    setSelectedThreadId(thread.id);
     const next = new URLSearchParams(searchParams);
     next.set("threadId", thread.id);
     setSearchParams(next, { replace: true });
@@ -181,31 +204,35 @@ const AdminRecruiterMail = () => {
     }
   };
 
-  const handleBackToList = () => {
-    setSelectedThreadId(null);
-    const next = new URLSearchParams(searchParams);
-    next.delete("threadId");
-    setSearchParams(next, { replace: true });
-  };
-
   // Thread Operations
-  const handleMarkRead = (threadId, isRead) => {
-    const updated = threads.map((t) =>
-      t.id === threadId ? { ...t, isRead } : t,
+  const handleMarkRead = async (threadId, isRead) => {
+    setThreads((prev) =>
+      prev.map((t) => (t.id === threadId ? { ...t, isRead } : t)),
     );
-    setThreads(updated);
-    saveStoredThreads(updated);
+    try {
+      await updateMailboxRead([threadId], isRead);
+    } catch (err) {
+      setThreads((prev) =>
+        prev.map((t) => (t.id === threadId ? { ...t, isRead: !isRead } : t)),
+      );
+      toast.error(err?.response?.data?.message || "Could not update the message");
+    }
   };
 
-  const handleDeleteThread = (threadId) => {
-    const updated = threads.filter((t) => t.id !== threadId);
-    setThreads(updated);
-    saveStoredThreads(updated);
+  const handleDeleteThread = async (threadId) => {
+    const previous = threads;
+    setThreads((prev) => prev.filter((t) => t.id !== threadId));
     setSelectedThreadIds((prev) => prev.filter((id) => id !== threadId));
     if (selectedThreadId === threadId) {
       handleBackToList();
     }
-    toast.success("Message deleted");
+    try {
+      await deleteMailboxThreads([threadId]);
+      toast.success("Message deleted");
+    } catch (err) {
+      setThreads(previous);
+      toast.error(err?.response?.data?.message || "Could not delete the message");
+    }
   };
 
   // Reusable Delete Confirmation State
@@ -274,28 +301,38 @@ const AdminRecruiterMail = () => {
     );
   };
 
-  const handleBulkMarkRead = (isRead) => {
-    const updated = threads.map((t) =>
-      selectedThreadIds.includes(t.id) ? { ...t, isRead } : t,
+  const handleBulkMarkRead = async (isRead) => {
+    const ids = [...selectedThreadIds];
+    if (!ids.length) return;
+    setThreads((prev) =>
+      prev.map((t) => (ids.includes(t.id) ? { ...t, isRead } : t)),
     );
-    setThreads(updated);
-    saveStoredThreads(updated);
     setSelectedThreadIds([]);
-    toast.success(
-      `Marked ${selectedThreadIds.length} emails as ${isRead ? "read" : "unread"}`,
-    );
+    try {
+      await updateMailboxRead(ids, isRead);
+      toast.success(`Marked ${ids.length} emails as ${isRead ? "read" : "unread"}`);
+    } catch (err) {
+      await loadData();
+      toast.error(err?.response?.data?.message || "Could not update the messages");
+    }
   };
 
-  const handleBulkDelete = () => {
-    const updated = threads.filter((t) => !selectedThreadIds.includes(t.id));
-    setThreads(updated);
-    saveStoredThreads(updated);
-    const count = selectedThreadIds.length;
+  const handleBulkDelete = async () => {
+    const ids = [...selectedThreadIds];
+    if (!ids.length) return;
+    const previous = threads;
+    setThreads((prev) => prev.filter((t) => !ids.includes(t.id)));
     setSelectedThreadIds([]);
-    if (selectedThreadId && selectedThreadIds.includes(selectedThreadId)) {
+    if (selectedThreadId && ids.includes(selectedThreadId)) {
       handleBackToList();
     }
-    toast.success(`Deleted ${count} emails`);
+    try {
+      await deleteMailboxThreads(ids);
+      toast.success(`Deleted ${ids.length} emails`);
+    } catch (err) {
+      setThreads(previous);
+      toast.error(err?.response?.data?.message || "Could not delete the messages");
+    }
   };
 
   // Send Message from Composer
@@ -306,32 +343,29 @@ const AdminRecruiterMail = () => {
     body,
     attachments,
   }) => {
-    await sendAdminMessage({
+    const result = await sendAdminMessage({
       toEmail,
       toName,
       subject,
       body,
       attachments,
-      adminUser: user,
     });
-    // Refresh threads and switch to sent folder
-    const fresh = getStoredThreads();
-    setThreads(fresh);
+    await loadData();
     setActiveFolder(MAIL_FOLDERS.SENT);
+    return result;
   };
 
   // Send Reply from Thread View
   const handleSendReply = async ({ threadId, body, attachments }) => {
     setIsSendingReply(true);
     try {
-      await sendAdminMessage({
+      const result = await sendAdminMessage({
         threadId,
         body,
         attachments,
-        adminUser: user,
       });
-      const fresh = getStoredThreads();
-      setThreads(fresh);
+      await loadData();
+      return result;
     } finally {
       setIsSendingReply(false);
     }
@@ -488,10 +522,11 @@ const AdminRecruiterMail = () => {
 
       {/* Clean Email Composer */}
       <DockedComposer
+        key={`${composeInitialData.recruiter?.email || ""}-${composeInitialData.subject}-${isComposeOpen}`}
         isOpen={isComposeOpen}
         onClose={() => setIsComposeOpen(false)}
         onSend={handleSendMessage}
-        recruitersDirectory={recruitersDirectory}
+        searchContacts={searchMailboxContacts}
         adminUser={user}
         initialToRecruiter={composeInitialData.recruiter}
         initialSubject={composeInitialData.subject}

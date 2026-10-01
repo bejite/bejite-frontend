@@ -10,12 +10,14 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { filesToMailboxAttachments } from "../../../utils/mailboxAttachments";
 
 export const DockedComposer = ({
   isOpen,
   onClose,
   onSend,
   recruitersDirectory = [],
+  searchContacts,
   adminUser: _adminUser,
   initialToRecruiter = null,
   initialSubject = "",
@@ -23,24 +25,38 @@ export const DockedComposer = ({
 }) => {
   const [windowState, setWindowState] = useState("normal"); // "normal" | "minimized" | "maximized"
   const isMaximized = windowState === "maximized";
-  const [toInput, setToInput] = useState("");
+  const [toInput, setToInput] = useState(initialToRecruiter?.email || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [attachments, setAttachments] = useState([]);
+  const [subject, setSubject] = useState(initialSubject || "");
+  const [body, setBody] = useState(initialBody || "");
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [remoteContacts, setRemoteContacts] = useState([]);
 
   const fileInputRef = useRef(null);
   const toFieldRef = useRef(null);
 
-  // Initialize with initial props if provided
   useEffect(() => {
-    if (initialToRecruiter) {
-      setToInput(initialToRecruiter.email || "");
-    }
-    if (initialSubject) setSubject(initialSubject);
-    if (initialBody) setBody(initialBody);
-  }, [initialToRecruiter, initialSubject, initialBody]);
+    if (!searchContacts || !showSuggestions) return undefined;
+
+    const q = toInput.trim();
+    if (q.length < 2) return undefined;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const matches = await searchContacts(q);
+        if (!cancelled) setRemoteContacts(Array.isArray(matches) ? matches : []);
+      } catch {
+        if (!cancelled) setRemoteContacts([]);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchContacts, showSuggestions, toInput]);
 
   // Click outside listener for suggestions
   useEffect(() => {
@@ -56,15 +72,19 @@ export const DockedComposer = ({
   if (!isOpen) return null;
 
   // Filter contact suggestions if user is typing
-  const filteredContacts = recruitersDirectory
-    .filter((c) => {
-      const q = toInput.toLowerCase().trim();
-      if (!q) return false;
-      return (
-        c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
-      );
-    })
-    .slice(0, 5);
+  const filteredContacts = searchContacts
+    ? toInput.trim().length < 2
+      ? []
+      : remoteContacts
+    : recruitersDirectory
+        .filter((c) => {
+          const q = toInput.toLowerCase().trim();
+          if (!q) return false;
+          return (
+            c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 5);
 
   const handleSelectContact = (contact) => {
     setToInput(contact.email);
@@ -74,18 +94,18 @@ export const DockedComposer = ({
   const handleAddAttachment = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-
-    const newAttachments = files.map((f) => ({
-      name: f.name,
-      size: `${(f.size / 1024).toFixed(1)} KB`,
-      type: f.name.split(".").pop(),
-    }));
-
-    setAttachments((prev) => [...prev, ...newAttachments]);
+    setAttachmentFiles((prev) => {
+      const next = [...prev, ...files].slice(0, 3);
+      if (prev.length + files.length > 3) {
+        toast.warning("You can attach at most 3 files.");
+      }
+      return next;
+    });
+    e.target.value = "";
   };
 
   const handleRemoveAttachment = (idx) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+    setAttachmentFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSend = async (e) => {
@@ -96,7 +116,6 @@ export const DockedComposer = ({
       return;
     }
 
-    // Basic email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanTo)) {
       toast.warning("Please enter a valid email address");
@@ -108,14 +127,15 @@ export const DockedComposer = ({
       return;
     }
 
-    if (!body.trim() && attachments.length === 0) {
+    if (!body.trim() && attachmentFiles.length === 0) {
       toast.warning("Please enter a message body");
       return;
     }
 
     setIsSending(true);
     try {
-      await onSend({
+      const attachments = await filesToMailboxAttachments(attachmentFiles);
+      const result = await onSend({
         toEmail: cleanTo,
         toName: cleanTo.split("@")[0],
         subject: subject.trim(),
@@ -123,33 +143,37 @@ export const DockedComposer = ({
         attachments,
       });
 
-      toast.success(`Email sent to ${cleanTo}`);
-      // Reset form
+      if (result?.delivered === false) {
+        toast.warning(
+          result.deliveryMessage || "Message saved, but it was not delivered.",
+        );
+      } else {
+        toast.success(`Email sent to ${cleanTo}`);
+      }
       setToInput("");
       setSubject("");
       setBody("");
-      setAttachments([]);
+      setAttachmentFiles([]);
       onClose();
     } catch (err) {
       console.error("Failed to send email:", err);
-      toast.error("Failed to send email. Please try again.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to send email. Please try again.",
+      );
     } finally {
       setIsSending(false);
     }
   };
 
   const handleDiscard = () => {
-    if (
-      toInput ||
-      subject ||
-      body ||
-      attachments.length > 0
-    ) {
+    if (toInput || subject || body || attachmentFiles.length > 0) {
       if (window.confirm("Discard unsaved message?")) {
         setToInput("");
         setSubject("");
         setBody("");
-        setAttachments([]);
+        setAttachmentFiles([]);
         onClose();
       }
     } else {
@@ -292,15 +316,15 @@ export const DockedComposer = ({
         </div>
 
         {/* Attachment List */}
-        {attachments.length > 0 && (
+        {attachmentFiles.length > 0 && (
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-200/80 flex flex-wrap gap-2 shrink-0">
-            {attachments.map((att, idx) => (
+            {attachmentFiles.map((file, idx) => (
               <div
-                key={idx}
+                key={`${file.name}-${idx}`}
                 className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700"
               >
                 <FileText size={12} className="text-slate-500" />
-                <span className="truncate max-w-[140px]">{att.name}</span>
+                <span className="truncate max-w-[140px]">{file.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveAttachment(idx)}

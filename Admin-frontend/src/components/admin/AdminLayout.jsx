@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
@@ -14,7 +14,7 @@ import {
   Shield,
   Megaphone,
   Mail,
-  // Inbox, // Mailbox temporarily disabled
+  Inbox,
   Calendar,
   Bell,
 } from "lucide-react";
@@ -24,8 +24,7 @@ import {
 } from "../../constants/adminPermissions";
 import NotificationDropdown from "./NotificationDropdown";
 import { useAdminInbox } from "../../context/AdminInboxContext";
-// Mailbox temporarily disabled
-// import { getStoredThreads, MAIL_FOLDERS } from "../../services/recruiterMailService";
+import { fetchMailboxSummary } from "../../services/recruiterMailService";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,15 +47,31 @@ const AdminLayout = () => {
     setTimeout(() => setBellRing(false), 800);
   }, []);
 
-  // Mailbox temporarily disabled
-  // const recruiterMailUnread = (() => {
-  //   try {
-  //     const threads = getStoredThreads();
-  //     return threads.filter((t) => t.folder === MAIL_FOLDERS.INBOX && !t.isRead).length;
-  //   } catch (e) {
-  //     return 0;
-  //   }
-  // })();
+  const canSeeMailbox = canAccessPath(user?.admin_role, "/admin/mailbox");
+  const [mailboxUnread, setMailboxUnread] = useState(0);
+  const recruiterMailUnread = canSeeMailbox ? mailboxUnread : 0;
+
+  useEffect(() => {
+    if (!canSeeMailbox) return undefined;
+
+    let cancelled = false;
+
+    const loadUnread = async () => {
+      try {
+        const summary = await fetchMailboxSummary();
+        if (!cancelled) setMailboxUnread(summary.inboxUnread || 0);
+      } catch {
+        if (!cancelled) setMailboxUnread(0);
+      }
+    };
+
+    loadUnread();
+    window.addEventListener("bejite-mailbox-changed", loadUnread);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("bejite-mailbox-changed", loadUnread);
+    };
+  }, [canSeeMailbox]);
 
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
@@ -69,13 +84,12 @@ const AdminLayout = () => {
     { name: "Jobs List", path: "/admin/jobs", icon: Briefcase },
     { name: "AdPro Review", path: "/admin/adpro", icon: Megaphone },
     { name: "Email Outreach", path: "/admin/email-outreach", icon: Mail },
-    // Mailbox temporarily disabled
-    // {
-    //   name: "Mailbox",
-    //   path: "/admin/mailbox",
-    //   icon: Inbox,
-    //   badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
-    // },
+    {
+      name: "Mailbox",
+      path: "/admin/mailbox",
+      icon: Inbox,
+      badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
+    },
     { name: "Events Manager", path: "/admin/events", icon: Calendar },
     {
       name: "Notifications",
