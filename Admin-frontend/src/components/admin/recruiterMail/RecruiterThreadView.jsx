@@ -7,12 +7,12 @@ import {
   Paperclip,
   X,
   FileText,
-  Download,
   Copy,
   Check,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getThreadContact } from "../../../services/recruiterMailService";
+import { filesToMailboxAttachments } from "../../../utils/mailboxAttachments";
 
 export const RecruiterThreadView = ({
   thread,
@@ -24,7 +24,7 @@ export const RecruiterThreadView = ({
   adminUser: _adminUser,
 }) => {
   const [replyBody, setReplyBody] = useState("");
-  const [replyAttachments, setReplyAttachments] = useState([]);
+  const [replyAttachmentFiles, setReplyAttachmentFiles] = useState([]);
   const [copiedMsgId, setCopiedMsgId] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -43,39 +43,50 @@ export const RecruiterThreadView = ({
   const handleAddAttachment = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-
-    const newAttachments = files.map((f) => ({
-      name: f.name,
-      size: `${(f.size / 1024).toFixed(1)} KB`,
-      type: f.name.split(".").pop(),
-    }));
-
-    setReplyAttachments((prev) => [...prev, ...newAttachments]);
+    setReplyAttachmentFiles((prev) => {
+      const next = [...prev, ...files].slice(0, 3);
+      if (prev.length + files.length > 3) {
+        toast.warning("You can attach at most 3 files.");
+      }
+      return next;
+    });
+    e.target.value = "";
   };
 
   const handleRemoveAttachment = (idx) => {
-    setReplyAttachments((prev) => prev.filter((_, i) => i !== idx));
+    setReplyAttachmentFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleExecuteReply = async (e) => {
     e.preventDefault();
-    if (!replyBody.trim() && replyAttachments.length === 0) {
+    if (!replyBody.trim() && replyAttachmentFiles.length === 0) {
       toast.warning("Please type a message to reply");
       return;
     }
 
     try {
-      await onSendReply({
+      const attachments = await filesToMailboxAttachments(replyAttachmentFiles);
+      const result = await onSendReply({
         threadId: thread.id,
         body: replyBody.trim(),
-        attachments: replyAttachments,
+        attachments,
       });
       setReplyBody("");
-      setReplyAttachments([]);
-      toast.success(`Reply sent to ${contact.name}`);
+      setReplyAttachmentFiles([]);
+      if (result?.delivered === false) {
+        toast.warning(
+          result.deliveryMessage || "Reply saved, but it was not delivered.",
+        );
+      } else {
+        toast.success(`Reply sent to ${contact.name}`);
+      }
     } catch (err) {
       console.error("Failed to send reply:", err);
-      toast.error("Failed to send reply. Please try again.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to send reply. Please try again.",
+      );
     }
   };
 
@@ -181,10 +192,40 @@ export const RecruiterThreadView = ({
                           Admin
                         </span>
                       )}
+                      {isAdmin && msg.deliveryStatus === "sent" && (
+                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                          Delivered
+                        </span>
+                      )}
+                      {isAdmin &&
+                        (msg.deliveryStatus === "failed" ||
+                          msg.deliveryStatus === "skipped") && (
+                          <span
+                            className="px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-bold"
+                            title={msg.deliveryError || undefined}
+                          >
+                            Not delivered
+                          </span>
+                        )}
+                      {isAdmin && msg.deliveryStatus === "pending" && (
+                        <span className="px-1.5 py-0.5 bg-sky-50 text-sky-800 rounded text-[10px] font-bold">
+                          Sending…
+                        </span>
+                      )}
                     </div>
                     <div className="text-[11px] text-slate-400 truncate">
+                      From: {msg.senderEmail || "contact@bejite.com"}
+                      {" · "}
                       To: {msg.to || contact.email}
                     </div>
+                    {isAdmin &&
+                      msg.deliveryError &&
+                      (msg.deliveryStatus === "failed" ||
+                        msg.deliveryStatus === "skipped") && (
+                        <div className="text-[11px] text-amber-700 mt-0.5">
+                          {msg.deliveryError}
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -242,15 +283,15 @@ export const RecruiterThreadView = ({
       <div className="p-3 sm:p-4 bg-white border-t border-slate-200/80 shrink-0">
         <form onSubmit={handleExecuteReply} className="space-y-3">
           {/* Attachment list if files selected */}
-          {replyAttachments.length > 0 && (
+          {replyAttachmentFiles.length > 0 && (
             <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200">
-              {replyAttachments.map((att, idx) => (
+              {replyAttachmentFiles.map((file, idx) => (
                 <div
-                  key={idx}
+                  key={`${file.name}-${idx}`}
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700"
                 >
                   <FileText size={12} className="text-slate-500" />
-                  <span className="truncate max-w-[140px]">{att.name}</span>
+                  <span className="truncate max-w-[140px]">{file.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveAttachment(idx)}
@@ -300,7 +341,7 @@ export const RecruiterThreadView = ({
                   type="button"
                   onClick={() => {
                     setReplyBody("");
-                    setReplyAttachments([]);
+                    setReplyAttachmentFiles([]);
                   }}
                   className="px-3 py-1.5 text-slate-400 hover:text-slate-700 text-xs font-semibold"
                 >
@@ -310,7 +351,10 @@ export const RecruiterThreadView = ({
 
               <button
                 type="submit"
-                disabled={isSendingReply || (!replyBody.trim() && replyAttachments.length === 0)}
+                disabled={
+                  isSendingReply ||
+                  (!replyBody.trim() && replyAttachmentFiles.length === 0)
+                }
                 className="flex items-center gap-2 px-4 py-2 bg-[#16730F] hover:bg-[#125e0c] disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
               >
                 <Send size={13} />
