@@ -346,7 +346,12 @@ function JobType() {
                       value={form.jobTitle}
                       onChange={updateField("jobTitle")}
                       options={JOB_TITLE_OPTIONS}
-                      placeholder="Select job title"
+                      placeholder="Enter or select job title"
+                      editable={true}
+                      creatable={true}
+                      onAddNew={(title) => {
+                        toast.success(`Added "${title}" as job title`);
+                      }}
                     />
                   </div>
                   <div className="flex-1 min-w-[220px]">
