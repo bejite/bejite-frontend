@@ -71,3 +71,58 @@ export function formatChatMessageTime(dateString) {
     hour12: true,
   });
 }
+
+/** Local minute key used to cluster consecutive same-sender bubbles. */
+export function chatMinuteKey(dateString) {
+  const date = parseChatDate(dateString);
+  if (!date) return "";
+  const day = chatDayKey(dateString);
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${day}T${hour}:${minute}`;
+}
+
+export function getMessageSenderKey(message) {
+  if (!message) return "";
+  const id =
+    message.sender_id ??
+    message.user_id ??
+    message.sender?.id ??
+    message.senderId;
+  return id == null || id === "" ? "" : String(id);
+}
+
+/**
+ * WhatsApp-style clustering: consecutive same-sender messages in the same
+ * displayed minute share one footer timestamp on the last bubble.
+ */
+export function getMessageClusterFlags(messages, index) {
+  const message = messages?.[index];
+  if (!message) {
+    return { isContinuation: false, showTime: true };
+  }
+
+  const sender = getMessageSenderKey(message);
+  const minute = chatMinuteKey(message.created_at);
+  const canCluster = Boolean(sender) && Boolean(minute);
+
+  const prev = messages[index - 1];
+  const next = messages[index + 1];
+
+  const sameAsPrev =
+    canCluster &&
+    prev &&
+    getMessageSenderKey(prev) === sender &&
+    chatMinuteKey(prev.created_at) === minute;
+
+  const sameAsNext =
+    canCluster &&
+    next &&
+    getMessageSenderKey(next) === sender &&
+    chatMinuteKey(next.created_at) === minute;
+
+  return {
+    isContinuation: Boolean(sameAsPrev),
+    showTime: !sameAsNext,
+  };
+}

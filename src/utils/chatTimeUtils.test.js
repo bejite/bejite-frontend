@@ -2,8 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   chatDayKey,
+  chatMinuteKey,
   formatChatDayLabel,
   formatChatMessageTime,
+  getMessageClusterFlags,
   groupMessagesByDay,
 } from "./chatTimeUtils.js";
 
@@ -67,5 +69,65 @@ describe("formatChatMessageTime", () => {
     assert.match(label, /3:28/);
     assert.match(label, /PM/i);
     assert.equal(/mon/i.test(label), false);
+  });
+});
+
+describe("chatMinuteKey", () => {
+  it("keys messages by local calendar minute", () => {
+    assert.equal(
+      chatMinuteKey(new Date(2026, 7, 31, 9, 3, 12).toISOString()),
+      "2026-08-31T09:03",
+    );
+    assert.equal(
+      chatMinuteKey(new Date(2026, 7, 31, 9, 3, 58).toISOString()),
+      "2026-08-31T09:03",
+    );
+  });
+});
+
+describe("getMessageClusterFlags", () => {
+  const messages = [
+    {
+      id: 1,
+      sender_id: "a",
+      created_at: new Date(2026, 7, 31, 9, 3, 10).toISOString(),
+    },
+    {
+      id: 2,
+      sender_id: "a",
+      created_at: new Date(2026, 7, 31, 9, 3, 40).toISOString(),
+    },
+    {
+      id: 3,
+      sender_id: "b",
+      created_at: new Date(2026, 7, 31, 9, 3, 50).toISOString(),
+    },
+    {
+      id: 4,
+      sender_id: "a",
+      created_at: new Date(2026, 7, 31, 9, 4, 5).toISOString(),
+    },
+  ];
+
+  it("hides time on earlier same-sender same-minute messages", () => {
+    assert.deepEqual(getMessageClusterFlags(messages, 0), {
+      isContinuation: false,
+      showTime: false,
+    });
+    assert.deepEqual(getMessageClusterFlags(messages, 1), {
+      isContinuation: true,
+      showTime: true,
+    });
+  });
+
+  it("starts a new cluster for a different sender or minute", () => {
+    assert.deepEqual(getMessageClusterFlags(messages, 2), {
+      isContinuation: false,
+      showTime: true,
+    });
+    assert.deepEqual(getMessageClusterFlags(messages, 3), {
+      isContinuation: false,
+      showTime: true,
+    });
   });
 });

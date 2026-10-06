@@ -1,11 +1,9 @@
 export function buildCandidateSearchParams(searchCriteria, page = 1, limit = 10) {
   const queryParams = new URLSearchParams();
 
-  const searchTerms = [];
-  if (searchCriteria.jobInput) searchTerms.push(searchCriteria.jobInput);
-
-  if (searchTerms.length > 0) {
-    queryParams.append("q", searchTerms.join(" "));
+  const jobTitle = String(searchCriteria.jobInput || "").trim();
+  if (jobTitle) {
+    queryParams.append("title", jobTitle);
   }
 
   if (searchCriteria.industryInput) {
