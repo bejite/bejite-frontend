@@ -7,7 +7,12 @@ import { API_URL } from '../../config';
 import ChatMessageInput from '../chat/ChatMessageInput';
 import ChatMessageBubble from '../chat/ChatMessageBubble';
 import ChatDaySeparator from '../chat/ChatDaySeparator';
-import { formatChatDayLabel, formatChatMessageTime, groupMessagesByDay } from '../../utils/chatTimeUtils';
+import {
+  formatChatDayLabel,
+  formatChatMessageTime,
+  getMessageClusterFlags,
+  groupMessagesByDay,
+} from '../../utils/chatTimeUtils';
 import { formatDisplayPersonName } from '../../utils/personDisplayName';
 import { toQuotePreview } from '../../utils/chatQuote';
 import { notifyChatConversationUpdated } from '../../utils/headerBadgeEvents';
@@ -416,7 +421,7 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
             <ChatDaySeparator
               label={formatChatDayLabel(day.messages[0]?.created_at)}
             />
-            {day.messages.map((msg) => {
+            {day.messages.map((msg, index) => {
           const senderName = formatDisplayPersonName(
             {
               firstName: msg.firstName ?? msg.first_name,
@@ -425,6 +430,10 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
             'User',
           );
           const messageTime = formatChatMessageTime(msg.created_at);
+          const { isContinuation, showTime } = getMessageClusterFlags(
+            day.messages,
+            index,
+          );
           const ownMessage = isOwnMessage(msg);
           const senderAvatar = getProfileImageUrl(
             msg.profilePictureUrl ||
@@ -454,6 +463,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
                 senderAvatar={senderAvatar}
                 senderInitials={senderInitials}
                 messageTime={messageTime}
+                showTime={showTime}
+                isContinuation={isContinuation}
                 editing={editingMessageId === msg.id}
                 saving={savingEdit && editingMessageId === msg.id}
                 onStartEdit={() => setEditingMessageId(msg.id)}
