@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import PitchVideoPlayer from "./PitchVideoPlayer";
 import PitchDetailsCard from "./PitchDetailsCard";
+import { getPitchShareUrl } from "../../utils/pitchShare";
 import {
   likePitch,
   unlikePitch,
@@ -275,7 +276,7 @@ export default function PitchPreviewModal({
   };
 
   const handleShare = async (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+    const shareUrl = getPitchShareUrl(pitch.id);
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(shareUrl);

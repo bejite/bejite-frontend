@@ -6,6 +6,7 @@ import {
   SharedPostRedirect,
   SharedJobRedirect,
   SharedAdRedirect,
+  SharedPitchRedirect,
   PostPage,
   Chat,
   Connections,
@@ -32,6 +33,7 @@ export const socialRoutes = (
     <Route path="/p/:postId" element={<SharedPostRedirect />} />
     <Route path="/j/:jobId" element={<SharedJobRedirect />} />
     <Route path="/a/:campaignId" element={<SharedAdRedirect />} />
+    <Route path="/v/:pitchId" element={<SharedPitchRedirect />} />
     <Route
       path="/news-feed"
       element={guard(<Recruitment />, "Please log in to view your feed.")}

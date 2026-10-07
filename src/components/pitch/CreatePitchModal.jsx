@@ -19,6 +19,7 @@ import {
   apiErrorMessage,
 } from "../../services/pitchesApi";
 import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
+import { getPitchShareUrl } from "../../utils/pitchShare";
 
 function resolveDurationSeconds(videoEl, durationText, fallbackSeconds) {
   const fromEl = videoEl?.duration;
@@ -500,7 +501,7 @@ export default function CreatePitchModal({
 
   const handleShareLink = () => {
     const pitchId = publishedPitchData?.id || "latest";
-    const shareUrl = `${window.location.origin}/pitch?id=${pitchId}`;
+    const shareUrl = getPitchShareUrl(pitchId);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl);
       toast.success("Pitch link copied to clipboard!");

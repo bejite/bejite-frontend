@@ -12,6 +12,7 @@ import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
 import { CATEGORIES } from "./pitchData";
+import { getPitchShareUrl } from "../../utils/pitchShare";
 import {
   getPitchFeed,
   getMyPitches,
@@ -196,7 +197,7 @@ export default function PitchPage() {
   };
 
   const handleShare = async (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+    const shareUrl = getPitchShareUrl(pitch.id);
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(shareUrl);
