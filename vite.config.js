@@ -78,6 +78,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/a\//, "/share/ad/"),
         },
+        "/v/": {
+          target: apiTarget,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/v\//, "/share/pitch/"),
+        },
       },
     },
   };

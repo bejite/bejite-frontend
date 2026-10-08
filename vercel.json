@@ -12,6 +12,10 @@
       "source": "/a/:campaignId",
       "destination": "https://bejite-backend-9mg2.onrender.com/share/ad/:campaignId"
     },
+    {
+      "source": "/v/:pitchId",
+      "destination": "https://bejite-backend-9mg2.onrender.com/share/pitch/:pitchId"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -63,6 +63,7 @@ export const getFeed = async (limit = 20, cursor = null, options = {}) => {
     const params = { limit };
     if (cursor) params.cursor = cursor;
     if (options.hashtag) params.hashtag = options.hashtag;
+    if (options.shuffle) params.shuffle = options.shuffle;
     const response = await axiosInstance.get(`${POSTS_API_URL}/feed`, { params });
     return normalizePostsPayload(response.data);
   } catch (error) {

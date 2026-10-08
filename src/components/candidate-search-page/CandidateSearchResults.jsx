@@ -545,7 +545,7 @@ const LoadMoreSection = ({ compact, loading, error, onLoadMore, onUpgrade }) => 
       {loading ? "Loading more candidates..." : "Load more candidates"}
     </button>
     <p className={`text-white/70 mt-2 ${compact ? "text-[10px]" : "text-xs"}`}>
-      Uses 1 search credit
+      {/* Does not use an extra search credit */}
     </p>
   </div>
 );
