@@ -90,6 +90,7 @@ const SharePostModal = ({
                   onMouseDown={stopParentDismiss}
                   onClick={(event) => {
                     event.stopPropagation();
+                    onShare?.(id);
                     onClose();
                   }}
                   className={optionClassName}

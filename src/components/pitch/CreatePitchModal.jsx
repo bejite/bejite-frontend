@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import { PITCH_TYPES } from "./modal/pitchModalConstants";
 import PitchModalHeader from "./modal/PitchModalHeader";
@@ -6,6 +7,7 @@ import PitchModalStepper from "./modal/PitchModalStepper";
 import PitchModalFooter from "./modal/PitchModalFooter";
 import PitchSuccessView from "./modal/PitchSuccessView";
 import PitchLeaveConfirmModal from "./modal/PitchLeaveConfirmModal";
+import SharePostModal from "../SharePostModal";
 import Step1PitchType from "./modal/steps/Step1PitchType";
 import Step2RecordUpload from "./modal/steps/Step2RecordUpload";
 import Step3Details from "./modal/steps/Step3Details";
@@ -13,9 +15,14 @@ import Step4Audience from "./modal/steps/Step4Audience";
 import Step5Cta from "./modal/steps/Step5Cta";
 import Step6Review from "./modal/steps/Step6Review";
 import {
+  getPitchPlatformHref,
+  copyPitchLink,
+} from "../../utils/pitchShare";
+import {
   createPitch,
   updatePitch,
   uploadPitchMedia,
+  sharePitch,
   apiErrorMessage,
 } from "../../services/pitchesApi";
 import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
@@ -76,6 +83,7 @@ export default function CreatePitchModal({
   const [isPublishing, setIsPublishing] = useState(false);
   const [showLiveSuccess, setShowLiveSuccess] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [publishedPitchData, setPublishedPitchData] = useState(null);
 
   // Refs
@@ -92,6 +100,7 @@ export default function CreatePitchModal({
     if (isOpen) {
       setShowLiveSuccess(false);
       setShowLeaveConfirm(false);
+      setShowShareModal(false);
       setIsPublishing(false);
 
       if (draftToEdit) {
@@ -499,14 +508,30 @@ export default function CreatePitchModal({
   };
 
   const handleShareLink = () => {
-    const pitchId = publishedPitchData?.id || "latest";
-    const shareUrl = `${window.location.origin}/pitch?id=${pitchId}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Pitch link copied to clipboard!");
-    } else {
-      toast.info(`Pitch link: ${shareUrl}`);
+    setShowShareModal(true);
+  };
+
+  const handleShareOption = async (platform) => {
+    const pitch =
+      publishedPitchData || {
+        id: existingPitchId,
+        headline,
+        creator: currentUser,
+      };
+
+    if (platform === "copy") {
+      await copyPitchLink(pitch?.id);
     }
+
+    if (pitch?.id) {
+      try {
+        await sharePitch(pitch.id);
+      } catch (error) {
+        console.error("sharePitch failed:", error);
+      }
+    }
+
+    setShowShareModal(false);
   };
 
   if (!isOpen) return null;
@@ -650,6 +675,28 @@ export default function CreatePitchModal({
         onDiscard={handleConfirmDiscard}
         onSaveDraftAndExit={handleConfirmSaveDraft}
       />
+
+      {showShareModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <SharePostModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            onShare={handleShareOption}
+            getPlatformHref={(platform) =>
+              getPitchPlatformHref(
+                publishedPitchData || {
+                  id: existingPitchId,
+                  headline,
+                  creator: currentUser,
+                },
+                platform
+              )
+            }
+            title="Share pitch"
+          />,
+          document.body
+        )}
     </div>
   );
 }

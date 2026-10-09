@@ -8,10 +8,15 @@ import PitchDetailsCard from "../../components/pitch/PitchDetailsCard";
 import MyPitchesView from "../../components/pitch/MyPitchesView";
 import PitchEmptyState from "../../components/pitch/PitchEmptyState";
 import DeleteModal from "../../components/modal/DeleteModal";
+import SharePostModal from "../../components/SharePostModal";
 import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
 import { CATEGORIES } from "./pitchData";
+import {
+  getPitchPlatformHref,
+  copyPitchLink,
+} from "../../utils/pitchShare";
 import {
   getPitchFeed,
   getMyPitches,
@@ -33,6 +38,8 @@ export default function PitchPage() {
 
   const [pitches, setPitches] = useState([]);
   const [userActivePitches, setUserActivePitches] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [pitchToShare, setPitchToShare] = useState(null);
   const [drafts, setDrafts] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
   const [loadingMine, setLoadingMine] = useState(false);
@@ -195,24 +202,32 @@ export default function PitchPage() {
     }
   };
 
-  const handleShare = async (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+  const handleShare = (pitch) => {
+    setPitchToShare(pitch || currentPitch);
+    setShowShareModal(true);
+  };
+
+  const handleShareOption = async (platform) => {
+    const targetPitch = pitchToShare || currentPitch;
+    if (!targetPitch) return;
+
+    if (platform === "copy") {
+      await copyPitchLink(targetPitch.id);
+    }
+
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-      }
-      const result = await sharePitch(pitch.id);
+      const result = await sharePitch(targetPitch.id);
       setPitches((prev) =>
         prev.map((p) =>
-          p.id === pitch.id
-            ? { ...p, shares: result?.shares ?? p.shares + 1 }
+          p.id === targetPitch.id
+            ? { ...p, shares: result?.shares ?? (p.shares || 0) + 1 }
             : p
         )
       );
-      toast.success("Pitch link copied to clipboard!");
     } catch (error) {
-      toast.info(`Pitch link: ${shareUrl}`);
       console.error("sharePitch:", error);
+    } finally {
+      setShowShareModal(false);
     }
   };
 
@@ -456,6 +471,19 @@ export default function PitchPage() {
         }
         confirmText="Delete"
         isLoading={deletingPitch}
+      />
+
+      <SharePostModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          setPitchToShare(null);
+        }}
+        onShare={handleShareOption}
+        getPlatformHref={(platform) =>
+          getPitchPlatformHref(pitchToShare || currentPitch, platform)
+        }
+        title="Share pitch"
       />
     </NewsFeedLayout>
   );
