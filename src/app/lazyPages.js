@@ -39,6 +39,7 @@ export const PostDetailPage = lazy(() => import("../pages/PostDetailPage.jsx"));
 export const SharedPostRedirect = lazy(() => import("../pages/SharedPostRedirect.jsx"));
 export const SharedJobRedirect = lazy(() => import("../pages/SharedJobRedirect.jsx"));
 export const SharedAdRedirect = lazy(() => import("../pages/SharedAdRedirect.jsx"));
+export const SharedPitchRedirect = lazy(() => import("../pages/SharedPitchRedirect.jsx"));
 export const CandidateSearchPage = lazy(() => import("../pages/employerDashboard/CandidateSearchPage.jsx"));
 export const Chat = lazy(() => import("../pages/employerDashboard/Chat.jsx"));
 export const Connections = lazy(() => import("../pages/Connections.jsx"));

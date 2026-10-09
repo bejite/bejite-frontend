@@ -349,7 +349,7 @@ const SearchCriteria = ({ formData, setFormData, onSearch }) => {
               Search <FaSearch className="h-5 w-5" />
             </button>
             <p className="text-center text-xs text-gray-500 mt-3 px-2 leading-relaxed">
-              Each search uses 1 ASE credit. Add skills, location, and other filters
+              Add skills, location, and other filters
               to narrow results before searching.
             </p>
           </div>

@@ -271,8 +271,8 @@ const PostCreationModal = ({
     : postBody.trim() || mediaFiles.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-white sm:max-h-[90vh]">
         <div className="flex items-center justify-between p-4 border-b border-[#A9A9A9]">
           <h2 className="text-lg font-semibold text-[#1A3E32]">
             {isEditing ? "Edit Post" : isPollMode ? "Create Poll" : "Create Post"}
@@ -394,18 +394,56 @@ const PostCreationModal = ({
               </div>
             </div>
           ) : (
-            <div>
-              <PostBodyComposer
-                ref={bodyComposerRef}
-                value={postBody}
-                onChange={setPostBody}
-                placeholder="What do you want to talk about?"
-                autoFocus
-              />
-              <div className="flex justify-end mt-2">
-                <EmojiPickerButton onEmojiSelect={insertIntoComposer} />
-              </div>
-            </div>
+            <PostBodyComposer
+              ref={bodyComposerRef}
+              value={postBody}
+              onChange={setPostBody}
+              placeholder="What do you want to talk about?"
+              autoFocus
+              toolbar={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                    aria-label="Add image"
+                    title="Add image"
+                  >
+                    <FaImage className="text-base" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                    aria-label="Add video"
+                    title="Add video"
+                  >
+                    <FaVideo className="text-base" />
+                  </button>
+                  {!isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsPollMode(true)}
+                      disabled={uploadingMedia}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                      aria-label="Add poll"
+                      title="Add poll"
+                    >
+                      <FaPoll className="text-base" />
+                    </button>
+                  )}
+                  <EmojiPickerButton
+                    onEmojiSelect={insertIntoComposer}
+                    buttonClassName="h-9 w-9 rounded-full hover:bg-[#16730F]/10"
+                  />
+                  {uploadingMedia && (
+                    <span className="ml-1 text-xs text-gray-500">Uploading...</span>
+                  )}
+                </>
+              }
+            />
           )}
 
           {!isPollMode && mediaFiles.length > 0 && (
@@ -474,54 +512,6 @@ const PostCreationModal = ({
         </div>
 
         <div className="p-4 border-t border-[#A9A9A9]">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
-            {!isPollMode ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={uploadingMedia}
-                  className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
-                >
-                  <FaImage className="text-lg" />
-                  <span className="text-sm">Add Image</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  disabled={uploadingMedia}
-                  className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
-                >
-                  <FaVideo className="text-lg" />
-                  <span className="text-sm">Add Video</span>
-                </button>
-                {!isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => setIsPollMode(true)}
-                    disabled={uploadingMedia}
-                    className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
-                  >
-                    <FaPoll className="text-lg" />
-                    <span className="text-sm">Add Poll</span>
-                  </button>
-                )}
-                {uploadingMedia && (
-                  <span className="text-sm text-gray-500">Uploading...</span>
-                )}
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsPollMode(false)}
-                className="flex items-center gap-2 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-              >
-                <FaTimes className="text-sm" />
-                <span>Remove Poll</span>
-              </button>
-            )}
-          </div>
-
           {!isPollMode && (
             <>
               <input

@@ -26,6 +26,7 @@ import {
   apiErrorMessage,
 } from "../../services/pitchesApi";
 import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
+import { getPitchShareUrl } from "../../utils/pitchShare";
 
 function resolveDurationSeconds(videoEl, durationText, fallbackSeconds) {
   const fromEl = videoEl?.duration;

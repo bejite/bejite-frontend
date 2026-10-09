@@ -11,6 +11,7 @@ const PostBodyComposer = forwardRef(function PostBodyComposer(
     autoFocus = false,
     textClassName = "text-base",
     showHint = true,
+    toolbar = null,
   },
   ref,
 ) {
@@ -25,18 +26,33 @@ const PostBodyComposer = forwardRef(function PostBodyComposer(
     },
   }));
 
+  const fieldClassName = toolbar
+    ? `w-full ${minHeightClass} px-3 pt-3 pb-1 ${textClassName}`
+    : `w-full ${minHeightClass} p-3 border border-gray-300 rounded-lg focus-within:border-[#16730F] ${textClassName}`;
+
   return (
     <div className={className}>
-      <MentionComposerField
-        ref={fieldRef}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        className={`w-full ${minHeightClass} p-3 border border-gray-300 rounded-lg focus-within:border-[#16730F] ${textClassName}`}
-      />
+      <div
+        className={
+          toolbar
+            ? "rounded-lg border border-gray-300 focus-within:border-[#16730F]"
+            : undefined
+        }
+      >
+        <MentionComposerField
+          ref={fieldRef}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          className={fieldClassName}
+        />
+        {toolbar ? (
+          <div className="flex items-center gap-0.5 px-1.5 pb-1.5">{toolbar}</div>
+        ) : null}
+      </div>
       {showHint && (
-        <p className="mt-1.5 text-xs text-gray-500">
+        <p className={`mt-1.5 text-xs text-gray-500 ${toolbar ? "hidden sm:block" : ""}`}>
           Use <span className="font-semibold">*bold*</span>,{" "}
           <span className="italic">_italic_</span>,{" "}
           <span className="text-[#16730F]">@name</span>, and{" "}

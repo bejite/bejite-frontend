@@ -226,6 +226,10 @@ export default function RecruitmentMiddle() {
     setIsPitchPreviewOpen(true);
   };
 
+  const feedShuffleSeedRef = useRef(
+    globalThis.crypto?.randomUUID?.() ||
+      `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`,
+  );
   const [posts, setPosts] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -338,6 +342,7 @@ export default function RecruitmentMiddle() {
       if (!silent) setLoading(true);
       const data = await getFeed(FEED_PAGE_SIZE, null, {
         hashtag: feedHashtag || undefined,
+        shuffle: feedShuffleSeedRef.current,
       });
       setPosts(data.posts || []);
       setNextCursor(data.nextCursor ?? null);
@@ -362,6 +367,7 @@ export default function RecruitmentMiddle() {
             })
           : await getFeed(FEED_PAGE_SIZE, nextCursor, {
               hashtag: feedHashtag || undefined,
+              shuffle: feedShuffleSeedRef.current,
             });
       setPosts((prev) => mergeFeedPosts(prev, data.posts || []));
       setNextCursor(data.nextCursor ?? null);

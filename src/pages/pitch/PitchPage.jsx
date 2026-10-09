@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
 import { CATEGORIES } from "./pitchData";
+import { getPitchShareUrl } from "../../utils/pitchShare";
 import {
   getPitchPlatformHref,
   copyPitchLink,
