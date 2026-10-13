@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext, useNavigate, useLocation } from "react-router-dom";
 import NavigationButtons from "../../../components/NavigationButtons";
+import { toast } from "react-toastify";
 import {
   FaPlus,
-  FaCamera,
   FaTrash,
   FaCheck,
+  FaAward,
+  FaBuilding,
+  FaCalendarAlt,
+  FaCamera,
 } from "react-icons/fa";
-import { toast } from "react-toastify";
 
 import useAuth from "../../../hooks/useAuth";
 import useLocalStorage from "../../../hooks/useLocalStorage";
 import { useCreateCertificate } from "../../../services/certificateService";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
 import DeleteModal from "../../../components/modal/DeleteModal";
+import { InputWithIcon } from "../../../components/forms/InputIcon";
 import FormLabel from "../../../components/forms/FormLabel";
 import axiosInstance from "../../../utils/axiosInstance";
 import {
@@ -34,23 +38,6 @@ const isAllowedCertificateFile = (selectedFile) => {
   const extension = `.${selectedFile.name.split(".").pop()?.toLowerCase() || ""}`;
   return ALLOWED_CERTIFICATE_EXTENSIONS.has(extension);
 };
-
-const InputWithIcon = ({ value, onChange, placeholder, type = "text" }) => (
-  <div className="relative w-full">
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className={`w-full h-12 border-2 rounded-[10px] text-sm p-2 pr-10 focus:outline-1 focus:outline-[#16730F] ${
-        value ? "border-[#828282]" : "border-[#F5F5F5]"
-      } ${type === "date" && value ? "hide-calendar-icon" : ""}`}
-    />
-    {value && (
-      <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-[#16730F] text-lg" />
-    )}
-  </div>
-);
 
 const mapExistingCertificate = (cert) => ({
   id: cert.id,
@@ -292,18 +279,17 @@ function Certificate() {
       getPath={getPath}
       isEditMode={isEditMode}
     >
-      <div>
+      <div className="pb-20">
         <div className="max-w-3xl mx-auto mt-6 text-[#16730F] text-2xl font-semibold">
           Awards / Achievements (Optional)
         </div>
         <p className="max-w-3xl mx-auto text-[#333] text-sm mb-6">
-          Stand out by showing recognition you’ve received for your work or
-          talent.
+          Stand out by showing recognition you’ve received for your work or talent.
         </p>
 
-        <div className="max-w-full md:max-w-4xl mx-auto border-2 border-[#E0E0E0] p-4 rounded-lg">
-          <div className="bg-[#F5F5F5] p-3 rounded-2xl space-y-4">
-            <div className="bg-[#fff] rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+        <div className="max-w-4xl mx-auto border-2 border-[#E0E0E0] p-4 rounded-lg overflow-visible">
+          <div className="bg-[#F5F5F5] p-3 rounded-2xl space-y-4 overflow-visible">
+            <div className="bg-[#fff] rounded-2xl p-4 flex flex-col sm:flex-row gap-4 overflow-visible">
               <div className="flex-1">
                 <FormLabel
                   label="CERTIFICATE NAME"
@@ -339,9 +325,9 @@ function Certificate() {
                     {file ? file.name : "Upload JPG or PNG"}
                   </span>
                   {file ? (
-                    <FaCheck className="ml-2 text-[#16730F] text-lg" />
+                    <FaCheck className="ml-2 text-[#16730F] text-lg shrink-0" />
                   ) : (
-                    <FaCamera className="ml-2 text-lg" />
+                    <FaCamera className="ml-2 text-lg shrink-0" />
                   )}
                   <input
                     type="file"
@@ -364,15 +350,15 @@ function Certificate() {
               </div>
             </div>
 
-            <div className="max-w-xs mx-auto bg-[#00000040] mt-3 rounded-2xl flex">
+            <div className="max-w-2xs bg-[#00000040] mt-3 ml-auto rounded-2xl flex">
               <button
                 type="button"
                 onClick={addMore}
                 disabled={!allFilled || isSaving}
-                className={`flex-1 cursor-pointer h-16 flex items-center justify-center gap-2 text-white border-2 rounded-lg text-sm ${
+                className={`flex-1 h-16 flex items-center justify-center gap-2 text-white border-2 rounded-lg text-sm transition-all ${
                   allFilled && !isSaving
-                    ? "bg-[#16730F] border-[#16730F] hover:bg-[#145a0c]"
-                    : "bg-transparent border-[#F5F5F5] cursor-not-allowed opacity-70"
+                    ? "bg-[#16730F] border-[#16730F] cursor-pointer hover:bg-[#145a0c] transform hover:scale-105"
+                    : "bg-transparent border-[#F5F5F5] cursor-not-allowed opacity-50"
                 }`}
               >
                 ADD MORE <FaPlus />
@@ -381,35 +367,66 @@ function Certificate() {
           </div>
         </div>
 
+        {/* Added Certificates: full-width cards matching work history */}
         {savedCertificates.length > 0 && (
-          <div className="max-w-4xl px-4 mt-6 m-auto space-y-3">
+          <div className="w-full max-w-4xl mx-auto mt-6 space-y-4 px-1">
             {savedCertificates.map((cert, index) => (
               <div
                 key={cert.id || `${cert.certName}-${cert.issueDate}-${index}`}
-                className="max-w-xs m-auto bg-[#16730F] text-white rounded-lg flex flex-col sm:flex-row justify-between sm:items-center p-4 space-y-2 sm:space-y-0"
+                className="w-full bg-white border border-gray-200 hover:border-[#16730F]/40 shadow-sm hover:shadow-md transition-all rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group relative overflow-hidden"
               >
-                <div>
-                  <p className="font-semibold">{cert.certName}</p>
-                  <p className="text-sm">@ {cert.issuer}</p>
-                  {cert.issueDate && (
-                    <p className="text-xs opacity-90 mt-1">{cert.issueDate}</p>
-                  )}
-                  {cert.fileUrl && (
-                    <img
-                      src={cert.fileUrl}
-                      alt={cert.certName}
-                      className="mt-2 max-h-24 rounded"
-                    />
-                  )}
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#16730F] rounded-l-xl"></div>
+                <div className="flex items-start gap-4 flex-1 min-w-0 pl-1">
+                  <div className="w-11 h-11 rounded-xl bg-[#16730F]/10 text-[#16730F] flex items-center justify-center shrink-0 group-hover:bg-[#16730F] group-hover:text-white transition-colors duration-200">
+                    <FaAward className="text-lg" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-base sm:text-lg text-[#1A3E32] tracking-tight truncate">
+                      {cert.certName}
+                    </h4>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-gray-700 mt-1">
+                      <span className="flex items-center gap-1 font-semibold text-[#16730F]">
+                        <FaBuilding className="text-xs opacity-75" />
+                        {cert.issuer}
+                      </span>
+                      {cert.issueDate && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1 text-xs text-gray-500 font-normal">
+                            <FaCalendarAlt className="text-xs text-gray-400" />
+                            Issued {cert.issueDate}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {cert.fileUrl && (
+                      <div className="mt-3">
+                        <img
+                          src={cert.fileUrl}
+                          alt={cert.certName}
+                          className="h-16 w-auto max-w-xs object-cover rounded-md border border-gray-200 shadow-xs"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setCertToDelete({ cert, index })}
-                  className="text-white text-xl cursor-pointer hover:text-red-300 transition-colors"
-                  aria-label="Delete certificate"
-                >
-                  <FaTrash />
-                </button>
+
+                <div className="flex items-center justify-end w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 shrink-0">
+                  <button
+                    type="button"
+                    title="Delete certificate"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 hover:border-red-200 transition-all cursor-pointer"
+                    onClick={() => setCertToDelete({ cert, index })}
+                  >
+                    <FaTrash className="text-sm" />
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>

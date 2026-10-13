@@ -1,5 +1,32 @@
 # Git Work Log
 
+## 2026-10-13 22:20 (WAT) — Redesign Awards and Certificates Step with Full-Width Responsive Layout
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Redesigned the Awards / Achievements (Certificate) CV builder screen from a narrow, clunky layout to a full-width, modern responsive interface. Replaced nested grey boxes, black upload buttons, and narrow green blocks with a sleek card form, modern upload dropzone with previews, and a responsive 3-column card grid for added certificates.
+- **Changed**:
+  - `src/pages/jobseekerSignup/cvBuilder/Certificate.jsx`: Expanded layout to full width, modernized header with award iconography, replaced nested grey boxes with a clean border-card, upgraded upload input to a modern file dropzone with file size and format badges, and displayed saved certificates in a responsive 3-column card grid with thumbnails and quick delete actions.
+  - `src/components/NavigationButtons.jsx`: Allowed flexible full-width layout and custom className overrides.
+- **Conventional type**: `style(onboarding)`
+
+### Proposed Commit Message
+
+```
+style(onboarding): redesign awards and certificate cv builder step to full width
+
+The certificate step previously suffered from narrow width constraints (max-w-xs),
+awkward nested grey containers, clunky black upload buttons, and poorly aligned
+green blocks for saved certificates.
+
+- Expand certificate step to full width matching the onboarding stepper
+- Replace nested containers with a modern single-border form card
+- Modernize certificate image upload with file info, size badges, and change actions
+- Transform saved certificates into a responsive 3-column card grid with image previews
+- Allow NavigationButtons to expand smoothly across full width
+```
+
+---
+
 ## 2026-10-13 21:30 (WAT) — Add Two-Step Reason Validation and Confirmation Flow for Account Deactivation and Deletion
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)
