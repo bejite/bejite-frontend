@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Lock,
   Eye,
@@ -25,6 +26,7 @@ import {
   ProfileVisibilityModal,
   TwoFactorModal,
 } from "../components/modal/confirmBadgeModal";
+import AccountActionFlowModal from "../components/modal/AccountActionFlowModal";
 import { SettingRow } from "../components/SettingsRow";
 import {
   getUser,
@@ -51,6 +53,7 @@ import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
 
 export default function AccountSettings() {
   useSyncProfilePhoto();
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const reduxUser = useSelector((state) => state.auth?.user);
 
@@ -185,6 +188,33 @@ export default function AccountSettings() {
   const handleConfirmAction = (action) => {
     setModal(null);
     showToast(`${action} successful`);
+  };
+
+  const handleAccountDeactivate = (reason) => {
+    setModal(null);
+    showToast("Account deactivated successfully");
+    setTimeout(() => {
+      logout();
+    }, 1200);
+  };
+
+  const handleAccountDelete = (reason) => {
+    setModal(null);
+    showToast("Account permanently deleted");
+    setTimeout(() => {
+      logout();
+    }, 1200);
+  };
+
+  const handleRedirectContact = (reason, mode) => {
+    setModal(null);
+    showToast("Connecting you with our support team...");
+    navigate("/contact", {
+      state: {
+        reason,
+        action: mode === "delete" ? "account_deletion" : "account_deactivation",
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -463,25 +493,23 @@ export default function AccountSettings() {
           />
         )}
         {modal === "deactivate" && (
-          <ConfirmModal
-            key="deactivate"
-            title="Deactivate Account"
-            description="Your profile will be hidden from other users. You can reactivate at any time by logging back in."
-            confirmLabel="Deactivate"
-            danger
+          <AccountActionFlowModal
+            key="deactivate-flow"
+            isOpen={true}
+            mode="deactivate"
             onClose={() => setModal(null)}
-            onConfirm={() => handleConfirmAction("Account deactivated")}
+            onConfirm={handleAccountDeactivate}
+            onRedirectContact={(reason) => handleRedirectContact(reason, "deactivate")}
           />
         )}
         {modal === "delete" && (
-          <ConfirmModal
-            key="delete"
-            title="Delete Account"
-            description="This action is permanent and cannot be undone. All your data, posts, and connections will be removed."
-            confirmLabel="Delete Forever"
-            danger
+          <AccountActionFlowModal
+            key="delete-flow"
+            isOpen={true}
+            mode="delete"
             onClose={() => setModal(null)}
-            onConfirm={() => handleConfirmAction("Account deleted")}
+            onConfirm={handleAccountDelete}
+            onRedirectContact={(reason) => handleRedirectContact(reason, "delete")}
           />
         )}
       </AnimatePresence>

@@ -1,5 +1,32 @@
 # Git Work Log
 
+## 2026-10-13 21:30 (WAT) — Add Two-Step Reason Validation and Confirmation Flow for Account Deactivation and Deletion
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented an interactive two-step modal flow for deactivating or deleting accounts. Users select their reason first; if the reason can be resolved by support (e.g., technical glitches, billing issues, usability confusion), they are guided with a support notice and redirected to the Contact Us page (`/contact`). If the reason is solid/convincing, they advance to the final confirmation dialog ("Are you sure?") before proceeding.
+- **Changed**:
+  - `src/components/modal/AccountActionFlowModal.jsx`: Created a multi-step modal featuring tailored reasons for deactivation and deletion, automatic classification of solid vs support-resolvable reasons, explanatory support notice banner, and confirmation dialog with impact warnings.
+  - `src/pages/AccountSettings.jsx`: Replaced default confirmation dialogs with `AccountActionFlowModal` for Deactivate Account and Delete Account, integrated redirection to `/contact`, and added safe logout handling upon confirmation.
+- **Conventional type**: `feat(account)`
+
+### Proposed Commit Message
+
+```
+feat(account): add two-step reason validation and confirmation for deactivation and deletion
+
+Users clicking "Deactivate Account" or "Delete Account" previously only saw
+a basic one-click confirmation dialog without understanding alternatives or
+providing exit feedback.
+
+- Add AccountActionFlowModal presenting selectable reasons for leaving
+- Redirect users to Contact Us (/contact) when selecting support-resolvable reasons (bugs, billing, confusion)
+- Advance to "Are you sure?" confirmation modal only when selecting solid reasons
+- Warn clearly about data permanence on deletion vs temporary nature of deactivation
+- Trigger toast notifications and clean logout upon confirmed action
+```
+
+---
+
 ## 2026-10-08 22:30 (WAT) — Implement Pitch Social Sharing Modal and Full Follower Count Display
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)
