@@ -26,3 +26,12 @@ export function formatCompactCount(count) {
 
   return String(n);
 }
+
+/**
+ * Full count formatted with commas: 1234 becomes "1,234".
+ */
+export function formatFullCount(count) {
+  const n = Math.floor(Number(count));
+  if (!Number.isFinite(n) || n <= 0) return "0";
+  return n.toLocaleString();
+}

@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { canAccessPath } from "../../constants/adminPermissions";
-import { useAdminInbox } from "../../context/AdminInboxContext";
+import { useAdminInbox } from "../../context/useAdminInbox";
 import { NOTIFICATION_CATEGORIES } from "../../data/notificationData";
 import {
   NotificationHeader,

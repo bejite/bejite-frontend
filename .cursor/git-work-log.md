@@ -1,5 +1,90 @@
 # Git Work Log
 
+## 2026-10-13 22:20 (WAT) — Redesign Awards and Certificates Step with Full-Width Responsive Layout
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Redesigned the Awards / Achievements (Certificate) CV builder screen from a narrow, clunky layout to a full-width, modern responsive interface. Replaced nested grey boxes, black upload buttons, and narrow green blocks with a sleek card form, modern upload dropzone with previews, and a responsive 3-column card grid for added certificates.
+- **Changed**:
+  - `src/pages/jobseekerSignup/cvBuilder/Certificate.jsx`: Expanded layout to full width, modernized header with award iconography, replaced nested grey boxes with a clean border-card, upgraded upload input to a modern file dropzone with file size and format badges, and displayed saved certificates in a responsive 3-column card grid with thumbnails and quick delete actions.
+  - `src/components/NavigationButtons.jsx`: Allowed flexible full-width layout and custom className overrides.
+- **Conventional type**: `style(onboarding)`
+
+### Proposed Commit Message
+
+```
+style(onboarding): redesign awards and certificate cv builder step to full width
+
+The certificate step previously suffered from narrow width constraints (max-w-xs),
+awkward nested grey containers, clunky black upload buttons, and poorly aligned
+green blocks for saved certificates.
+
+- Expand certificate step to full width matching the onboarding stepper
+- Replace nested containers with a modern single-border form card
+- Modernize certificate image upload with file info, size badges, and change actions
+- Transform saved certificates into a responsive 3-column card grid with image previews
+- Allow NavigationButtons to expand smoothly across full width
+```
+
+---
+
+## 2026-10-13 21:30 (WAT) — Add Two-Step Reason Validation and Confirmation Flow for Account Deactivation and Deletion
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented an interactive two-step modal flow for deactivating or deleting accounts. Users select their reason first; if the reason can be resolved by support (e.g., technical glitches, billing issues, usability confusion), they are guided with a support notice and redirected to the Contact Us page (`/contact`). If the reason is solid/convincing, they advance to the final confirmation dialog ("Are you sure?") before proceeding.
+- **Changed**:
+  - `src/components/modal/AccountActionFlowModal.jsx`: Created a multi-step modal featuring tailored reasons for deactivation and deletion, automatic classification of solid vs support-resolvable reasons, explanatory support notice banner, and confirmation dialog with impact warnings.
+  - `src/pages/AccountSettings.jsx`: Replaced default confirmation dialogs with `AccountActionFlowModal` for Deactivate Account and Delete Account, integrated redirection to `/contact`, and added safe logout handling upon confirmation.
+- **Conventional type**: `feat(account)`
+
+### Proposed Commit Message
+
+```
+feat(account): add two-step reason validation and confirmation for deactivation and deletion
+
+Users clicking "Deactivate Account" or "Delete Account" previously only saw
+a basic one-click confirmation dialog without understanding alternatives or
+providing exit feedback.
+
+- Add AccountActionFlowModal presenting selectable reasons for leaving
+- Redirect users to Contact Us (/contact) when selecting support-resolvable reasons (bugs, billing, confusion)
+- Advance to "Are you sure?" confirmation modal only when selecting solid reasons
+- Warn clearly about data permanence on deletion vs temporary nature of deactivation
+- Trigger toast notifications and clean logout upon confirmed action
+```
+
+---
+
+## 2026-10-08 22:30 (WAT) — Implement Pitch Social Sharing Modal and Full Follower Count Display
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Replaced direct clipboard link copying with the interactive `SharePostModal` across all pitch views (pitch page, preview modal, and post-creation modal) to support sharing directly to WhatsApp, Facebook, X, LinkedIn, Telegram, and copying links. Updated recruiter profile follower stats to display exact follower counts with comma separation.
+- **Changed**:
+  - `src/utils/pitchShare.js`: Created reusable helper to resolve pitch URLs and trigger social sharing modal with pitch title and link.
+  - `src/utils/formatCompactCount.js`: Added `formatFullCount` helper to format numbers with comma separation (`1,234`).
+  - `src/components/SharePostModal.jsx`: Supported dynamic title and URL props so the sharing modal works seamlessly for pitch sharing as well as regular feed posts.
+  - `src/pages/pitch/PitchPage.jsx`: Replaced simple link copy on pitch cards with the comprehensive `SharePostModal`.
+  - `src/components/pitch/PitchPreviewModal.jsx`: Integrated `SharePostModal` for previewing and sharing pitches.
+  - `src/components/pitch/CreatePitchModal.jsx`: Updated post-creation success dialog to trigger social share dialog.
+  - `src/pages/Profile.jsx`: Switched follower count from abbreviated notation (`1.2k`) to full formatted count (`1,234 Followers`) on corporate profile cards.
+- **Conventional type** (for next commit): `feat(pitch)`
+
+### Proposed Commit Message
+
+```
+feat(pitch): add pitch social sharing modal and display exact follower count
+
+We want candidates and recruiters to easily share pitch presentations across
+social networks, and display accurate total follower counts on user profiles.
+
+- Open social share modal on pitch cards supporting WhatsApp, X, Facebook, LinkedIn, and Telegram
+- Add pitchShare utility to standardize pitch URLs and share triggers
+- Update SharePostModal to support custom post titles and URLs
+- Integrate share dialog into pitch preview and pitch creation success screens
+- Display exact comma-separated follower counts on profiles instead of rounded abbreviations
+```
+
+---
+
 ## 2026-09-29 08:15 (WAT) — Move Polls Inside Create Post Modal and Clean Newsfeed Bar
 
 - **Repo**: `bejite-frontend`

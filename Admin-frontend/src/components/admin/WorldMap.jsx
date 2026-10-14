@@ -75,7 +75,7 @@ const normalizeCountryName = (name) => {
 };
 
 // Green color scale tiers based on jobseeker counts
-export const COLOR_TIERS = [
+const COLOR_TIERS = [
   { min: 1, max: 9, label: "1 - 9", color: "#dcfce7" }, // very light pastel green
   { min: 10, max: 19, label: "10 - 19", color: "#bbf7d0" }, // light pastel green
   { min: 20, max: 29, label: "20 - 29", color: "#86efac" }, // soft spring green
@@ -89,7 +89,7 @@ export const COLOR_TIERS = [
   { min: 20000, max: Infinity, label: "20K+", color: "#052e16" }, // deepest dark green
 ];
 
-export const getTierForCount = (count) => {
+const getTierForCount = (count) => {
   if (!count || count <= 0) return null;
   for (let i = COLOR_TIERS.length - 1; i >= 0; i--) {
     if (count >= COLOR_TIERS[i].min) {

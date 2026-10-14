@@ -1,1 +1,1 @@
-export { DeleteModal, DeleteConfirmModal, default } from "./modal/DeleteModal";
+// Delete confirmation UI lives in ./modal/DeleteModal.jsx.

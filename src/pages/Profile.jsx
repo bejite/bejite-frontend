@@ -59,7 +59,7 @@ import MutualConnectionsModal from "../components/MutualConnectionsModal";
 import ProfileVerifiedBadgeCard from "../components/profile/ProfileVerifiedBadgeCard";
 import { userHasVerifiedBadge } from "../utils/verifiedBadge";
 
-import { formatCompactCount as formatConnectionCount } from "../utils/formatCompactCount";
+import { formatCompactCount as formatConnectionCount, formatFullCount } from "../utils/formatCompactCount";
 
 const ABOUT_CHAR_LIMIT = 240;
 const ABOUT_WORD_LIMIT = 35;
@@ -762,61 +762,57 @@ const Profile = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-end justify-between gap-4 shrink-0 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-              {/* Connections Stat Widget */}
-              {isViewingOwnProfile ? (
-                <button
-                  type="button"
-                  onClick={() => navigate("/connection")}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-[#16730F] text-xs sm:text-sm font-bold border border-emerald-200 transition-all cursor-pointer shadow-2xs"
-                  title={
-                    profileData.isCorporate ||
-                    (String(profileData.role || "").toLowerCase() ===
-                      "recruiter" &&
-                      String(profileData.mode || "").toLowerCase() ===
-                        "corporate")
-                      ? "View all your followers"
-                      : "View all your connections"
-                  }
-                >
-                  <FaUserFriends className="text-base" />
-                  <span className="text-lg font-extrabold text-[#16730F]">
-                    {formatConnectionCount(profileData.connectionCount)}
-                  </span>
-                  <span className="text-slate-600 font-medium">
-                    {profileData.isCorporate ||
-                    (String(profileData.role || "").toLowerCase() ===
-                      "recruiter" &&
-                      String(profileData.mode || "").toLowerCase() ===
-                        "corporate")
-                      ? Number(profileData.connectionCount) === 1
-                        ? "Follower"
-                        : "Followers"
-                      : Number(profileData.connectionCount) === 1
-                        ? "Connection"
-                        : "Connections"}
-                  </span>
-                </button>
-              ) : (
-                <div className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-5 py-3 rounded-2xl bg-slate-100/90 text-slate-800 text-xs sm:text-sm font-bold border border-slate-200">
-                  <FaUserFriends className="text-[#16730F] text-base" />
-                  <span className="text-lg font-extrabold text-[#16730F]">
-                    {formatConnectionCount(profileData.connectionCount)}
-                  </span>
-                  <span className="text-slate-600 font-medium">
-                    {profileData.isCorporate ||
-                    (String(profileData.role || "").toLowerCase() ===
-                      "recruiter" &&
-                      String(profileData.mode || "").toLowerCase() ===
-                        "corporate")
-                      ? Number(profileData.connectionCount) === 1
-                        ? "Follower"
-                        : "Followers"
-                      : Number(profileData.connectionCount) === 1
-                        ? "Connection"
-                        : "Connections"}
-                  </span>
-                </div>
-              )}
+              {/* Connections / Followers Stat Widget */}
+              {(() => {
+                const isFollowers = Boolean(
+                  profileData.isCorporate ||
+                  (String(profileData.role || "").toLowerCase() ===
+                    "recruiter" &&
+                    String(profileData.mode || "").toLowerCase() ===
+                      "corporate")
+                );
+                const displayCount = isFollowers
+                  ? formatFullCount(profileData.connectionCount)
+                  : formatConnectionCount(profileData.connectionCount);
+                const countUnit = isFollowers
+                  ? Number(profileData.connectionCount) === 1
+                    ? "Follower"
+                    : "Followers"
+                  : Number(profileData.connectionCount) === 1
+                    ? "Connection"
+                    : "Connections";
+
+                return isViewingOwnProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/connection")}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-[#16730F] text-xs sm:text-sm font-bold border border-emerald-200 transition-all cursor-pointer shadow-2xs"
+                    title={
+                      isFollowers
+                        ? "View all your followers"
+                        : "View all your connections"
+                    }
+                  >
+                    <FaUserFriends className="text-base" />
+                    <span className="text-lg font-extrabold text-[#16730F]">
+                      {displayCount}
+                    </span>
+                    <span className="text-slate-600 font-medium">
+                      {countUnit}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-5 py-3 rounded-2xl bg-slate-100/90 text-slate-800 text-xs sm:text-sm font-bold border border-slate-200">
+                    <FaUserFriends className="text-[#16730F] text-base" />
+                    <span className="text-lg font-extrabold text-[#16730F]">
+                      {displayCount}
+                    </span>
+                    <span className="text-slate-600 font-medium">
+                      {countUnit}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Connect / Message Actions Panel */}
               {!isViewingOwnProfile && viewedProfileId && (
