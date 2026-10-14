@@ -18,6 +18,8 @@ function isAllowedHost(hostname) {
 
 /**
  * @param {string} pathOrUrl
+ * Same-site and other Bejite hosts stay inside the current app (so localhost
+ * does not jump to production). Anything else is rejected.
  * @returns {{ kind: 'internal', path: string } | { kind: 'external', url: string } | { kind: 'reject' }}
  */
 export function classifyNavigationTarget(pathOrUrl) {
@@ -33,11 +35,8 @@ export function classifyNavigationTarget(pathOrUrl) {
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return { kind: "reject" };
     }
-    if (url.origin === window.location.origin) {
-      return { kind: "internal", path: `${url.pathname}${url.search}${url.hash}` };
-    }
-    if (isAllowedHost(url.hostname)) {
-      return { kind: "external", url: url.toString() };
+    if (url.origin === window.location.origin || isAllowedHost(url.hostname)) {
+      return { kind: "internal", path: `${url.pathname}${url.search}${url.hash}` || "/" };
     }
     return { kind: "reject" };
   } catch {

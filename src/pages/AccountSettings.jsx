@@ -185,12 +185,7 @@ export default function AccountSettings() {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  const handleConfirmAction = (action) => {
-    setModal(null);
-    showToast(`${action} successful`);
-  };
-
-  const handleAccountDeactivate = (reason) => {
+  const handleAccountDeactivate = (_reason) => {
     setModal(null);
     showToast("Account deactivated successfully");
     setTimeout(() => {
@@ -198,7 +193,7 @@ export default function AccountSettings() {
     }, 1200);
   };
 
-  const handleAccountDelete = (reason) => {
+  const handleAccountDelete = (_reason) => {
     setModal(null);
     showToast("Account permanently deleted");
     setTimeout(() => {

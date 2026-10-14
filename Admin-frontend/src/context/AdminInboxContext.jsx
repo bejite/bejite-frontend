@@ -1,16 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchAdminInbox } from "../services/adminInboxApi";
+import { AdminInboxContext } from "./adminInboxContext";
 
 const POLL_MS = 60_000;
-
-const AdminInboxContext = createContext(null);
 
 export function AdminInboxProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
@@ -79,12 +71,4 @@ export function AdminInboxProvider({ children }) {
       {children}
     </AdminInboxContext.Provider>
   );
-}
-
-export function useAdminInbox() {
-  const context = useContext(AdminInboxContext);
-  if (!context) {
-    throw new Error("useAdminInbox must be used within AdminInboxProvider");
-  }
-  return context;
 }

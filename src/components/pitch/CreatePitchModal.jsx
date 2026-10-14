@@ -26,7 +26,6 @@ import {
   apiErrorMessage,
 } from "../../services/pitchesApi";
 import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
-import { getPitchShareUrl } from "../../utils/pitchShare";
 
 function resolveDurationSeconds(videoEl, durationText, fallbackSeconds) {
   const fromEl = videoEl?.duration;
@@ -95,6 +94,7 @@ export default function CreatePitchModal({
   const recordTimerRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const stopCameraRef = useRef(() => {});
 
   // Initialize or restore draft
   useEffect(() => {
@@ -169,14 +169,14 @@ export default function CreatePitchModal({
       setShowLiveSuccess(false);
       setPublishedPitchData(null);
     } else {
-      stopCamera();
+      stopCameraRef.current();
     }
   }, [isOpen, draftToEdit]);
 
   // Camera cleanup on step change
   useEffect(() => {
     if (step !== 2 || mediaMode !== "record") {
-      stopCamera();
+      stopCameraRef.current();
     }
   }, [step, mediaMode]);
 
@@ -216,6 +216,7 @@ export default function CreatePitchModal({
       stopRecording();
     }
   };
+  stopCameraRef.current = stopCamera;
 
   const startRecording = () => {
     if (!streamRef.current) {

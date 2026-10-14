@@ -23,7 +23,7 @@ import {
   getAdminRoleLabel,
 } from "../../constants/adminPermissions";
 import NotificationDropdown from "./NotificationDropdown";
-import { useAdminInbox } from "../../context/AdminInboxContext";
+import { useAdminInbox } from "../../context/useAdminInbox";
 import { fetchMailboxSummary } from "../../services/recruiterMailService";
 
 const AdminLayout = () => {

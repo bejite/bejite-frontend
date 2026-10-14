@@ -4,7 +4,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { toast } from "react-toastify";
 import AdCampaignReviewCard from "../../components/admin/AdCampaignReviewCard";
 import { Search, Megaphone } from "lucide-react";
-import { useAdminInbox } from "../../context/AdminInboxContext";
+import { useAdminInbox } from "../../context/useAdminInbox";
 
 const STATUS_FILTERS = [
   { value: "pending_review", label: "Pending Review" },
