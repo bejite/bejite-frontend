@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import OnboardingLayout from "../../components/layout/onboardingLayout";
 import Loader from "../../components/ui/Loader";
 import FormLabel from "../../components/forms/FormLabel";
+import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
 import {
   JOB_TITLE_OPTIONS,
   INDUSTRY_OPTIONS,
@@ -340,28 +341,31 @@ function JobType() {
                     />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <RecruiterSelect
+                    <FormLabel
                       label="JOB TITLE / YOUR ROLE"
                       tooltip="Your target job role or desired position"
+                    />
+                    <AutocompleteInput
                       value={form.jobTitle}
                       onChange={updateField("jobTitle")}
-                      options={JOB_TITLE_OPTIONS}
                       placeholder="Enter or select job title"
-                      editable={true}
-                      creatable={true}
-                      onAddNew={(title) => {
-                        toast.success(`Added "${title}" as job title`);
-                      }}
+                      formName="job-type"
+                      fieldName="job_title"
+                      staticOptions={JOB_TITLE_OPTIONS}
                     />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <RecruiterSelect
+                    <FormLabel
                       label="INDUSTRY / SECTOR"
                       tooltip="The industry or sector you want to work in (e.g. Technology, Finance, Healthcare)"
+                    />
+                    <AutocompleteInput
                       value={form.industry}
                       onChange={updateField("industry")}
-                      options={INDUSTRY_OPTIONS}
-                      placeholder="Select industry"
+                      placeholder="Enter or select industry"
+                      formName="job-type"
+                      fieldName="industry_sector"
+                      staticOptions={INDUSTRY_OPTIONS}
                     />
                   </div>
                 </div>
