@@ -3,53 +3,88 @@ import React, { useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
 import * as connectionsApi from "../services/connectionsApi";
+import * as followsApi from "../services/followsApi";
+import { getUser } from "../utils/tokenManager";
+import { resolveRecruiterMode } from "../utils/recruiterProfilePaths";
 
 const PeopleConnect = () => {
-  const [users, setUsers] = useState(() => 
+  const currentUser = getUser();
+  const viewerIsCorporate =
+    String(currentUser?.role || "").toLowerCase() === "recruiter" &&
+    resolveRecruiterMode(currentUser) === "corporate";
+
+  const [users, setUsers] = useState(() =>
     Array(8).fill({
       id: null,
       name: "John Samuel",
       role: "Jobseeker",
       connections: "34",
       image: "/assets/images/photo_placeholder.png",
-      connectionStatus: "none" // none, pending, connected
-    })
+      connectionStatus: "none", // none, pending, connected, following
+    }),
   );
 
   const handleSendRequest = async (userId, userName) => {
+    if (viewerIsCorporate) {
+      toast.info(
+        "Corporate pages don't send connection requests. Others can follow you.",
+      );
+      return;
+    }
+    if (userId == null) {
+      toast.error("This profile cannot receive connections yet.");
+      return;
+    }
     try {
+      const followStatus = await followsApi.getFollowStatus(userId);
+      if (followStatus?.isCorporate) {
+        await followsApi.followUser(userId);
+        toast.success(`You are now following ${userName}!`);
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === userId
+              ? { ...user, connectionStatus: "following" }
+              : user,
+          ),
+        );
+        return;
+      }
+
       await connectionsApi.sendConnectionRequest(userId);
       toast.success(`Connection request sent to ${userName}!`);
-      
-      // Update local state - mark as pending
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, connectionStatus: "pending" } : user
-      ));
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId ? { ...user, connectionStatus: "pending" } : user,
+        ),
+      );
     } catch (error) {
-      console.error('Error sending connection request:', error);
-      toast.error('Failed to send connection request');
+      console.error("Error sending network request:", error);
+      toast.error(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Failed to send request",
+      );
     }
   };
 
   return (
     <div className="max-w-3xl m-auto px-6 py-6 bg-[#F5F5F5] mt-2">
-      {/* Search Section */}
       <div className="max-w-3xl mx-auto rounded-2xl p-4 sm:p-6 bg-white shadow-sm">
         <SearchBar />
       </div>
-      
+
       <Divider />
 
-      {/* Connections Section */}
       <div className="max-w-3xl mx-auto rounded-2xl p-4 sm:p-6 bg-white shadow-sm space-y-4">
-        <ConnectionHeader />
+        <ConnectionHeader viewerIsCorporate={viewerIsCorporate} />
         <Divider small />
-        
-        {/* User List */}
+
         {users.map((user, index) => (
           <React.Fragment key={index}>
-            <UserCard 
+            <UserCard
               user={user}
+              viewerIsCorporate={viewerIsCorporate}
               onConnect={() => handleSendRequest(user.id || index, user.name)}
             />
             <Divider small />
@@ -60,7 +95,6 @@ const PeopleConnect = () => {
   );
 };
 
-// Reusable Components
 const SearchBar = () => (
   <div className="relative w-full sm:w-[300px] md:w-[400px] m-auto">
     <input
@@ -74,20 +108,27 @@ const SearchBar = () => (
   </div>
 );
 
-const ConnectionHeader = () => (
+const ConnectionHeader = ({ viewerIsCorporate }) => (
   <>
-    <p className="text-[#1A3E32] font-semibold">Connect with people</p>
-    <div className="flex space-x-3">
-      <Button variant="suggestions">Suggestions</Button>
-      <Button variant="connect">Connect</Button>
-    </div>
+    <p className="text-[#1A3E32] font-semibold">
+      {viewerIsCorporate
+        ? "Your company page is follow-only"
+        : "Connect with people"}
+    </p>
+    {!viewerIsCorporate && (
+      <div className="flex space-x-3">
+        <Button variant="suggestions">Suggestions</Button>
+        <Button variant="connect">Connect</Button>
+      </div>
+    )}
   </>
 );
 
-const UserCard = ({ user, onConnect }) => {
+const UserCard = ({ user, onConnect, viewerIsCorporate }) => {
   const { name, role, connections, image, connectionStatus } = user;
   const isPending = connectionStatus === "pending";
   const isConnected = connectionStatus === "connected";
+  const isFollowing = connectionStatus === "following";
 
   return (
     <div className="flex gap-3">
@@ -99,32 +140,43 @@ const UserCard = ({ user, onConnect }) => {
           <p className="text-[#FFB547]">.{connections}</p>
           <p className="text-[#FFB547]">connections</p>
         </div>
-        <Button 
-          variant="connectUser" 
-          onClick={onConnect}
-          disabled={isPending || isConnected}
-        >
-          <img src="/assets/images/repeate-one.svg" alt="Connect icon" />
-          <span>{isPending ? "Pending" : isConnected ? "Connected" : "Connect"}</span>
-        </Button>
+        {!viewerIsCorporate && (
+          <Button
+            variant="connectUser"
+            onClick={onConnect}
+            disabled={isPending || isConnected || isFollowing}
+          >
+            <img src="/assets/images/repeate-one.svg" alt="Connect icon" />
+            <span>
+              {isPending
+                ? "Pending"
+                : isConnected
+                  ? "Connected"
+                  : isFollowing
+                    ? "Following"
+                    : "Connect"}
+            </span>
+          </Button>
+        )}
       </div>
     </div>
   );
 };
 
 const Button = ({ variant, children, onClick, disabled }) => {
-  const baseClasses = "rounded-2xl p-2 text-[13px] flex items-center justify-center space-x-1";
-  
+  const baseClasses =
+    "rounded-2xl p-2 text-[13px] flex items-center justify-center space-x-1";
+
   const variants = {
     suggestions: "bg-[#1A3E32] text-[#FFB547] w-36",
     connect: "bg-[#1A3E32] text-[#FFB547] w-36",
-    connectUser: "bg-[#16730F] text-[#FFFFFF] w-40 p-2 rounded-3xl"
+    connectUser: "bg-[#16730F] text-[#FFFFFF] w-40 p-2 rounded-3xl",
   };
 
   const disabledClasses = "opacity-50 cursor-not-allowed";
 
   return (
-    <button 
+    <button
       className={`${baseClasses} ${variants[variant]} ${disabled ? disabledClasses : ""}`}
       onClick={onClick}
       disabled={disabled}
@@ -135,7 +187,9 @@ const Button = ({ variant, children, onClick, disabled }) => {
 };
 
 const Divider = ({ small = false }) => (
-  <div className={`max-w-3xl mx-auto my-4 border-t-2 ${small ? "border-[#E0E0E0]" : "border-[#16730F]"}`} />
+  <div
+    className={`max-w-3xl mx-auto my-4 border-t-2 ${small ? "border-[#E0E0E0]" : "border-[#16730F]"}`}
+  />
 );
 
 export default PeopleConnect;

@@ -6,13 +6,15 @@
  */
 export function formatSalaryExpectation(amount, currency) {
   if (amount == null || amount === '') return null;
+  if (String(amount).trim().toLowerCase() === 'any') return null;
 
-  const num = Number(amount);
-  if (Number.isNaN(num)) return String(amount);
+  const cleaned = String(amount).replace(/,/g, '').replace(/[^\d.-]/g, '');
+  const num = Number(cleaned);
+  if (!cleaned || Number.isNaN(num)) return String(amount).trim();
 
   const code = String(currency || 'NGN')
     .trim()
-    .toUpperCase();
+    .toUpperCase() || 'NGN';
 
   try {
     return new Intl.NumberFormat('en-US', {
@@ -21,6 +23,6 @@ export function formatSalaryExpectation(amount, currency) {
       maximumFractionDigits: 0,
     }).format(num);
   } catch {
-    return `${num.toLocaleString()} ${code}`;
+    return `${code} ${num.toLocaleString('en-US')}`;
   }
 }

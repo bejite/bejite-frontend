@@ -1,6 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { MockJobs } from "../../../utils/mockJobs";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { HeroSection } from "../../../components/jobs/HeroSection";
 import { SearchBar } from "../../../components/jobs/SearchBar";
 import NewsFeedLayout from "../../../components/layout/NewsFeedLayout";
@@ -13,15 +12,14 @@ import {
   getJobVacancyById,
 } from "../../../services/jobVacancyApi";
 import { toast } from "react-toastify";
-import {
-  FaBookmark,
-  FaSpinner,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
+import { FaBookmark, FaSpinner } from "react-icons/fa";
+import { getUser } from "../../../utils/tokenManager";
+
+const JOBS_PER_PAGE = 6;
 
 const JobVacancyListing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentUserId = getUser()?.id || null;
   const [jobs, setJobs] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,11 +33,15 @@ const JobVacancyListing = () => {
   const [savedJobs, setSavedJobs] = useState([]);
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [jobsPerPage] = useState(6);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadMoreRef = useRef(null);
+  const loadingMoreRef = useRef(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("savedJobs");
@@ -84,25 +86,11 @@ const JobVacancyListing = () => {
     };
   }, [searchParams]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    debouncedSearch,
-    selectedIndustry,
-    selectedWorkMode,
-    selectedJobType,
-    selectedExperienceLevel,
-    salaryRange,
-  ]);
-
-  const loadJobs = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const buildParams = useCallback(
+    (page) => {
       const params = {
-        page: currentPage,
-        limit: jobsPerPage,
+        page,
+        limit: JOBS_PER_PAGE,
       };
 
       if (debouncedSearch) params.search = debouncedSearch;
@@ -116,41 +104,128 @@ const JobVacancyListing = () => {
         params.salaryMax = salaryRange[1];
       }
 
-      const response = await getJobVacancies(params);
+      return params;
+    },
+    [
+      debouncedSearch,
+      selectedIndustry,
+      selectedWorkMode,
+      selectedJobType,
+      selectedExperienceLevel,
+      salaryRange,
+    ],
+  );
 
-      if (!response?.success) {
-        throw new Error(response?.message || "Failed to load job vacancies");
+  const loadJobs = useCallback(
+    async ({ page = 1, append = false } = {}) => {
+      if (append) {
+        if (loadingMoreRef.current) return;
+        loadingMoreRef.current = true;
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+        setError(null);
       }
 
-      setJobs(response.data?.jobs || []);
-      setIndustries(response.data?.industries || []);
-      setTotalJobs(response.pagination?.total || 0);
-    } catch (err) {
-      console.error("Job vacancies load error:", err);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to load job vacancies",
-      );
-      setJobs([]);
-      setTotalJobs(0);
-    } finally {
-      setIsLoading(false);
+      try {
+        const response = await getJobVacancies(buildParams(page));
+
+        if (!response?.success) {
+          throw new Error(response?.message || "Failed to load job vacancies");
+        }
+
+        const nextJobs = response.data?.jobs || [];
+        const total = Number(response.pagination?.total) || 0;
+
+        setIndustries(response.data?.industries || []);
+        setTotalJobs(total);
+        setCurrentPage(page);
+        setJobs((prev) => {
+          if (!append) return nextJobs;
+
+          const seen = new Set(prev.map((job) => String(job.id)));
+          const merged = [...prev];
+          for (const job of nextJobs) {
+            const id = String(job.id);
+            if (!seen.has(id)) {
+              seen.add(id);
+              merged.push(job);
+            }
+          }
+          return merged;
+        });
+        setHasMore(
+          append
+            ? page * JOBS_PER_PAGE < total && nextJobs.length > 0
+            : nextJobs.length < total,
+        );
+      } catch (err) {
+        console.error("Job vacancies load error:", err);
+        if (!append) {
+          setError(
+            err.response?.data?.message ||
+              err.message ||
+              "Failed to load job vacancies",
+          );
+          setJobs([]);
+          setTotalJobs(0);
+          setHasMore(false);
+        } else {
+          toast.error("Failed to load more jobs. Try again.");
+        }
+      } finally {
+        if (append) {
+          loadingMoreRef.current = false;
+          setIsLoadingMore(false);
+        } else {
+          setIsLoading(false);
+        }
+      }
+    },
+    [buildParams],
+  );
+
+  // Reset and reload when search/filters change.
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    loadJobs({ page: 1, append: false });
+  }, [loadJobs]);
+
+  const loadMoreJobs = useCallback(() => {
+    if (!hasMore || isLoading || isLoadingMore || loadingMoreRef.current) {
+      return;
     }
-  }, [
-    currentPage,
-    jobsPerPage,
-    debouncedSearch,
-    selectedIndustry,
-    selectedWorkMode,
-    selectedJobType,
-    selectedExperienceLevel,
-    salaryRange,
-  ]);
+    loadJobs({ page: currentPage + 1, append: true });
+  }, [hasMore, isLoading, isLoadingMore, currentPage, loadJobs]);
 
   useEffect(() => {
-    loadJobs();
-  }, [loadJobs]);
+    const node = loadMoreRef.current;
+    if (!node || !hasMore) return undefined;
+
+    let scrollRoot = node.parentElement;
+    while (scrollRoot) {
+      const { overflowY } = window.getComputedStyle(scrollRoot);
+      if (overflowY === "auto" || overflowY === "scroll") break;
+      scrollRoot = scrollRoot.parentElement;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMoreJobs();
+        }
+      },
+      {
+        root: scrollRoot || null,
+        rootMargin: "240px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMoreJobs, jobs.length, hasMore]);
 
   const workModes = ["Remote", "Onsite", "Hybrid"];
   const jobTypes = [
@@ -167,81 +242,6 @@ const JobVacancyListing = () => {
     "Lead",
     "Executive",
   ];
-
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.requirements?.some((req) =>
-          req.skill?.toLowerCase().includes(searchTerm.toLowerCase()),
-        ) ||
-        job.tags?.some((tag) =>
-          tag.toLowerCase().includes(searchTerm.toLowerCase()),
-        );
-
-      const matchesIndustry =
-        !selectedIndustry || job.industry === selectedIndustry;
-      const matchesWorkMode =
-        !selectedWorkMode || job.workMode === selectedWorkMode;
-      const matchesJobType =
-        !selectedJobType || job.jobType === selectedJobType;
-      const matchesExperienceLevel =
-        !selectedExperienceLevel ||
-        job.experienceLevel === selectedExperienceLevel;
-
-      let salaryInUSD = job.salaryMin || 0;
-      if (job.salaryCurrency === "NGN") salaryInUSD = job.salaryMin / 1500;
-      if (job.salaryCurrency === "KES") salaryInUSD = job.salaryMin / 120;
-      if (job.salaryCurrency === "GHS") salaryInUSD = job.salaryMin / 12;
-      if (job.salaryCurrency === "ZAR") salaryInUSD = job.salaryMin / 18;
-
-      const matchesSalary = salaryInUSD <= salaryRange[1];
-
-      return (
-        matchesSearch &&
-        matchesIndustry &&
-        matchesWorkMode &&
-        matchesJobType &&
-        matchesExperienceLevel &&
-        matchesSalary &&
-        job.isActive
-      );
-    });
-  }, [
-    jobs,
-    searchTerm,
-    selectedIndustry,
-    selectedWorkMode,
-    selectedJobType,
-    selectedExperienceLevel,
-    salaryRange,
-  ]);
-
-  const indexOfLastJob = currentPage * jobsPerPage;
-  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
-
-  const handlePageChange = useCallback((pageNumber) => {
-    setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [currentPage, totalPages]);
-
-  const handlePrevPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [currentPage]);
 
   const handleSaveJob = useCallback((jobId) => {
     setSavedJobs((prev) => {
@@ -283,43 +283,9 @@ const JobVacancyListing = () => {
     setSearchTerm("");
   }, []);
 
-  const getPageNumbers = useCallback(() => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else if (currentPage <= 3) {
-      for (let i = 1; i <= 4; i++) {
-        pageNumbers.push(i);
-      }
-      pageNumbers.push("...");
-      pageNumbers.push(totalPages);
-    } else if (currentPage >= totalPages - 2) {
-      pageNumbers.push(1);
-      pageNumbers.push("...");
-      for (let i = totalPages - 3; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-      pageNumbers.push("...");
-      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-        pageNumbers.push(i);
-      }
-      pageNumbers.push("...");
-      pageNumbers.push(totalPages);
-    }
-    return pageNumbers;
-  }, [currentPage, totalPages]);
-
-  const pageNumbers = getPageNumbers();
-
   return (
     <NewsFeedLayout showSidebars={false}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 w-full box-border">
         <HeroSection />
         <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
@@ -329,8 +295,8 @@ const JobVacancyListing = () => {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
+        <div className="grid lg:grid-cols-4 gap-6 min-w-0">
+          <div className="lg:col-span-1 min-w-0">
             <FilterSidebar
               industries={industries}
               workModes={workModes}
@@ -350,16 +316,35 @@ const JobVacancyListing = () => {
             />
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 min-w-0">
             <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
               <p className="text-gray-600 text-sm">
-                Showing{" "}
-                <span className="font-semibold text-gray-900">{totalJobs}</span>{" "}
-                jobs
+                {totalJobs > jobs.length ? (
+                  <>
+                    Showing{" "}
+                    <span className="font-semibold text-gray-900">
+                      {jobs.length}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-semibold text-gray-900">
+                      {totalJobs}
+                    </span>{" "}
+                    jobs
+                  </>
+                ) : (
+                  <>
+                    Showing{" "}
+                    <span className="font-semibold text-gray-900">
+                      {totalJobs}
+                    </span>{" "}
+                    jobs
+                  </>
+                )}
               </p>
               <div className="flex gap-3">
                 {savedJobs.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => setShowSavedModal(true)}
                     className="flex items-center gap-2 text-[#16730F] text-sm font-medium border border-[#16730F]/30 rounded-xl px-4 py-2 hover:bg-[#16730F]/5 transition"
                   >
@@ -370,100 +355,71 @@ const JobVacancyListing = () => {
               </div>
             </div>
 
-            {isLoading ? (
-              <div className="flex justify-center py-20">
-                <FaSpinner className="animate-spin text-[#16730F] text-4xl" />
-              </div>
-            ) : jobs.length > 0 ? (
-              <>
-                <div className="space-y-4">
-                  {currentJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      isSaved={isJobSaved(job.id)}
-                      onSave={handleSaveJob}
-                      onUnsave={handleUnsaveJob}
-                      onClick={() => setSelectedJob(job)}
-                    />
-                  ))}
+            <div className="relative min-h-[28rem]">
+              {isLoading && jobs.length === 0 && (
+                <div className="absolute inset-0 z-10 flex items-start justify-center pt-20 bg-[#F5F5F5]/70 backdrop-blur-[1px]">
+                  <FaSpinner className="animate-spin text-[#16730F] text-4xl" />
                 </div>
+              )}
 
-                {totalPages > 1 && (
-                  <div className="flex flex-wrap justify-center items-center gap-2 mt-8 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={handlePrevPage}
-                      disabled={currentPage === 1}
-                      className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        currentPage === 1
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-[#16730F] hover:text-white border border-gray-300"
-                      }`}
-                      aria-label="Previous page"
-                    >
-                      <FaChevronLeft size={14} />
-                      <span className="text-sm hidden sm:inline">Prev</span>
-                    </button>
-
-                    <div className="flex gap-2 flex-wrap justify-center">
-                      {pageNumbers.map((page, index) => (
-                        <button
-                          key={index}
-                          onClick={() =>
-                            typeof page === "number" && handlePageChange(page)
-                          }
-                          className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                            currentPage === page
-                              ? "bg-[#16730F] text-white shadow-md"
-                              : page === "..."
-                                ? "bg-transparent text-gray-400 cursor-default"
-                                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                          }`}
-                          disabled={page === "..."}
-                          aria-label={`Page ${page}`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={handleNextPage}
-                      disabled={currentPage === totalPages}
-                      className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        currentPage === totalPages
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-[#16730F] hover:text-white border border-gray-300"
-                      }`}
-                      aria-label="Next page"
-                    >
-                      <span className="text-sm hidden sm:inline">Next</span>
-                      <FaChevronRight size={14} />
-                    </button>
+              {jobs.length > 0 ? (
+                <div aria-busy={isLoading || isLoadingMore}>
+                  <div className="space-y-4">
+                    {jobs.map((job) => (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        isSaved={isJobSaved(job.id)}
+                        onSave={handleSaveJob}
+                        onUnsave={handleUnsaveJob}
+                        onClick={() => setSelectedJob(job)}
+                        currentUserId={currentUserId}
+                      />
+                    ))}
                   </div>
-                )}
 
-                <div className="text-center mt-4 text-sm text-gray-500 lg:hidden">
-                  Page {currentPage} of {totalPages || 1}
+                  <div
+                    ref={loadMoreRef}
+                    className="h-10 w-full"
+                    aria-hidden
+                  />
+
+                  {isLoadingMore && (
+                    <div className="flex justify-center items-center gap-2 py-6 text-[#16730F]">
+                      <FaSpinner className="animate-spin" />
+                      <span className="text-sm font-medium">
+                        Loading more jobs...
+                      </span>
+                    </div>
+                  )}
+
+                  {!hasMore && !isLoadingMore && (
+                    <p className="text-center text-sm text-gray-500 py-6">
+                      You’ve reached the end of the list
+                    </p>
+                  )}
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-20 bg-gray-50 rounded-2xl">
-                <div className="text-5xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-gray-700">
-                  No jobs found
-                </h3>
-                <p className="text-gray-500 mt-2">
-                  Try adjusting your search or filters
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 text-[#16730F] hover:underline font-medium"
-                >
-                  Clear all filters
-                </button>
-              </div>
-            )}
+              ) : isLoading ? (
+                <div className="h-72" aria-hidden />
+              ) : (
+                <div className="text-center py-20 bg-gray-50 rounded-2xl">
+                  <div className="text-5xl mb-4">🔍</div>
+                  <h3 className="text-xl font-semibold text-gray-700">
+                    No jobs found
+                  </h3>
+                  <p className="text-gray-500 mt-2">
+                    Try adjusting your search or filters
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-4 text-[#16730F] hover:underline font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

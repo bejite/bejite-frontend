@@ -8,6 +8,7 @@ import {
   FaPlus,
   FaCheckCircle,
   FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import {
@@ -34,7 +35,7 @@ const EmployerDashboard = () => {
     setError(null);
 
     try {
-      const response = await getEmployerDashboard({ status: statusFilter });
+      const response = await getEmployerDashboard({ status: statusFilter, listing_kind: "job_posting" });
 
       if (response?.success) {
         setJobs(response.data?.jobs || []);
@@ -44,7 +45,7 @@ const EmployerDashboard = () => {
             activeJobs: 0,
             totalApplications: 0,
             totalRevenue: 0,
-          }
+          },
         );
       } else {
         throw new Error(response?.message || "Failed to load dashboard");
@@ -54,7 +55,7 @@ const EmployerDashboard = () => {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Failed to load employer dashboard"
+          "Failed to load employer dashboard",
       );
       setJobs([]);
       setStats({
@@ -134,111 +135,123 @@ const EmployerDashboard = () => {
     const isDeleting = deletingJobId === job.id;
 
     return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-shadow h-full flex flex-col min-w-0">
-      <div className="mb-3 sm:mb-4 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words min-w-0 flex-1">
-            {job.title}
-          </h3>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span
-              className={`px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
-                job.status === "active"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {job.status === "active" ? "Active" : "Expired"}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleDeleteJob(job)}
-              disabled={isDeleting}
-              aria-label={`Delete ${job.title}`}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaTrash className="text-xs sm:text-sm" />
-            </button>
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-shadow h-full flex  flex-col min-w-0">
+        <div className="mb-3 sm:mb-4 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words min-w-0 flex-1">
+              {job.title}
+            </h3>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                  job.status === "active"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {job.status === "active" ? "Active" : "Expired"}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/edit`)}
+                aria-label={`Edit ${job.title}`}
+                title="Edit job"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-[#16730F] hover:bg-green-50 transition-colors"
+              >
+                <FaEdit className="text-xs sm:text-sm" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteJob(job)}
+                disabled={isDeleting}
+                aria-label={`Delete ${job.title}`}
+                title="Delete job"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaTrash className="text-xs sm:text-sm" />
+              </button>
+            </div>
           </div>
+          <p className="text-xs sm:text-sm text-gray-500 leading-relaxed break-words">
+            {[job.industry, job.workMode, job.country]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
         </div>
-        <p className="text-xs sm:text-sm text-gray-500 leading-relaxed break-words">
-          {[job.industry, job.workMode, job.country].filter(Boolean).join(" · ")}
-        </p>
-      </div>
 
-      <div className="grid grid-cols-3 gap-1 sm:gap-4 mb-3 sm:mb-4 pt-3 sm:pt-4 border-t border-gray-100">
-        <div className="min-w-0 text-center sm:text-center">
-          <p className="text-lg sm:text-2xl font-bold text-[#16730F] leading-none">
-            {job.applications}
-          </p>
-          <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
-            <span className="sm:hidden">Apps</span>
-            <span className="hidden sm:inline">Applications</span>
-          </p>
-        </div>
-        <div className="min-w-0 text-center">
-          <div className="flex items-center justify-center gap-0.5 sm:gap-1 min-w-0">
-            <FaClock className="text-orange-500 text-[10px] sm:text-sm shrink-0" />
-            <p className="text-[11px] sm:text-sm font-medium text-gray-700 leading-tight">
-              {job.timeLeft}
+        <div className="grid grid-cols-3 gap-1 sm:gap-4 mb-3 sm:mb-4 pt-3 sm:pt-4 border-t border-gray-100">
+          <div className="min-w-0 text-center sm:text-center">
+            <p className="text-lg sm:text-2xl font-bold text-[#16730F] leading-none">
+              {job.applications}
+            </p>
+            <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
+              <span className="sm:hidden">Apps</span>
+              <span className="hidden sm:inline">Applications</span>
             </p>
           </div>
-          <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
-            Time Left
-          </p>
+          <div className="min-w-0 text-center">
+            <div className="flex items-center justify-center gap-0.5 sm:gap-1 min-w-0">
+              <FaClock className="text-orange-500 text-[10px] sm:text-sm shrink-0" />
+              <p className="text-[11px] sm:text-sm font-medium text-gray-700 leading-tight">
+                {job.timeLeft}
+              </p>
+            </div>
+            <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
+              Time Left
+            </p>
+          </div>
+          <div className="min-w-0 text-center">
+            <p className="text-lg sm:text-sm font-medium text-gray-700 leading-none">
+              {job.extensions}
+            </p>
+            <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
+              <span className="sm:hidden">Ext.</span>
+              <span className="hidden sm:inline">Extensions</span>
+            </p>
+          </div>
         </div>
-        <div className="min-w-0 text-center">
-          <p className="text-lg sm:text-sm font-medium text-gray-700 leading-none">
-            {job.extensions}
-          </p>
-          <p className="text-[10px] sm:text-xs text-gray-500 leading-tight mt-1">
-            <span className="sm:hidden">Ext.</span>
-            <span className="hidden sm:inline">Extensions</span>
-          </p>
-        </div>
-      </div>
 
-      <div className="flex flex-row gap-2 mt-auto">
-        {job.status === "active" ? (
-          <>
-            <button
-              type="button"
-              onClick={() => navigate(`/employer/job/${job.id}/applications`)}
-              className="flex-1 min-w-0 bg-[#16730F] text-white py-2 px-2 sm:px-3 rounded-xl hover:bg-[#145A0C] transition-colors text-[11px] sm:text-sm font-medium"
-            >
-              <span className="sm:hidden">Applications</span>
-              <span className="hidden sm:inline">View Applications</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/employer/job/${job.id}/extend`)}
-              className="shrink-0 py-2 px-3 sm:px-4 border border-[#16730F] text-[#16730F] rounded-xl hover:bg-green-50 transition-colors text-[11px] sm:text-sm font-medium"
-            >
-              Extend
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => navigate(`/employer/job/${job.id}/recruit`)}
-              className="flex-1 min-w-0 bg-gradient-to-r from-[#16730F] to-[#1A3E32] text-white py-2 px-2 sm:px-3 rounded-xl hover:opacity-90 transition-opacity text-[11px] sm:text-sm font-medium flex items-center justify-center gap-1 sm:gap-2"
-            >
-              <FaRobot className="shrink-0 text-xs sm:text-sm" />
-              <span className="truncate sm:hidden">Recruit ASE</span>
-              <span className="hidden sm:inline">Recruit with ASE</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/employer/job/${job.id}/repost`)}
-              className="shrink-0 py-2 px-3 sm:px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-[11px] sm:text-sm font-medium"
-            >
-              Repost
-            </button>
-          </>
-        )}
+        <div className="flex flex-row gap-2 mt-auto">
+          {job.status === "active" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/applications`)}
+                className="flex-1 min-w-0 bg-[#16730F] text-white py-2 px-2 sm:px-3 rounded-xl hover:bg-[#145A0C] transition-colors text-[11px] sm:text-sm font-medium"
+              >
+                <span className="sm:hidden">Applications</span>
+                <span className="hidden sm:inline">View Applications</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/extend`)}
+                className="shrink-0 py-2 px-3 sm:px-4 border border-[#16730F] text-[#16730F] rounded-xl hover:bg-green-50 transition-colors text-[11px] sm:text-sm font-medium"
+              >
+                Extend
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/recruit`)}
+                className="flex-1 min-w-0 bg-gradient-to-r from-[#16730F] to-[#1A3E32] text-white py-2 px-2 sm:px-3 rounded-xl hover:opacity-90 transition-opacity text-[11px] sm:text-sm font-medium flex items-center justify-center gap-1 sm:gap-2"
+              >
+                <FaRobot className="shrink-0 text-xs sm:text-sm" />
+                <span className="truncate sm:hidden">Recruit ASE</span>
+                <span className="hidden sm:inline">Recruit with ASE</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/employer/job/${job.id}/repost`)}
+                className="shrink-0 py-2 px-3 sm:px-4 border border-[#16730F] text-[#16730F] rounded-xl hover:bg-green-50 transition-colors text-[11px] sm:text-sm font-medium"
+              >
+                Repost
+              </button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
     );
   };
 
@@ -254,7 +267,10 @@ const EmployerDashboard = () => {
 
   return (
     <NewsFeedLayout showSidebars={false}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div
+        className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-8 flex flex-col"
+        data-testid="employer-dashboard"
+      >
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -284,7 +300,7 @@ const EmployerDashboard = () => {
             title="Total Applications"
             value={stats.totalApplications}
             color="bg-purple-500"
-          />          
+          />
         </div>
 
         {/* Quick Actions */}
@@ -385,7 +401,7 @@ const EmployerDashboard = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate("/ase/pricing")}
+              onClick={() => navigate("/subscription-pricing")}
               className="px-6 py-3 bg-white text-[#16730F] rounded-xl font-semibold hover:shadow-lg transition-shadow"
             >
               Get Started

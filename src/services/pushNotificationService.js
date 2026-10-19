@@ -25,15 +25,31 @@ export async function getNotificationPreferences() {
   return response.data;
 }
 
-export async function updateNotificationPreferences({
-  push_enabled,
-  email_enabled,
-  sms_enabled,
-} = {}) {
+const GRANULAR_EMAIL_PREF_KEYS = [
+  "email_connection_requests",
+  "email_comments",
+  "email_likes",
+  "email_shares",
+  "email_messages",
+  "email_job_alerts",
+  "email_application_updates",
+  "email_connection_posts",
+  "email_digest_enabled",
+];
+
+export async function updateNotificationPreferences(updates = {}) {
+  const allowed = [
+    "push_enabled",
+    "email_enabled",
+    "sms_enabled",
+    ...GRANULAR_EMAIL_PREF_KEYS,
+  ];
   const body = {};
-  if (typeof push_enabled === "boolean") body.push_enabled = push_enabled;
-  if (typeof email_enabled === "boolean") body.email_enabled = email_enabled;
-  if (typeof sms_enabled === "boolean") body.sms_enabled = sms_enabled;
+  for (const key of allowed) {
+    if (typeof updates[key] === "boolean") {
+      body[key] = updates[key];
+    }
+  }
 
   const response = await axiosInstance.patch("/api/notifications/preferences", body);
   return response.data;
@@ -96,7 +112,9 @@ export async function unsubscribeFromPushNotifications() {
       data: { endpoint },
     });
   } else {
-    await axiosInstance.delete("/api/notifications/push/subscribe");
+    await axiosInstance.delete("/api/notifications/push/subscribe", {
+      data: {},
+    });
   }
 
   await updateNotificationPreferences({ push_enabled: false });

@@ -23,6 +23,7 @@ import {
   deleteAdProCampaign,
   duplicateAdProCampaign,
 } from "../../services/adProApi";
+import { formatAdProCurrency, getCampaignProgress } from "../../utils/formatAdProCurrency";
 
 function FilterModal({ isOpen, onClose, onApply, currentFilter }) {
   const [selectedStatus, setSelectedStatus] = useState(currentFilter || "all");
@@ -108,6 +109,7 @@ export default function AdProDashboard() {
     activeCampaigns: 0,
     avgCtr: 0,
   });
+  const [adCreditBalance, setAdCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -140,6 +142,7 @@ export default function AdProDashboard() {
           avgCtr: 0,
         },
       );
+      setAdCreditBalance(Number(response.data?.adCreditBalance) || 0);
     } catch (err) {
       console.error("AdPro dashboard load error:", err);
       setError(
@@ -173,8 +176,15 @@ export default function AdProDashboard() {
 
   const metrics = [
     {
+      title: "Ad Credit Balance",
+      value: formatAdProCurrency(adCreditBalance),
+      change: "From ASE plan",
+      icon: Wallet,
+      color: "from-[#1A3E32] to-emerald-700",
+    },
+    {
       title: "Total Spend",
-      value: `${dashboardMetrics.totalSpend.toFixed(2)} NGN`,
+      value: formatAdProCurrency(dashboardMetrics.totalSpend),
       change: "+12%",
       icon: Wallet,
       color: "from-emerald-500 to-teal-600",
@@ -248,9 +258,11 @@ export default function AdProDashboard() {
     }
   };
 
-  const handleViewReports = (campaignId) => {
+  const handleViewReports = (campaign) => {
     setOpenMenuId(null);
-    navigate(`/adpro/campaign/${campaignId}/reports`);
+    navigate(`/adpro/campaign/${campaign.id}/reports`, {
+      state: { report: null, campaign },
+    });
   };
 
   const handleApplyFilter = (status) => {
@@ -271,33 +283,33 @@ export default function AdProDashboard() {
   };
 
   return (
-    <NewsFeedLayout classes={false} showSidebars={false}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+    <NewsFeedLayout showSidebars={false}>
+      <div className="bg-[#F8FAFC] min-w-0 w-full overflow-x-hidden">
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A3E32] to-[#2d6a54] flex items-center justify-center shadow-lg">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-w-0">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 py-4 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-[#1A3E32] to-[#2d6a54] flex items-center justify-center shadow-lg">
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">AdPro</h1>
-                  <p className="text-xs text-gray-500 hidden sm:block">
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold text-gray-900 truncate">AdPro</h1>
+                  <p className="text-xs text-gray-500 hidden sm:block truncate">
                     Precision Advertising Platform
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 min-w-0 w-full lg:w-auto">
                 <button
                   onClick={() => setIsFilterOpen(true)}
-                  className="px-4 py-2 border border-gray-300 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all text-sm text-gray-700"
+                  className="px-4 py-2 border border-gray-300 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all text-sm text-gray-700 min-w-0"
                 >
-                  <Filter className="w-4 h-4" />
-                  {getFilterButtonText()}
+                  <Filter className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{getFilterButtonText()}</span>
                 </button>
                 <button
                   onClick={() => navigate("/adpro/create")}
-                  className="bg-[#1A3E32] text-white px-4 py-2 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#2d6a54] transition-all text-sm"
+                  className="bg-[#1A3E32] text-white px-4 py-2 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#2d6a54] transition-all text-sm shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   Create Campaign
@@ -307,9 +319,9 @@ export default function AdProDashboard() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 lg:py-8 min-w-0">
           {error && (
-            <div className="mb-6 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700 break-words">
               {error}
             </div>
           )}
@@ -320,28 +332,28 @@ export default function AdProDashboard() {
             </div>
           ) : (
             <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8 min-w-0">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6 lg:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-gray-900">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 md:p-6 mb-6 lg:mb-8 min-w-0 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 min-w-0">
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                   Performance Overview
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                   Reach and engagement trends over time
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 w-fit">
+              <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-lg p-1 w-full sm:w-fit min-w-0 overflow-x-auto">
                 {["week", "month", "quarter"].map((p) => (
                   <button
                     key={p}
                     onClick={() => setSelectedPeriod(p)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
                       selectedPeriod === p
                         ? "bg-white shadow-sm text-gray-900"
                         : "text-gray-500 hover:text-gray-700"
@@ -356,17 +368,19 @@ export default function AdProDashboard() {
                 ))}
               </div>
             </div>
-            <CampaignChart period={selectedPeriod} data={chartData} />
+            <div className="w-full min-w-0 overflow-hidden">
+              <CampaignChart period={selectedPeriod} data={chartData} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible">
-            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden min-w-0">
+            <div className="px-3 sm:px-6 py-4 sm:py-5 border-b border-gray-100 min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+                <div className="min-w-0">
                   <h2 className="text-base sm:text-lg font-bold text-gray-900">
                     Your Campaigns
                   </h2>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 break-words">
                     {filteredCampaigns.length} total campaigns ·{" "}
                     {activeCampaigns} active
                     {statusFilter !== "all" && (
@@ -379,7 +393,7 @@ export default function AdProDashboard() {
                 {statusFilter !== "all" && (
                   <button
                     onClick={() => setStatusFilter("all")}
-                    className="text-xs text-[#1A3E32] font-medium flex items-center gap-1 hover:gap-2 transition-all"
+                    className="text-xs text-[#1A3E32] font-medium flex items-center gap-1 hover:gap-2 transition-all shrink-0"
                   >
                     <X className="w-3 h-3" /> Clear filter
                   </button>
@@ -387,80 +401,81 @@ export default function AdProDashboard() {
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100 overflow-visible">
+            <div className="divide-y divide-gray-100 min-w-0">
               {filteredCampaigns.map((campaign, index) => {
-                const progress =
-                  (campaign.reachDelivered / campaign.reachPurchased) * 100;
+                const progress = getCampaignProgress(campaign);
                 const isNearBottom = index >= filteredCampaigns.length - 2;
                 return (
                   <div
                     key={campaign.id}
-                    className={`group ${openMenuId === campaign.id ? "relative z-[200]" : ""}`}
+                    className={`group min-w-0 ${openMenuId === campaign.id ? "relative z-[200]" : ""}`}
                   >
-                    <div className="p-4 sm:p-5 lg:p-6 hover:bg-gray-50/50 transition-all duration-200">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+                    <div className="p-3 sm:p-5 lg:p-6 hover:bg-gray-50/50 transition-all duration-200 min-w-0">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 min-w-0">
                         <div
-                          className="flex-1 min-w-0 cursor-pointer"
+                          className="flex-1 min-w-0 cursor-pointer overflow-hidden"
                           onClick={() =>
-                            navigate(`/adpro/campaign/${campaign.id}`)
+                            navigate(`/adpro/campaign/${campaign.id}`, {
+                              state: { campaign },
+                            })
                           }
                         >
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                          <div className="flex flex-wrap items-center gap-2 mb-3 min-w-0">
+                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate max-w-full min-w-0">
                               {campaign.name}
                             </h3>
                             <CampaignStatusBadge status={campaign.status} />
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                            <div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 min-w-0">
+                            <div className="min-w-0 col-span-2 sm:col-span-1">
                               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
                                 Progress
                               </p>
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex-1 min-w-0 h-2 bg-gray-100 rounded-full overflow-hidden">
                                   <div
                                     className="h-full bg-[#1A3E32] rounded-full transition-all duration-500"
-                                    style={{ width: `${progress}%` }}
+                                    style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
                                   />
                                 </div>
-                                <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                                <span className="text-xs font-medium text-gray-700 shrink-0">
                                   {Math.round(progress)}%
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-400 mt-1.5">
-                                {campaign.reachDelivered.toLocaleString()} /{" "}
-                                {campaign.reachPurchased.toLocaleString()}
+                              <p className="text-xs text-gray-400 mt-1.5 truncate">
+                                {(campaign.reachDelivered || 0).toLocaleString()} /{" "}
+                                {(campaign.reachPurchased || 0).toLocaleString()}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
                                 Delivered
                               </p>
-                              <p className="text-sm sm:text-base font-semibold text-gray-900">
-                                {campaign.reachDelivered.toLocaleString()}
+                              <p className="text-sm sm:text-base font-semibold text-gray-900 tabular-nums truncate">
+                                {(campaign.reachDelivered || 0).toLocaleString()}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
                                 Spend
                               </p>
-                              <p className="text-sm sm:text-base font-semibold text-gray-900">
-                                ${campaign.spend.toFixed(2)}
+                              <p className="text-sm sm:text-base font-semibold text-gray-900 tabular-nums truncate">
+                                {formatAdProCurrency(campaign.spend)}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
                                 CTR
                               </p>
-                              <p className="text-sm sm:text-base font-semibold text-gray-900">
+                              <p className="text-sm sm:text-base font-semibold text-gray-900 tabular-nums truncate">
                                 {campaign.ctr}%
                               </p>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 self-end lg:self-center">
+                        <div className="flex items-center gap-1 self-end lg:self-center shrink-0">
                           <button
-                            onClick={() => handleViewReports(campaign.id)}
+                            onClick={() => handleViewReports(campaign)}
                             className="p-2 text-gray-400 hover:text-[#1A3E32] hover:bg-gray-100 rounded-lg transition-all"
                             title="View Reports"
                           >
@@ -494,15 +509,6 @@ export default function AdProDashboard() {
                                 }`}
                                 onMouseDown={(e) => e.stopPropagation()}
                               >
-                                {/* <button
-                                  onClick={() =>
-                                    handleEditCampaign(campaign.id)
-                                  }
-                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" /> Edit
-                                  Campaign
-                                </button> */}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

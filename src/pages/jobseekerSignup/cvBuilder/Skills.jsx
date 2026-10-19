@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useOutletContext, useNavigate, useLocation } from "react-router-dom";
 import NavigationButtons from "../../../components/NavigationButtons";
 import {
@@ -16,12 +17,17 @@ import Loader from "../../../components/ui/Loader";
 import { toast } from "react-toastify";
 import axiosInstance from "../../../utils/axiosInstance";
 import { AutocompleteInput } from "../../../components/forms/AutocompleteInput";
+import FormLabel from "../../../components/forms/FormLabel";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
 import {
   categoryOptions,
   experienceOptions,
 } from "../../../data/skillsData";
 import { SKILL_SUGGESTIONS } from "../../../utils/checksFormat";
+import {
+  getPortaledMenuStyle,
+  usePortaledMenu,
+} from "../../../hooks/usePortaledMenu";
 
 // Skills options removed - now using text inputs
 // const skillOptions = [...];
@@ -30,7 +36,7 @@ import { SKILL_SUGGESTIONS } from "../../../utils/checksFormat";
 
 const CATEGORY_OPTIONS = [
   { value: "Entry Level", label: "Entry Level", icon: FaRocket, color: "text-blue-500" },
-  { value: "Junior", label: "Junior", icon: FaGraduationCap, color: "text-green-500" },
+  { value: "Junior", label: "Junior", icon: FaGraduationCap, color: "text-[#16730F]" },
   { value: "Mid-level", label: "Mid-level", icon: FaUserTie, color: "text-yellow-500" },
   { value: "Senior", label: "Senior", icon: FaStar, color: "text-orange-500" },
   { value: "Veteran", label: "Veteran", icon: FaStar, color: "text-red-500" },
@@ -43,11 +49,11 @@ const InputWithIcon = ({ value, onChange, placeholder }) => (
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full h-12 border-2 rounded-[10px] pl-4 pr-10 focus:outline-1 focus:outline-[#1A3E32] ${value ? "border-[#828282]" : "border-[#F5F5F5]"
+      className={`w-full h-12 border-2 rounded-[10px] pl-4 pr-10 focus:outline-1 focus:outline-[#16730F] ${value ? "border-[#828282]" : "border-[#F5F5F5]"
         }`}
     />
     {value && (
-      <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg" />
+      <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-[#16730F] text-lg" />
     )}
   </div>
 );
@@ -59,20 +65,16 @@ const AutocompleteSkillInput = ({ value, onChange, placeholder, suggestions, onA
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef(null);
+  const { triggerRef, menuRef, menuPos } = usePortaledMenu({
+    isOpen: showSuggestions,
+    onClose: () => setShowSuggestions(false),
+    maxHeight: 240,
+    extraContainRefs: [wrapperRef],
+  });
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;
@@ -108,6 +110,7 @@ const AutocompleteSkillInput = ({ value, onChange, placeholder, suggestions, onA
   return (
     <div ref={wrapperRef} className="relative w-full" style={{ position: "relative", zIndex: 20 }}>
       <input
+        ref={triggerRef}
         type="text"
         value={inputValue}
         onChange={handleInputChange}
@@ -124,57 +127,59 @@ const AutocompleteSkillInput = ({ value, onChange, placeholder, suggestions, onA
           }
         }}
         placeholder={placeholder}
-        className="w-full h-12 border-2 rounded-[10px] pl-4 pr-10 focus:outline-1 focus:outline-[#1A3E32] transition-all bg-white"
+        className="w-full h-12 border-2 rounded-[10px] pl-4 pr-10 focus:outline-1 focus:outline-[#16730F] transition-all bg-white"
       />
       {inputValue && (
-        <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg pointer-events-none" />
+        <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-[#16730F] text-lg pointer-events-none" />
       )}
 
-      {showSuggestions && (
-        <div
-          className="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto nfl-scroll"
-          style={{
-            zIndex: 9999,
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0
-          }}
-        >
-          {filteredSuggestions.length > 0 ? (
-            <>
-              {filteredSuggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleSelectSuggestion(suggestion)}
-                  className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition-colors"
-                >
-                  {suggestion}
-                </div>
-              ))}
-              {inputValue.trim() && !filteredSuggestions.includes(inputValue.trim()) && (
+      {showSuggestions &&
+        menuPos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-y-auto nfl-scroll"
+            style={{
+              ...getPortaledMenuStyle(menuPos),
+              maxHeight: menuPos.maxHeight,
+            }}
+          >
+            {filteredSuggestions.length > 0 ? (
+              <>
+                {filteredSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition-colors"
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+                {inputValue.trim() && !filteredSuggestions.includes(inputValue.trim()) && (
+                  <div
+                    onClick={handleAddNew}
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-[#16730F] font-medium transition-colors flex items-center gap-2 border-t border-gray-100"
+                  >
+                    <FaPlus className="text-xs" />
+                    Add "{inputValue}"
+                  </div>
+                )}
+              </>
+            ) : (
+              inputValue.trim() && (
                 <div
                   onClick={handleAddNew}
-                  className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-[#1A3E32] font-medium transition-colors flex items-center gap-2 border-t border-gray-100"
+                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-[#16730F] font-medium transition-colors flex items-center gap-2"
                 >
                   <FaPlus className="text-xs" />
                   Add "{inputValue}"
                 </div>
-              )}
-            </>
-          ) : (
-            inputValue.trim() && (
-              <div
-                onClick={handleAddNew}
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-[#1A3E32] font-medium transition-colors flex items-center gap-2"
-              >
-                <FaPlus className="text-xs" />
-                Add "{inputValue}"
-              </div>
-            )
-          )}
-        </div>
-      )}
+              )
+            )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -183,16 +188,12 @@ const AutocompleteSkillInput = ({ value, onChange, placeholder, suggestions, onA
 const CategorySelect = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const { triggerRef, menuRef, menuPos } = usePortaledMenu({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    maxHeight: 320,
+    extraContainRefs: [wrapperRef],
+  });
 
   const selectedCategory = CATEGORY_OPTIONS.find(opt => opt.value === value);
   const SelectedIcon = selectedCategory?.icon;
@@ -200,8 +201,9 @@ const CategorySelect = ({ value, onChange }) => {
   return (
     <div ref={wrapperRef} className="relative w-full" style={{ position: "relative", zIndex: 15 }}>
       <div
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-12 border-2 rounded-[10px] pl-4 pr-10 flex items-center justify-between cursor-pointer focus:outline-1 focus:outline-[#1A3E32] ${value ? "border-[#828282]" : "border-[#F5F5F5]"
+        className={`w-full h-12 border-2 rounded-[10px] pl-4 pr-10 flex items-center justify-between cursor-pointer focus:outline-1 focus:outline-[#16730F] ${value ? "border-[#828282]" : "border-[#F5F5F5]"
           } bg-white`}
       >
         <div className="flex items-center gap-2">
@@ -211,50 +213,52 @@ const CategorySelect = ({ value, onChange }) => {
           </span>
         </div>
         {value ? (
-          <FaCheck className="text-green-500 text-lg" />
+          <FaCheck className="text-[#16730F] text-lg" />
         ) : (
           <FaChevronDown className={`text-gray-400 text-lg transition-transform ${isOpen ? "rotate-180" : ""}`} />
         )}
       </div>
 
-      {isOpen && (
-        <div
-          className="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
-          style={{
-            zIndex: 9998,
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0
-          }}
-        >
-          {CATEGORY_OPTIONS.map((option) => {
-            const OptionIcon = option.icon;
-            return (
-              <div
-                key={option.value}
-                onClick={() => {
-                  onChange({ target: { value: option.value } });
-                  setIsOpen(false);
-                }}
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
-              >
-                <OptionIcon className={`text-lg ${option.color}`} />
-                <div>
-                  <div className="text-sm font-medium text-gray-700">{option.label}</div>
-                  <div className="text-xs text-gray-400">
-                    {option.value === "Entry Level" && "0-2 years experience"}
-                    {option.value === "Junior" && "2-4 years experience"}
-                    {option.value === "Mid-level" && "4-7 years experience"}
-                    {option.value === "Senior" && "7-10 years experience"}
-                    {option.value === "Veteran" && "10+ years experience"}
+      {isOpen &&
+        menuPos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+            style={{
+              ...getPortaledMenuStyle(menuPos),
+              maxHeight: menuPos.maxHeight,
+            }}
+          >
+            {CATEGORY_OPTIONS.map((option) => {
+              const OptionIcon = option.icon;
+              return (
+                <div
+                  key={option.value}
+                  onClick={() => {
+                    onChange({ target: { value: option.value } });
+                    setIsOpen(false);
+                  }}
+                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
+                >
+                  <OptionIcon className={`text-lg ${option.color}`} />
+                  <div>
+                    <div className="text-sm font-medium text-gray-700">{option.label}</div>
+                    <div className="text-xs text-gray-400">
+                      {option.value === "Entry Level" && "0-2 years experience"}
+                      {option.value === "Junior" && "2-4 years experience"}
+                      {option.value === "Mid-level" && "4-7 years experience"}
+                      {option.value === "Senior" && "7-10 years experience"}
+                      {option.value === "Veteran" && "10+ years experience"}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -393,7 +397,7 @@ function Skills() {
   const getCategoryBadgeColor = (categoryName) => {
     switch (categoryName) {
       case "Entry Level": return "bg-blue-100 text-blue-700";
-      case "Junior": return "bg-green-100 text-green-700";
+      case "Junior": return "bg-[#16730F]/10 text-[#16730F]";
       case "Mid-level": return "bg-yellow-100 text-yellow-700";
       case "Senior": return "bg-orange-100 text-orange-700";
       case "Veteran": return "bg-red-100 text-red-700";
@@ -411,7 +415,7 @@ function Skills() {
       getPath={getPath}
       isEditMode={isEditMode}
     >
-        <div className="max-w-3xl mx-auto mt-6 px-4 text-[#1A3E32] text-2xl font-semibold">
+        <div className="max-w-3xl mx-auto mt-6 px-4 text-[#16730F] text-2xl font-semibold">
           Skills
         </div>
         <p className="max-w-3xl mx-auto px-4 text-[#333] text-sm mb-6">
@@ -422,7 +426,12 @@ function Skills() {
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible">
           <div className="bg-[#fff] overflow-visible p-3 rounded-2xl space-y-1">
             <div className="bg-[#fff] rounded-2xl p-4">
-              <p className="font-semibold text-xs mb-1">SKILL (Enter or select a skill name and category and years of experience and use the add more button to add more skills)</p>
+              <FormLabel
+                label="SKILL"
+                required={true}
+                tooltip="Specific technical or professional skills you possess (e.g. React, Project Management)"
+              />
+              <p className="text-[11px] text-gray-500 mb-2">Enter or select a skill name and category, then use add more button</p>
               <AutocompleteSkillInput
                 value={skillsData.skillSector}
                 onChange={(e) =>
@@ -441,7 +450,11 @@ function Skills() {
 
             <div className="bg-[#fff] rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <p className="font-semibold text-xs mb-1">CATEGORY</p>
+                <FormLabel
+                  label="CATEGORY"
+                  required={true}
+                  tooltip="Your proficiency level for this skill (e.g. Entry Level, Junior, Mid-level, Senior, Veteran)"
+                />
                 <AutocompleteInput
                   value={skillsData.category}
                   onChange={(e) =>
@@ -457,7 +470,11 @@ function Skills() {
                 />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-xs mb-1">YEARS OF EXPERIENCE</p>
+                <FormLabel
+                  label="YEARS OF EXPERIENCE"
+                  required={true}
+                  tooltip="Number of years you have actively practiced or worked with this skill"
+                />
                 <AutocompleteInput
                   value={skillsData.experience}
                   onChange={(e) =>
@@ -482,7 +499,7 @@ function Skills() {
                   disabled={!allFilled}
                   className={`flex-1 h-16 flex items-center justify-center gap-2 text-white border-2 rounded-lg text-sm ${
                     allFilled
-                      ? "bg-[#2A4E42] cursor-pointer border-[#2A4E42]"
+                      ? "bg-[#16730F] cursor-pointer border-[#16730F] hover:bg-[#145a0c]"
                       : "bg-transparent border-[#F5F5F5]"
                   }`}
                 >
@@ -496,7 +513,7 @@ function Skills() {
         {/* Display Added Skills */}
         {allSkill.length > 0 && (
           <div className="max-w-3xl mx-auto mt-8">
-            <h3 className="text-lg font-semibold text-[#1A3E32] mb-4 px-4">
+            <h3 className="text-lg font-semibold text-[#16730F] mb-4 px-4">
               Your Skills ({allSkill.length})
             </h3>
             <div className="space-y-3 px-4">
@@ -508,7 +525,7 @@ function Skills() {
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h4 className="font-bold text-[#1A3E32] text-lg">
+                        <h4 className="font-bold text-[#16730F] text-lg">
                           {item.skillSector}
                         </h4>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryBadgeColor(item.category)}`}>

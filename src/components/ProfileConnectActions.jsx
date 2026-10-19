@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUserPlus, FaComment } from 'react-icons/fa';
+import { FaUserPlus, FaUserCheck, FaComment } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useCandidateConnect } from '../hooks/useCandidateConnect';
 import messagingService from '../services/messagingService';
@@ -16,20 +16,30 @@ export default function ProfileConnectActions({ userId, displayName }) {
     currentUser?.id != null &&
     String(currentUser.id) === normalizedUserId;
 
-  const { sendRequest, connectLabel, connectDisabled, status } = useCandidateConnect(
-    normalizedUserId,
-    displayName,
-  );
+  const { sendRequest, acceptRequest, connectLabel, connectDisabled, status, sending } =
+    useCandidateConnect(normalizedUserId, displayName);
   const [messaging, setMessaging] = useState(false);
 
   if (!normalizedUserId || isSelf) return null;
 
-  const handleConnect = () => {
+  const isStatusLoading = Boolean(status.loading);
+  const showConnectSpinner = isStatusLoading || sending;
+  const hideConnectButton = Boolean(status.viewerIsCorporate);
+  const isFollowingState = Boolean(status.isCorporate && status.isFollowing);
+  const isConnectedState = Boolean(!status.isCorporate && status.isConnected);
+  const isPendingState = Boolean(status.pendingOutgoing);
+  /** Active/settled network states use outline styling so they don't look like Follow/Connect. */
+  const isSettledNetworkState =
+    isFollowingState || isConnectedState || isPendingState;
+
+  const handleConnect = async () => {
+    if (hideConnectButton || isStatusLoading || sending) return;
     if (status.pendingIncoming) {
-      navigate('/connection');
+      await acceptRequest();
       return;
     }
-    if (!connectDisabled) {
+    // Following stays clickable (unfollow). Connected/Pending stay gated by connectDisabled.
+    if (isFollowingState || !connectDisabled) {
       sendRequest();
     }
   };
@@ -53,29 +63,72 @@ export default function ProfileConnectActions({ userId, displayName }) {
     }
   };
 
+  const connectButtonClass = isStatusLoading
+    ? 'bg-[#16730F]/80 text-white cursor-wait border-2 border-transparent'
+    : isSettledNetworkState
+      ? 'bg-white text-[#16730F] border-2 border-[#16730F] hover:bg-[#16730F]/10'
+      : connectDisabled
+        ? 'bg-gray-400 text-white cursor-not-allowed border-2 border-transparent'
+        : 'bg-[#16730F] text-white border-2 border-transparent hover:bg-[#145a0c]';
+
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 mt-4 w-full max-w-md sm:max-w-none mx-auto sm:mx-0">
-      <button
-        type="button"
-        onClick={handleConnect}
-        disabled={connectDisabled}
-        className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-colors ${
-          connectDisabled
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-[#16730F] hover:bg-[#145a0c]'
-        }`}
-      >
-        <FaUserPlus className="shrink-0" />
-        <span className="truncate">{connectLabel}</span>
-      </button>
+    <div
+      className={`mt-4 grid gap-2 sm:gap-3 w-full max-w-lg mx-auto sm:mx-0 min-w-0 ${
+        hideConnectButton
+          ? 'grid-cols-1'
+          : 'grid-cols-1 min-[420px]:grid-cols-2'
+      }`}
+    >
+      {!hideConnectButton && (
+        <button
+          type="button"
+          onClick={handleConnect}
+          disabled={
+            isStatusLoading ||
+            (!isFollowingState && connectDisabled)
+          }
+          aria-busy={showConnectSpinner}
+          aria-pressed={isFollowingState || isConnectedState}
+          className={`inline-flex w-full min-h-[44px] items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-full text-sm font-semibold transition-colors ${connectButtonClass}`}
+        >
+          {showConnectSpinner ? (
+            <span
+              className={`inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-t-transparent ${
+                isSettledNetworkState ? 'border-[#16730F]' : 'border-white'
+              }`}
+              aria-hidden="true"
+            />
+          ) : (
+            <>
+              {isFollowingState || isConnectedState ? (
+                <FaUserCheck className="shrink-0" />
+              ) : (
+                <FaUserPlus className="shrink-0" />
+              )}
+              <span className="truncate">{connectLabel}</span>
+            </>
+          )}
+          {showConnectSpinner && (
+            <span className="sr-only">Loading connection status</span>
+          )}
+        </button>
+      )}
       <button
         type="button"
         onClick={handleMessage}
         disabled={messaging}
-        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-full text-sm font-semibold text-[#16730F] border-2 border-[#16730F] bg-white hover:bg-[#16730F]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-busy={messaging}
+        className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-full text-sm font-semibold text-[#16730F] border-2 border-[#16730F] bg-white hover:bg-[#16730F]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <FaComment className="shrink-0" />
-        {messaging ? 'Opening...' : 'Message'}
+        {messaging ? (
+          <span
+            className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[#16730F] border-t-transparent"
+            aria-hidden="true"
+          />
+        ) : (
+          <FaComment className="shrink-0" />
+        )}
+        <span>Message</span>
       </button>
     </div>
   );

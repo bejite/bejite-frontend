@@ -1,6 +1,10 @@
 import React from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa";
+import {
+  SIGNUP_BTN_DISABLED,
+  SIGNUP_BTN_ENABLED,
+} from "../constants/signupTheme";
 
 const NavigationButtons = ({
   isFormComplete,
@@ -23,7 +27,7 @@ const NavigationButtons = ({
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
       {showSkip && onSkip && (
         <button
-          className="w-full sm:w-auto cursor-pointer px-8 h-11 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 font-bold rounded-xl shadow-sm transition-all"
+          className="w-full sm:w-auto cursor-pointer px-8 h-11 border-2 border-[#16730F] text-[#16730F] bg-white hover:bg-[#16730F]/5 font-bold rounded-full shadow-sm transition-all"
           onClick={onSkip}
         >
           Skip
@@ -31,10 +35,10 @@ const NavigationButtons = ({
       )}
 
       <button
-        className={`w-full sm:w-auto px-8 h-11 flex items-center justify-center gap-2 font-bold rounded-xl shadow-sm transition-all ${
+        className={`w-full sm:w-auto px-8 h-11 flex items-center justify-center gap-2 font-bold rounded-full shadow-md transition-all ${
           isFormComplete && !isLoading
-            ? "bg-[#1A3E32] text-white hover:bg-[#143026] hover:shadow-md cursor-pointer"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            ? `${SIGNUP_BTN_ENABLED} hover:shadow-md cursor-pointer`
+            : SIGNUP_BTN_DISABLED
         }`}
         disabled={!isFormComplete || isLoading}
         onClick={onNext}

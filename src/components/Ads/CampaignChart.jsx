@@ -71,10 +71,11 @@ export default function CampaignChart({ period, data }) {
   const chartData = dataByPeriod[period] || data || mockData.week;
 
   return (
-    <ResponsiveContainer width="100%" height={320}>
+    <div className="w-full min-w-0 h-[280px] sm:h-[320px]">
+    <ResponsiveContainer width="100%" height="100%">
       <AreaChart
         data={chartData}
-        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+        margin={{ top: 10, right: 4, left: 0, bottom: 0 }}
       >
         <defs>
           <linearGradient id="colorReach" x1="0" y1="0" x2="0" y2="1">
@@ -144,5 +145,6 @@ export default function CampaignChart({ period, data }) {
         />
       </AreaChart>
     </ResponsiveContainer>
+    </div>
   );
 }

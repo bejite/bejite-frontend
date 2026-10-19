@@ -1,80 +1,132 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import NewsFeedHeader from "../../components/NewsFeedHeader";
 import {
   getSubscriptionPlans,
   checkASEEligibility,
-  initializeOneTimePayment,
   initializeSubscriptionPayment,
-  activateFreeTrial,
+  initializeTopUpPayment,
 } from "../../services/paymentApi";
+import { getUser, isAuthenticated } from "../../utils/tokenManager";
 
-const formatPlanPrice = (plan, currency) => {
-  if (currency === "USD") return `$${plan.price}`;
-  return `₦${Number(plan.priceNaira ?? 0).toLocaleString("en-NG")}`;
-};
+// Sub-components
+import ASEPricingHeader from "../../components/pricing/ASEPricingHeader";
+import ASEPricingSidebar from "../../components/pricing/ASEPricingSidebar";
+import ASEPricingCard from "../../components/pricing/ASEPricingCard";
+import ASEPricingComparisonTable from "../../components/pricing/ASEPricingComparisonTable";
+import ASEPricingTopups from "../../components/pricing/ASEPricingTopups";
+import ASECheckoutModal from "../../components/pricing/ASECheckoutModal";
+
+const formatPlanPrice = (amount) =>
+  `₦${Number(amount).toLocaleString("en-NG")}`;
 
 const ASEPricingPage = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [eligibility, setEligibility] = useState(null);
-  const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [processingTopUp, setProcessingTopUp] = useState(null);
+
+  // Toggles and Modal State
+  const [billingInterval, setBillingInterval] = useState("monthly");
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [selectedCheckoutPlan, setSelectedCheckoutPlan] = useState(null);
 
   const defaultPlans = useMemo(
     () => [
       {
         id: "standard",
         name: "Standard Plan",
-        type: "one_time",
-        price: 10,
-        currency: "USD",
-        priceNaira: 10000,
-        currencyNaira: "NGN",
-        candidateLimit: 20,
+        subtitle: "For growing recruiters and teams",
+        prices: {
+          monthly: { usd: 10, ngn: 10000 },
+          yearly: { usd: 100, ngn: 100000 },
+        },
+        savings: { usd: 20, ngn: 20000 },
+        limits: {
+          searches: "5 searches/mo",
+          results: "10 results/search",
+          posts: "5 job posts/mo",
+          adCredits: "₦10,000 ad credit",
+          analytics: "Monthly",
+          support: "Email support",
+          events: "Access to events",
+          badge: "Not included",
+          applicantAccess: "Included before/after expiry for included posts",
+        },
         features: [
-          "One-time payment per search",
-          "View up to 20 candidates",
-          "Invite any or all candidates",
-          "No card storage required",
+          "5 ASE Searches / Month (10 results/search)",
+          "5 Job Posts / Month",
+          "Recruitment Management included",
+          "Applicant access included before/after expiry",
+          "₦10,000 AdPro ad credit",
+          "Monthly Job Analytics Dashboard",
+          "Access to Networking Events",
+          "Standard Email Support",
         ],
       },
       {
         id: "premium",
         name: "Premium Plan",
-        type: "subscription",
-        price: 7,
-        currency: "USD",
-        priceNaira: 7000,
-        currencyNaira: "NGN",
-        candidateLimit: 20,
-        billingPeriod: "monthly",
+        subtitle: "For professional agencies & scaling teams",
+        prices: {
+          monthly: { usd: 19, ngn: 19000 },
+          yearly: { usd: 183, ngn: 183000 },
+        },
+        savings: { usd: 45, ngn: 45000 },
+        limits: {
+          searches: "20 searches/mo",
+          results: "20 results/search",
+          posts: "20 job posts/mo",
+          adCredits: "₦20,000 ad credit",
+          analytics: "Enhanced monthly",
+          support: "Priority support",
+          events: "Priority access to events",
+          badge: "Not included",
+          applicantAccess: "Included",
+        },
         features: [
-          "$7/month (billed annually)",
-          "View up to 20 candidates per search",
-          "Unlimited searches",
-          "Save card for automatic billing",
-          "Cancel anytime",
+          "20 ASE Searches / Month (20 results/search)",
+          "20 Job Posts / Month",
+          "Recruitment Management included",
+          "Full Applicant Access (before/after expiry)",
+          "₦20,000 AdPro ad credit",
+          "Enhanced Monthly Analytics Dashboard",
+          "Priority Networking Event Access",
+          "Priority Email & Chat Support",
         ],
       },
       {
         id: "jumbo",
         name: "Jumbo Plan",
-        type: "subscription",
-        price: 15,
-        currency: "USD",
-        priceNaira: 15000,
-        currencyNaira: "NGN",
-        candidateLimit: 30,
-        billingPeriod: "monthly",
+        subtitle: "For high-volume recruiters & enterprises",
+        prices: {
+          monthly: { usd: 59, ngn: 59000 },
+          yearly: { usd: 568, ngn: 568000 },
+        },
+        savings: { usd: 140, ngn: 140000 },
+        limits: {
+          searches: "60 searches/mo",
+          results: "30 results/search",
+          posts: "Unlimited Fair Use",
+          adCredits: "₦30,000 ad credit",
+          analytics: "Advanced monthly + trends",
+          support: "Dedicated support manager",
+          events: "VIP networking events",
+          badge: "Not included",
+          applicantAccess: "Included",
+        },
         features: [
-          "$15/month (billed annually)",
-          "View up to 30 candidates per search",
-          "For high-volume recruiters",
-          "Save card for automatic billing",
-          "Cancel anytime",
+          "60 ASE Searches / Month (30 results/search)",
+          "Unlimited Job Posts (Fair Use)",
+          "Recruitment Management included",
+          "Full Applicant Access (before/after expiry)",
+          "₦30,000 AdPro ad credit",
+          "Advanced Analytics & Trend Reports",
+          "VIP Networking Event Access",
+          "Dedicated Account Support",
         ],
       },
     ],
@@ -116,51 +168,127 @@ const ASEPricingPage = () => {
     loadData();
   }, [loadData]);
 
-  const handleSelectPlan = async (plan) => {
-    setSelectedPlan(plan);
+  const plansData = useMemo(() => {
+    if (plans.length > 0) return plans;
+    return defaultPlans;
+  }, [plans, defaultPlans]);
+
+  const isCurrentPlan = useCallback(
+    (plan) =>
+      eligibility?.accessType === "subscription" &&
+      eligibility.planType === plan.id &&
+      eligibility.billingInterval === billingInterval,
+    [eligibility, billingInterval],
+  );
+
+  // Trigger checkout confirmation popup
+  const handleSelectPlan = (plan) => {
+    if (isCurrentPlan(plan)) return;
+    setSelectedCheckoutPlan(plan);
+    setIsCheckoutModalOpen(true);
+  };
+
+  // Perform backend Paystack subscription initialization
+  const triggerPayment = async (plan) => {
     setProcessing(true);
     try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = localStorage.getItem("userId");
+      const user = getUser();
+
+      if (!isAuthenticated() || !user?.email) {
+        toast.error("Please log in to subscribe");
+        navigate("/");
+        return;
+      }
+
+      const paymentAmount = plan.prices?.[billingInterval]?.ngn;
+      if (!paymentAmount) {
+        toast.error("Unable to determine plan price. Please try again.");
+        return;
+      }
 
       const paymentData = {
-        email: userData.email,
-        amount: currency === "USD" ? plan.price : plan.priceNaira,
-        currency: currency,
-        employerId: userId,
+        email: user.email,
+        amount: paymentAmount,
+        currency: "NGN",
+        employerId: user.id,
         planType: plan.id,
+        billingInterval,
+        billingPeriod: billingInterval,
       };
 
       localStorage.setItem("aseSelectedPlan", JSON.stringify(plan));
 
-      let data;
-      if (plan.type === "one_time") {
-        data = await initializeOneTimePayment(paymentData);
-      } else {
-        data = await initializeSubscriptionPayment(paymentData);
-      }
+      const data = await initializeSubscriptionPayment(paymentData);
 
       if (data.data?.authorization_url) {
         window.location.href = data.data.authorization_url;
       } else {
-        alert("Failed to initialize payment");
+        toast.error("Failed to initialize subscription checkout. Please try again.");
       }
     } catch (error) {
-      console.error("Payment error:", error);
+      console.error("Payment initiation error:", error);
       const errorMessage =
+        error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        "Payment initialization failed";
-      alert(errorMessage);
+        "Payment initialization failed. Please contact support.";
+      toast.error(errorMessage);
     } finally {
       setProcessing(false);
-      setSelectedPlan(null);
     }
+  };
+
+  const handlePurchaseTopUp = async (topUpType) => {
+    setProcessingTopUp(topUpType);
+    try {
+      if (!isAuthenticated()) {
+        toast.error("Please log in to purchase top-ups");
+        navigate("/");
+        return;
+      }
+
+      localStorage.setItem("aseTopUpType", topUpType);
+      const data = await initializeTopUpPayment({ topUpType });
+
+      if (data.data?.authorization_url) {
+        window.location.href = data.data.authorization_url;
+      } else {
+        toast.error("Failed to initialize top-up checkout. Please try again.");
+      }
+    } catch (error) {
+      console.error("Top-up payment error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to start top-up checkout",
+      );
+    } finally {
+      setProcessingTopUp(null);
+    }
+  };
+
+  // Price calculations helpers
+  const getDisplayPrice = (plan) => {
+    const val = plan.prices[billingInterval].ngn;
+    return formatPlanPrice(val);
+  };
+
+  const getSaveText = (plan) => {
+    if (billingInterval === "monthly") return null;
+    const val = plan.savings.ngn;
+    return `Save ${formatPlanPrice(val)}`;
+  };
+
+  const getMonthlyEquivalent = (plan) => {
+    if (billingInterval === "monthly") return null;
+    const val = plan.prices.yearly.ngn;
+    const monthlyEq = Math.round((val / 12) * 100) / 100;
+    return `${formatPlanPrice(Math.round(monthlyEq))}/mo`;
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-screen bg-[#F5F5F5]">
         <NewsFeedHeader />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
@@ -170,375 +298,211 @@ const ASEPricingPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-[#F5F5F5] text-[#16730F] font-sans antialiased">
       <NewsFeedHeader />
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr_1fr] gap-4 p-4 max-w-screen-xl mx-auto flex-1">
-        {/* Left Sidebar */}
-        <div className="hidden md:block">
-          <div className="bg-white rounded-lg shadow p-4 sticky top-20">
-            <h3 className="font-semibold text-[#1A3E32] mb-4">Navigation</h3>
-            <ul className="space-y-2">
-              <li>
-                <button
-                  onClick={() => navigate("/news-feed")}
-                  className="text-gray-600 hover:text-[#16730F] w-full text-left px-3 py-2 rounded hover:bg-gray-50"
-                >
-                  ← Back to Dashboard
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate("/candidate-search-page")}
-                  className="text-gray-600 hover:text-[#16730F] w-full text-left px-3 py-2 rounded hover:bg-gray-50"
-                >
-                  Candidate Search
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate("/ase/dashboard")}
-                  className="text-gray-600 hover:text-[#16730F] w-full text-left px-3 py-2 rounded hover:bg-gray-50"
-                >
-                  My Subscription
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 sm:gap-6 lg:gap-8 p-3 sm:p-6 max-w-[1500px] mx-auto w-full flex-1 min-w-0">
+        {/* Sidebar navigation & Help */}
+        <ASEPricingSidebar />
 
         {/* Main Content */}
-        <div className="min-h-0">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#1A3E32] px-6 py-8 text-center">
-              <h1 className="text-3xl font-bold text-white">
-                Advanced Search Engine
-              </h1>
-              <p className="text-green-100 mt-2 text-lg">
-                Find the perfect candidates for your hiring needs
-              </p>
-            </div>
+        <div className="space-y-6 min-w-0">
+          {/* Header Banner */}
+          <ASEPricingHeader />
 
-            {/* Current Status */}
-            {eligibility && (
-              <div className="mx-6 -mt-4 p-4 bg-white border-2 border-[#1A3E32] rounded-lg shadow">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-[#16730F]"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {eligibility.accessType === "free_trial" &&
-                          "Free Trial Available"}
-                        {eligibility.accessType === "free_trial_upgrade" &&
-                          "Free Trial Upgrade Available"}
-                        {eligibility.accessType === "one_time" &&
-                          `${eligibility.remainingSearches} Search Credits Remaining`}
-                        {eligibility.accessType === "subscription" &&
-                          `Active ${eligibility.planType?.toUpperCase()} Plan`}
-                        {eligibility.accessType === "none" && "No Active Plan"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {eligibility.accessType === "free_trial" &&
-                          "Use your free search to test our platform"}
-                        {eligibility.accessType === "free_trial_upgrade" &&
-                          eligibility.message}
-                        {eligibility.accessType === "one_time" &&
-                          "Purchase more searches or upgrade to unlimited"}
-                        {eligibility.accessType === "subscription" &&
-                          "Your subscription is active"}
-                        {eligibility.accessType === "none" &&
-                          "Choose a plan below to continue"}
-                      </p>
-                    </div>
-                  </div>
-                  {(eligibility.accessType !== "none" &&
-                    eligibility.accessType !== "subscription") ||
-                    (eligibility.accessType === "free_trial_upgrade" && (
-                      <button
-                        onClick={() => navigate("/candidate-search-page")}
-                        className="px-4 py-2 bg-[#1A3E32] text-white rounded-lg hover:bg-[#2d5a47] transition-colors"
-                      >
-                        Go to Search
-                      </button>
-                    ))}
+          {/* Current Status Box */}
+          {eligibility && (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 bg-green-50 rounded-2xl flex items-center justify-center text-[#16730F] shrink-0 border border-[#16730F]/20">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                    Your Current Status
+                  </p>
+                  <h4 className="font-extrabold text-gray-900 text-base sm:text-lg leading-snug">
+                    {eligibility.accessType === "free_monthly" &&
+                      (eligibility.eligible
+                        ? `Free Monthly Quota — ${eligibility.remainingSearches ?? 0}/${eligibility.monthlySearchLimit ?? 5} searches left`
+                        : "Free Monthly Search Quota Used")}
+                    {eligibility.accessType === "one_time" &&
+                      `${eligibility.remainingSearches} Search Credits`}
+                    {eligibility.accessType === "topup_search" &&
+                      `${eligibility.remainingSearches} Top-Up Searches`}
+                    {eligibility.accessType === "subscription" &&
+                      `Active ${eligibility.planType?.toUpperCase()} — ${eligibility.remainingSearches ?? 0}/${eligibility.monthlySearchLimit ?? "∞"} searches left`}
+                    {eligibility.accessType === "none" && "No Active Plan"}
+                  </h4>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {eligibility.accessType === "free_monthly" &&
+                      (eligibility.eligible
+                        ? `Includes ${eligibility.monthlySearchLimit ?? 5} ASE searches, ${eligibility.monthlyJobPostLimit ?? 5} job posts, 2 recruitment exercises, and ₦${Number(eligibility.adCreditNgn ?? 5000).toLocaleString("en-NG")} AdPro credit this month`
+                        : eligibility.message ||
+                          "You've used your free ASE searches for this month. Wait until next month or subscribe to continue.")}
+                    {eligibility.accessType === "one_time" &&
+                      "Purchase more searches or upgrade to a monthly plan"}
+                    {eligibility.accessType === "topup_search" &&
+                      "Top-up search credits available"}
+                    {eligibility.accessType === "subscription" &&
+                      "Plan limits apply to searches, job posts, AdPro credits, and recruitment management this billing period"}
+                    {eligibility.accessType === "none" &&
+                      "Choose a plan below to continue"}
+                  </p>
                 </div>
               </div>
-            )}
 
-            {/* Currency Toggle */}
-            <div className="px-6 py-4 border-b bg-gray-50">
-              <div className="flex items-center justify-center gap-4">
-                <span
-                  className={`text-sm font-medium ${currency === "USD" ? "text-[#1A3E32]" : "text-gray-400"}`}
+              {eligibility.accessType !== "none" &&
+                eligibility.accessType !== "subscription" &&
+                eligibility.eligible !== false && (
+                <button
+                  onClick={() => navigate("/candidate-search-page")}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#16730F] text-white rounded-xl hover:bg-[#2d5a47] transition-all font-bold text-sm shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
                 >
-                  USD ($)
-                </span>
+                  Go to Search
+                </button>
+              )}
+              {eligibility.accessType === "free_monthly" &&
+                eligibility.eligible === false && (
+                <button
+                  onClick={() => navigate("/subscription-pricing")}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#16730F] text-white rounded-xl hover:bg-[#2d5a47] transition-all font-bold text-sm shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+                >
+                  View Plans
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Interactive Controls (Toggles) */}
+          <div className="flex flex-col gap-4 sm:gap-6 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
+              <span className="text-sm font-bold text-gray-400 uppercase tracking-wider shrink-0">
+                Billing Interval:
+              </span>
+              <div className="inline-flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("monthly")}
+                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                    billingInterval === "monthly"
+                      ? "bg-[#16730F] text-white shadow-sm"
+                      : "text-gray-600 hover:text-[#16730F]"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("yearly")}
+                  className={`relative flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    billingInterval === "yearly"
+                      ? "bg-[#16730F] text-white shadow-sm"
+                      : "text-gray-600 hover:text-[#16730F]"
+                  }`}
+                >
+                  Yearly
+                  <span className="bg-[#16730F] text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Save ~20%
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm font-semibold text-gray-500 text-center sm:text-left">
+              All prices in Nigerian Naira (₦)
+            </p>
+          </div>
+
+          {/* Pricing Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {plansData.map((plan) => (
+              <ASEPricingCard
+                key={plan.id}
+                plan={plan}
+                billingInterval={billingInterval}
+                onSelectPlan={handleSelectPlan}
+                getDisplayPrice={getDisplayPrice}
+                getSaveText={getSaveText}
+                getMonthlyEquivalent={getMonthlyEquivalent}
+                isCurrentPlan={isCurrentPlan(plan)}
+              />
+            ))}
+          </div>
+
+          {/* Comparison Matrix Table */}
+          <ASEPricingComparisonTable />
+
+          {/* Top-Ups Information Box */}
+          <ASEPricingTopups
+            onPurchaseTopUp={handlePurchaseTopUp}
+            processingTopUp={processingTopUp}
+            topUpBalances={
+              eligibility
+                ? {
+                    topupSearchesRemaining:
+                      eligibility.topupSearchesRemaining || 0,
+                    topupJobPostsRemaining:
+                      eligibility.topupJobPostsRemaining || 0,
+                  }
+                : null
+            }
+          />
+
+          {/* Free Monthly Quota Banner */}
+          {eligibility && eligibility.accessType === "free_monthly" && (
+              <div className="border-2 border-dashed border-[#16730F] bg-green-50/50 rounded-3xl p-6 sm:p-8 text-center space-y-4">
+                <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                  {eligibility.eligible
+                    ? "Your Free Monthly ASE Quota"
+                    : "Free Monthly Quota Used"}
+                </h3>
+                <p className="text-gray-500 text-sm max-w-2xl mx-auto leading-relaxed">
+                  {eligibility.eligible
+                    ? `Each month you get ${eligibility.monthlySearchLimit ?? 5} ASE searches (20 results each), ${eligibility.monthlyJobPostLimit ?? 5} job posts, 2 recruitment exercises, and ₦${Number(eligibility.adCreditNgn ?? 5000).toLocaleString("en-NG")} AdPro credit — no card required.`
+                    : eligibility.message ||
+                      "You've used your free ASE quota for this month. Wait until next month or subscribe to continue enjoying Bejite recruiting."}
+                </p>
                 <button
                   onClick={() =>
-                    setCurrency(currency === "USD" ? "NGN" : "USD")
+                    navigate(
+                      eligibility.eligible
+                        ? "/candidate-search-page"
+                        : "/subscription-pricing",
+                    )
                   }
-                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-[#1A3E32] transition-colors"
+                  className="px-8 py-3 bg-[#16730F] text-white font-bold rounded-xl hover:bg-[#2d5a47] transition-all hover:shadow shadow-sm active:scale-95"
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currency === "NGN" ? "translate-x-6" : "translate-x-1"}`}
-                  />
+                  {eligibility.eligible ? "Start Searching" : "View Plans"}
                 </button>
-                <span
-                  className={`text-sm font-medium ${currency === "NGN" ? "text-[#1A3E32]" : "text-gray-400"}`}
-                >
-                  NGN (₦)
-                </span>
               </div>
-            </div>
-
-            {/* Plans */}
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-center text-[#1A3E32] mb-6">
-                Choose Your Plan
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                {plans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className={`relative border-2 rounded-xl p-4 sm:p-6 transition-all hover:shadow-lg min-w-0 overflow-visible ${
-                      plan.id === "premium" || plan.id === "jumbo" ? "pt-8 sm:pt-10" : ""
-                    } ${
-                      plan.id === "premium"
-                        ? "border-[#16730F] bg-green-50"
-                        : plan.id === "jumbo"
-                          ? "border-[#1A3E32] bg-[#1A3E32]/5"
-                          : "border-gray-200 hover:border-[#1A3E32]"
-                    }`}
-                  >
-                    {plan.id === "premium" && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap px-4 py-1 bg-[#16730F] text-white text-xs font-bold rounded-full shadow text-center">
-                        MOST POPULAR
-                      </span>
-                    )}
-
-                    {plan.id === "jumbo" && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap px-4 py-1 bg-[#1A3E32] text-white text-xs font-bold rounded-full shadow text-center">
-                        BEST VALUE
-                      </span>
-                    )}
-
-                    <div className="text-center">
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {plan.name}
-                      </h3>
-
-                      <div className="mt-4 flex flex-col items-center gap-1 min-w-0 w-full px-1">
-                        <span
-                          className={`font-bold text-[#1A3E32] leading-tight break-words text-center ${
-                            currency === "NGN"
-                              ? "text-2xl sm:text-3xl"
-                              : "text-3xl sm:text-4xl"
-                          }`}
-                        >
-                          {formatPlanPrice(plan, currency)}
-                        </span>
-                        <span className="text-gray-500 text-xs sm:text-sm">
-                          /{plan.billingPeriod || "search"}
-                        </span>
-                      </div>
-
-                      {/* Subscribe Button at Top */}
-                      <button
-                        onClick={() => handleSelectPlan(plan)}
-                        disabled={processing}
-                        className={`mt-4 w-full py-2 px-4 rounded-lg font-semibold transition-all ${
-                          plan.id === "premium"
-                            ? "bg-[#16730F] text-white hover:bg-[#145c0c]"
-                            : plan.id === "jumbo"
-                              ? "bg-[#1A3E32] text-white hover:bg-[#2d5a47]"
-                              : "bg-[#1A3E32] text-white hover:bg-[#2d5a47]"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {processing && selectedPlan?.id === plan.id
-                          ? "Processing..."
-                          : plan.type === "one_time"
-                            ? "Pay Now"
-                            : "Subscribe Now"}
-                      </button>
-                    </div>
-
-                    <ul className="mt-4 space-y-3">
-                      {plan.features?.map((feature, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-sm text-gray-600"
-                        >
-                          <svg
-                            className="w-5 h-5 text-[#16730F] flex-shrink-0 mt-0.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <button
-                      onClick={() => handleSelectPlan(plan)}
-                      disabled={processing}
-                      className={`mt-6 w-full py-3 px-4 rounded-lg font-semibold transition-all ${
-                        plan.id === "premium"
-                          ? "bg-[#16730F] text-white hover:bg-[#145c0c]"
-                          : plan.id === "jumbo"
-                            ? "bg-[#1A3E32] text-white hover:bg-[#2d5a47]"
-                            : "bg-gray-100 text-[#1A3E32] hover:bg-gray-200"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {processing && selectedPlan?.id === plan.id
-                        ? "Processing..."
-                        : plan.type === "one_time"
-                          ? "Pay Now"
-                          : "Subscribe"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Plan Comparison */}
-            <div className="px-6 pb-6">
-              <h3 className="text-lg font-bold text-[#1A3E32] mb-4 text-center">
-                Plan Comparison
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-[#1A3E32]">
-                      <th className="py-3 text-left text-gray-600">Feature</th>
-                      <th className="py-3 text-center text-[#1A3E32] font-bold">
-                        Standard
-                      </th>
-                      <th className="py-3 text-center text-[#16730F] font-bold">
-                        Premium
-                      </th>
-                      <th className="py-3 text-center text-[#1A3E32] font-bold">
-                        Jumbo
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-3 text-gray-600">
-                        Candidates per search
-                      </td>
-                      <td className="py-3 text-center font-semibold">20</td>
-                      <td className="py-3 text-center font-semibold">20</td>
-                      <td className="py-3 text-center font-semibold text-[#16730F]">
-                        30
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-3 text-gray-600">Payment type</td>
-                      <td className="py-3 text-center">One-time</td>
-                      <td className="py-3 text-center">Monthly</td>
-                      <td className="py-3 text-center">Monthly</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-3 text-gray-600">
-                        Save card for future
-                      </td>
-                      <td className="py-3 text-center">❌</td>
-                      <td className="py-3 text-center">✅</td>
-                      <td className="py-3 text-center">✅</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-600">Unlimited searches</td>
-                      <td className="py-3 text-center">❌</td>
-                      <td className="py-3 text-center">✅</td>
-                      <td className="py-3 text-center">✅</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Free Trial Section */}
-            {eligibility &&
-              (eligibility.accessType === "free_trial_upgrade" ||
-                (!eligibility.hasUsedFreeTrial &&
-                  eligibility.accessType === "none")) && (
-                <div className="px-6 pb-6">
-                  <div className="border-2 border-dashed border-[#16730F] bg-green-50 rounded-xl p-6 text-center">
-                    <h3 className="text-lg font-bold text-[#1A3E32]">
-                      {eligibility.accessType === "free_trial_upgrade"
-                        ? "Free Trial Upgrade"
-                        : "Try Before You Buy"}
-                    </h3>
-                    <p className="text-gray-600 mt-2">
-                      {eligibility.accessType === "free_trial_upgrade"
-                        ? eligibility.message ||
-                          "Get additional free searches to continue exploring candidates"
-                        : "Get free searches to test our candidate matching quality"}
-                    </p>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await activateFreeTrial();
-                          navigate("/candidate-search-page");
-                        } catch (error) {
-                          console.error("Free trial error:", error);
-                        }
-                      }}
-                      className="mt-4 px-6 py-2 bg-[#16730F] text-white font-semibold rounded-lg hover:bg-[#145c0c]"
-                    >
-                      {eligibility.accessType === "free_trial_upgrade"
-                        ? "Activate Upgrade"
-                        : "Use Free Trial"}
-                    </button>
-                  </div>
-                </div>
-              )}
-          </div>
-        </div>
-
-        {/* Right Sidebar - Help */}
-        <div className="hidden md:block">
-          <div className="bg-white rounded-lg shadow p-4 sticky top-20">
-            <h3 className="font-semibold text-[#1A3E32] mb-4">Need Help?</h3>
-            <div className="space-y-3 text-sm text-gray-600">
-              <p>
-                Contact our support team for assistance with choosing the right
-                plan.
-              </p>
-              <button
-                onClick={() => navigate("/contact")}
-                className="w-full py-2 px-4 border border-[#1A3E32] text-[#1A3E32] rounded hover:bg-[#1A3E32] hover:text-white transition-colors"
-              >
-                Contact Support
-              </button>
-            </div>
-          </div>
+            )}
         </div>
       </div>
+
+      {/* Paystack Checkout Modal */}
+      <ASECheckoutModal
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        plan={selectedCheckoutPlan}
+        billingInterval={billingInterval}
+        processing={processing}
+        onPay={triggerPayment}
+        getDisplayPrice={getDisplayPrice}
+        getSaveText={getSaveText}
+      />
     </div>
   );
 };

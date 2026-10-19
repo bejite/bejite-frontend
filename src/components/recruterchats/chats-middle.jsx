@@ -1,44 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { FaArrowLeft, FaPhone, FaVideo, FaBars } from 'react-icons/fa';
+import { FaArrowLeft, /* FaPhone, FaVideo, */ FaBars } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import messagingService from '../../services/messagingService';
 import { API_URL } from '../../config';
 import ChatMessageInput from '../chat/ChatMessageInput';
-import MessageAttachment from '../chat/MessageAttachment';
+import ChatMessageBubble from '../chat/ChatMessageBubble';
+import ChatDaySeparator from '../chat/ChatDaySeparator';
+import { formatChatDayLabel, formatChatMessageTime, groupMessagesByDay } from '../../utils/chatTimeUtils';
 import { formatDisplayPersonName } from '../../utils/personDisplayName';
+import { toQuotePreview } from '../../utils/chatQuote';
+import { notifyChatConversationUpdated } from '../../utils/headerBadgeEvents';
+
+function messagesFingerprint(msgs) {
+  return (msgs || [])
+    .map(
+      (msg) =>
+        `${msg.id}:${msg.updated_at || ''}:${msg.is_deleted ? 1 : 0}:${msg.content || ''}:${msg.reply_to_message_id || ''}:${msg.reply_to?.is_deleted ? 1 : 0}`,
+    )
+    .join('|');
+}
+
+function escapeMessageId(messageId) {
+  const value = String(messageId);
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
 
 function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
   const currentUser = useSelector((state) => state.auth.user);
+  const messagesContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const stickToBottomRef = useRef(true);
+  const programmaticScrollRef = useRef(false);
 
-  useEffect(() => {
-    if (selectedChat?.id) {
-      fetchMessages(selectedChat.id);
-      // Mark conversation as read when opened
-      messagingService.markConversationRead(selectedChat.id).catch((err) => {
-        console.error('Error marking conversation as read:', err);
-      });
+  const isNearBottom = useCallback((threshold = 96) => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    return (
+      container.scrollHeight - container.scrollTop - container.clientHeight <=
+      threshold
+    );
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Jump the messages pane instantly. Do not use scrollIntoView (it scrolls
+    // the page on mobile) or CSS smooth scrolling (that animates from the top).
+    programmaticScrollRef.current = true;
+    container.scrollTop = container.scrollHeight;
+  }, []);
+
+  const handleMessagesScroll = () => {
+    if (programmaticScrollRef.current) {
+      programmaticScrollRef.current = false;
+      stickToBottomRef.current = true;
+      return;
     }
-  }, [selectedChat]);
+    stickToBottomRef.current = isNearBottom();
+  };
 
   useEffect(() => {
-    if (!selectedChat?.id) return;
+    if (!selectedChat?.id) {
+      setMessages([]);
+      return;
+    }
+
+    stickToBottomRef.current = true;
+    setMessages([]);
+    setEditingMessageId(null);
+    setReplyTo(null);
+    fetchMessages(selectedChat.id);
+    messagingService.markConversationRead(selectedChat.id).catch((err) => {
+      console.error('Error marking conversation as read:', err);
+    });
+  }, [selectedChat?.id]);
+
+  useEffect(() => {
+    if (!selectedChat?.id || isRecordingVoice) {
+      return undefined;
+    }
 
     const interval = setInterval(() => {
       fetchMessages(selectedChat.id, true); // silent fetch
     }, 5000); // poll every 5 seconds
 
     return () => clearInterval(interval);
-  }, [selectedChat]);
+  }, [selectedChat?.id, isRecordingVoice]);
+
+  useLayoutEffect(() => {
+    if (!messages.length || loading) return;
+    if (!stickToBottomRef.current) return;
+    scrollToBottom();
+  }, [messages, loading, selectedChat?.id, scrollToBottom]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container || !messages.length || loading) return undefined;
+
+    const pinIfNeeded = () => {
+      if (stickToBottomRef.current) scrollToBottom();
+    };
+
+    const observer = new ResizeObserver(pinIfNeeded);
+    const inner = container.firstElementChild;
+    if (inner) observer.observe(inner);
+
+    return () => observer.disconnect();
+  }, [messages, loading, selectedChat?.id, scrollToBottom]);
 
   const fetchMessages = async (conversationId, silent = false) => {
     try {
       if (!silent) setLoading(true);
       const data = await messagingService.getMessages(conversationId);
-      setMessages((data || []).reverse());
+      const next = (data || []).reverse();
+      setMessages((prev) => {
+        if (messagesFingerprint(prev) === messagesFingerprint(next)) {
+          return prev;
+        }
+        return next;
+      });
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -51,31 +144,155 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
 
     try {
       setSending(true);
-      await messagingService.sendMessage(selectedChat.id, message.trim());
+      stickToBottomRef.current = true;
+      await messagingService.sendMessage(
+        selectedChat.id,
+        message.trim(),
+        null,
+        null,
+        replyTo?.id || null,
+      );
       setMessage('');
-      fetchMessages(selectedChat.id);
-      window.dispatchEvent(new CustomEvent('chat:conversation-updated'));
+      setReplyTo(null);
+      await fetchMessages(selectedChat.id, true);
+      notifyChatConversationUpdated();
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          'Failed to send message',
+      );
     } finally {
       setSending(false);
     }
   };
 
-  const handleSendAttachment = async (url, caption = '') => {
-    if (!selectedChat?.id || sending) return;
+  const handleSendAttachment = async (url, caption = '', attachment = null) => {
+    if (!selectedChat?.id || sending) {
+      return;
+    }
 
     try {
       setSending(true);
-      await messagingService.sendMessage(selectedChat.id, caption, url);
+      stickToBottomRef.current = true;
+      await messagingService.sendMessage(
+        selectedChat.id,
+        caption,
+        url,
+        attachment,
+        replyTo?.id || null,
+      );
       setMessage('');
-      fetchMessages(selectedChat.id);
-      window.dispatchEvent(new CustomEvent('chat:conversation-updated'));
+      setReplyTo(null);
+      await fetchMessages(selectedChat.id, true);
+      notifyChatConversationUpdated();
     } catch (error) {
-      console.error('Error sending attachment:', error);
+      const msg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        'Failed to send attachment';
+      toast.error(msg);
     } finally {
       setSending(false);
     }
+  };
+
+  const handleEditMessage = async (messageId, content) => {
+    if (!messageId || !content.trim() || savingEdit) return;
+
+    try {
+      setSavingEdit(true);
+      await messagingService.editMessage(messageId, content.trim());
+      setEditingMessageId(null);
+      await fetchMessages(selectedChat.id, true);
+      notifyChatConversationUpdated();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        'Failed to edit message';
+      toast.error(msg);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+    if (!window.confirm('Delete this message?')) return;
+
+    try {
+      await messagingService.deleteMessage(messageId);
+      if (editingMessageId === messageId) {
+        setEditingMessageId(null);
+      }
+      if (replyTo?.id === messageId) {
+        setReplyTo(null);
+      }
+      await fetchMessages(selectedChat.id, true);
+      notifyChatConversationUpdated();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        'Failed to delete message';
+      toast.error(msg);
+    }
+  };
+
+  const handleStartReply = (msg) => {
+    setEditingMessageId(null);
+    setReplyTo(toQuotePreview(msg));
+  };
+
+  const handleQuoteClick = (messageId) => {
+    const container = messagesContainerRef.current;
+    if (!container || !messageId) return;
+    const target = container.querySelector(
+      `[data-message-id="${escapeMessageId(messageId)}"]`,
+    );
+    if (!target) return;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    container.scrollTop += targetRect.top - containerRect.top - 16;
+    stickToBottomRef.current = isNearBottom();
+  };
+
+  const messageIds = useMemo(
+    () => new Set(messages.map((msg) => String(msg.id))),
+    [messages],
+  );
+
+  const messageDays = useMemo(() => groupMessagesByDay(messages), [messages]);
+
+  const isOwnMessage = (msg) => {
+    const currentUserId =
+      currentUser?.id ||
+      currentUser?.user_id ||
+      currentUser?.userId ||
+      currentUser?.sub ||
+      currentUser?.authId;
+
+    const selectedOtherUserId =
+      selectedChat?.other_user?.id ||
+      selectedChat?.other_user?.user_id ||
+      selectedChat?.otherUserId;
+
+    const messageSenderId =
+      msg.sender_id || msg.user_id || msg.sender?.id || msg.senderId;
+
+    if (currentUserId != null && messageSenderId != null) {
+      return String(messageSenderId) === String(currentUserId);
+    }
+    if (selectedOtherUserId != null && messageSenderId != null) {
+      return String(messageSenderId) !== String(selectedOtherUserId);
+    }
+
+    return (
+      `${msg.firstName || msg.first_name || ''} ${msg.lastName || msg.last_name || ''}`.trim() ===
+      `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim()
+    );
   };
 
   const getInitials = (firstName, lastName) => {
@@ -112,53 +329,64 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
   }
 
   return (
-<main className="w-full h-full min-h-0 flex flex-col overflow-hidden bg-gray-100">
-  {/* Header */}
-  <div className="bg-gray-200 shrink-0 flex items-center justify-between px-4 py-4 md:py-7">
-    <div className="flex items-center gap-2 md:gap-3">
-      <button
-        onClick={onShowChatList}
-        className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors"
-      >
-        <FaArrowLeft />
-      </button>
-      {selectedProfileImage ? (
-        <img
-          src={selectedProfileImage}
-          alt={selectedFullName}
-          className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover lg:hidden"
-        />
-      ) : (
-        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#556B1F] text-white font-semibold flex items-center justify-center lg:hidden">
-          {getInitials(selectedFirstName, selectedLastName)}
+    <main className="w-full h-full min-h-0 flex flex-col overflow-hidden bg-gray-100">
+      {/* Header */}
+      <div className="bg-gray-200 shrink-0 flex items-center justify-between gap-2 px-3 py-3 sm:px-4 md:py-4 border-b border-gray-300">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+          <button
+            onClick={onShowChatList}
+            className="md:hidden shrink-0 text-gray-600 hover:text-gray-800 transition-colors p-1"
+            aria-label="Back to conversations"
+          >
+            <FaArrowLeft />
+          </button>
+          {selectedProfileImage ? (
+            <img
+              src={selectedProfileImage}
+              alt={selectedFullName}
+              className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-[#556B1F] text-white text-xs sm:text-sm font-semibold flex items-center justify-center shrink-0">
+              {getInitials(selectedFirstName, selectedLastName)}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm sm:text-base md:text-xl font-semibold text-[#16730F] truncate" title={selectedFullName}>
+              {selectedFullName}
+            </h1>
+            <p className="text-[10px] sm:text-xs text-emerald-600 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Online
+            </p>
+          </div>
         </div>
-      )}
-      <div>
-          <h1 className="text-lg md:text-2xl font-semibold text-[#16730F]">
-            {selectedFullName}
-          </h1>
-          <p className="text-xs md:text-sm text-[#16730F]">Online</p>
-       </div>
-    </div>
 
-    <div className='flex items-center gap-2'>
-      <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition">
-        <FaPhone className="text-sm" />
-      </button>
-      <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition">
-        <FaVideo className="text-sm" />
-      </button>
-      <button 
-        onClick={onShowChatInfo}
-        className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors ml-2"
-      >
-        <FaBars />
-      </button>
-    </div>
-  </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition shadow-sm" title="Call">
+            <FaPhone className="text-xs sm:text-sm" />
+          </button>
+          <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition shadow-sm" title="Video call">
+            <FaVideo className="text-xs sm:text-sm" />
+          </button> */}
+          <button 
+            onClick={onShowChatInfo}
+            className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors p-1.5 ml-1"
+            aria-label="Toggle user details"
+            title="View info"
+          >
+            <FaBars className="text-base" />
+          </button>
+        </div>
+      </div>
 
   {/* Messages Area */}
-  <div className="flex-1 min-h-0 overflow-y-auto nfl-scroll scroll-smooth p-2 md:p-4">
+  <div
+    ref={messagesContainerRef}
+    onScroll={handleMessagesScroll}
+    data-chat-messages
+    className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain nfl-scroll [overflow-anchor:none] p-3 md:p-5 bg-[#F7F7F7]"
+  >
     {loading ? (
       <div className="text-center text-[#16730F] py-2 md:py-4">
         Loading messages...
@@ -170,38 +398,13 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
       </div>
     ) : (
       /* Messages Display */
-      <div className="space-y-4">
-        {messages.map((msg) => {
-          const currentUserId =
-            currentUser?.id ||
-            currentUser?.user_id ||
-            currentUser?.userId ||
-            currentUser?.sub ||
-            currentUser?.authId;
-
-          const selectedOtherUserId =
-            selectedChat?.other_user?.id ||
-            selectedChat?.other_user?.user_id ||
-            selectedChat?.otherUserId;
-
-          const messageSenderId = msg.sender_id || msg.user_id || msg.sender?.id || msg.senderId;
-
-          // Prefer ID-based check for robust sender/receiver separation
-          let isOwnMessage = false;
-          if (currentUserId != null && messageSenderId != null) {
-            isOwnMessage = String(messageSenderId) === String(currentUserId);
-          } else if (selectedOtherUserId != null && messageSenderId != null) {
-            // If current user ID is not available after refresh, infer from selected chat participant
-            isOwnMessage = String(messageSenderId) !== String(selectedOtherUserId);
-          } else {
-            // Final fallback to name match only when IDs are missing
-            isOwnMessage =
-              `${msg.firstName || msg.first_name || ''} ${msg.lastName || msg.last_name || ''}`.trim() ===
-              `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim();
-          }
-
-          // Real names from backend JOIN
-          // Backend returns firstName/lastName directly on msg (JOIN), NOT msg.sender object
+      <div className="px-1 md:px-2">
+        {messageDays.map((day) => (
+          <section key={day.dayKey} className="relative">
+            <ChatDaySeparator
+              label={formatChatDayLabel(day.messages[0]?.created_at)}
+            />
+            {day.messages.map((msg) => {
           const senderName = formatDisplayPersonName(
             {
               firstName: msg.firstName ?? msg.first_name,
@@ -209,53 +412,67 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
             },
             'User',
           );
-          const messageTime = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          const messageTime = formatChatMessageTime(msg.created_at);
+          const ownMessage = isOwnMessage(msg);
+          const senderAvatar = getProfileImageUrl(
+            msg.profilePictureUrl ||
+              msg.profile_photo ||
+              (!ownMessage
+                ? selectedChat?.other_user?.profilePictureUrl ||
+                  selectedChat?.other_user?.profilePhoto
+                : null),
+          );
+          const senderInitials = getInitials(
+            msg.firstName ?? msg.first_name,
+            msg.lastName ?? msg.last_name,
+          );
 
           return (
-            <div key={msg.id} className={isOwnMessage ? 'flex justify-end mb-2 md:mb-4' : 'flex justify-start mb-2 md:mb-4'}>
-              <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} w-full max-w-xs md:max-w-md`}>
-                {!isOwnMessage && (
-                  <div className="text-xs font-medium text-gray-500 mb-1">
-                    {senderName}
-                  </div>
-                )}
-                <div className={`p-2 md:p-3 rounded-2xl shadow-sm ${isOwnMessage ? 'bg-green-500 text-white ml-8 md:ml-16 rounded-r-none' : 'bg-white text-gray-900 mr-8 md:mr-16 rounded-l-none border'}`}>
-                  {msg.image_url && (
-                    <MessageAttachment url={msg.image_url} caption={msg.content} />
-                  )}
-                  {(() => {
-                    const attachmentLabel =
-                      msg.image_url &&
-                      (msg.content === '🎬 Video' ||
-                        msg.content === '🎤 Voice message' ||
-                        msg.content?.startsWith('📎'));
-                    if (!msg.content || attachmentLabel) return null;
-                    return (
-                      <p className={msg.is_deleted ? 'italic text-gray-400 line-through' : ''}>
-                        {msg.content}
-                      </p>
-                    );
-                  })()}
-                </div>
-                <div className={`text-xs mt-1 ${isOwnMessage ? 'text-gray-500 ml-auto' : 'text-gray-500'}`}>
-                  {messageTime}
-                </div>
-              </div>
-            </div>
+              <ChatMessageBubble
+                key={msg.id}
+                message={msg}
+                isOwnMessage={ownMessage}
+                senderName={senderName}
+                senderHasVerifiedBadge={Boolean(msg.hasVerifiedBadge)}
+                senderBadgeUser={
+                  ownMessage
+                    ? currentUser
+                    : selectedChat?.other_user
+                }
+                senderAvatar={senderAvatar}
+                senderInitials={senderInitials}
+                messageTime={messageTime}
+                editing={editingMessageId === msg.id}
+                saving={savingEdit && editingMessageId === msg.id}
+                onStartEdit={() => setEditingMessageId(msg.id)}
+                onCancelEdit={() => setEditingMessageId(null)}
+                onSaveEdit={(content) => handleEditMessage(msg.id, content)}
+                onDelete={() => handleDeleteMessage(msg.id)}
+                onReply={() => handleStartReply(msg)}
+                onQuoteClick={handleQuoteClick}
+                canJumpToQuote={messageIds.has(String(msg.reply_to?.id))}
+              />
           );
-        })}
+            })}
+          </section>
+        ))}
+        <div ref={messagesEndRef} aria-hidden="true" />
       </div>
     )}
   </div>
 
   {selectedChat?.id ? (
     <ChatMessageInput
+      key={selectedChat.id}
       message={message}
       setMessage={setMessage}
       onSend={handleSendMessage}
       onSendAttachment={handleSendAttachment}
+      onRecordingChange={setIsRecordingVoice}
       sending={sending}
       disabled={!selectedChat?.id}
+      replyTo={replyTo}
+      onCancelReply={() => setReplyTo(null)}
     />
   ) : (
     <div className="shrink-0 p-4 text-center text-sm text-gray-500">

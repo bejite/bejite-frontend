@@ -1,10 +1,4 @@
 import axios from "axios";
-// import { API_URL } from "../config";
-import {
-  dispatchHydrateAuth,
-  refreshAccessToken,
-  restoreUserFromServer,
-} from "./tokenManager";
 import { API_KEY, API_URL } from "../config.mjs";
 
 const axiosInstance = axios.create({
@@ -61,6 +55,13 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      const {
+        clearAuthData,
+        refreshAccessToken,
+        restoreUserFromServer,
+        dispatchHydrateAuth,
+      } = await import("./tokenManager.js");
+
       try {
         const refreshToken = localStorage.getItem("refreshToken");
 
@@ -75,13 +76,11 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.warn(
-          "Token refresh failed, preserving session for manual re-authentication:",
-          refreshError?.message,
-        );
-
+        clearAuthData();
         sessionStorage.setItem("sessionExpired", "true");
-        window.location.href = "/";
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
+        }
         return Promise.reject(refreshError);
       }
     }

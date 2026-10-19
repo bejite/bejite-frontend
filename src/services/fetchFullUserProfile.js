@@ -1,6 +1,14 @@
 import axiosInstance from '../utils/axiosInstance';
 import { normalizeProfileData, mergeCvBioIntoProfile } from '../utils/profileUtils';
 
+export class ProfileAccessError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = 'ProfileAccessError';
+    this.code = code;
+  }
+}
+
 /**
  * GET /api/users/:userId/profile/full — summary + full CV sections.
  * @param {string} userId
@@ -12,6 +20,8 @@ export async function fetchFullUserProfile(userId) {
     `/api/users/${id}/profile/full`,
     `/api/connections/users/${id}/profile/full`,
   ];
+
+  let lastAccessError = null;
 
   for (const url of endpoints) {
     try {
@@ -39,10 +49,24 @@ export async function fetchFullUserProfile(userId) {
           links: payload.cv?.links ?? null,
         },
       };
-    } catch {
-      /* try next */
+    } catch (error) {
+      const status = error?.response?.status;
+      const code = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message;
+
+      if (status === 403) {
+        lastAccessError = new ProfileAccessError(
+          message || 'This profile is not available',
+          code || 'PROFILE_NOT_VISIBLE',
+        );
+        continue;
+      }
     }
   }
 
+  if (lastAccessError) throw lastAccessError;
   return null;
 }

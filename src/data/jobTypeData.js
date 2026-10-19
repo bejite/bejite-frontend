@@ -1,7 +1,13 @@
 import {
   getAllCountryNames,
-  getStateNamesByCountryName,
 } from "../utils/countryStateData";
+import {
+  JOBSEEKER_MODE,
+  toJobseekerStatusValue,
+  resolveJobseekerStatus,
+  formatJobseekerModeLabel,
+  JOBSEEKER_MODE_SHORT_LABEL,
+} from "../utils/jobseekerMode";
 
 export const JOB_TITLE_OPTIONS = [
   "Software Engineer",
@@ -194,8 +200,6 @@ export const AVAILABILITY_OPTIONS = [
 
 export const RATE_OPTIONS = ["Hourly rate", "Monthly Salary"];
 
-export const getStateOptions = (country) => getStateNamesByCountryName(country);
-
 export const currencyLabelFromCode = (code, options = CURRENCY_OPTIONS) => {
   if (!code) return "";
   const trimmed = String(code).trim();
@@ -206,3 +210,32 @@ export const currencyLabelFromCode = (code, options = CURRENCY_OPTIONS) => {
 
 export const currencyCodeFromLabel = (label) =>
   label?.match(/\(([^)]+)\)$/)?.[1] || String(label || "").trim();
+
+export {
+  JOBSEEKER_MODE,
+  toJobseekerStatusValue,
+  resolveJobseekerStatus,
+  formatJobseekerModeLabel,
+  JOBSEEKER_MODE_SHORT_LABEL,
+};
+
+export const JOBSEEKER_STATUS_OPTIONS = [
+  { value: JOBSEEKER_MODE.ACTIVE, label: "ACTIVE JOBSEEKER" },
+  { value: JOBSEEKER_MODE.FREELANCER, label: "FREELANCER" },
+  { value: JOBSEEKER_MODE.INACTIVE, label: "INACTIVE JOBSEEKER" },
+];
+
+export const RECRUITER_TYPE_OPTIONS = [
+  { value: "Individual", label: "Individual" },
+  { value: "Corporate", label: "Corporate" },
+];
+
+export const toRecruiterTypeValue = (raw, fallback = "Individual") => {
+  const key = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (key === "corporate") return "Corporate";
+  if (key === "individual") return "Individual";
+  return fallback;
+};

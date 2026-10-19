@@ -22,14 +22,16 @@ const OnboardingLayout = ({
   return (
     <header
       style={{ fontFamily: "NunitoSemi" }}
-      className="w-full px-4 py-6 font-nunito-semi max-w-screen-xl mx-auto "
+      className="w-full px-4 pb-6 pt-2 font-nunito-semi max-w-screen-xl mx-auto "
     >
       <button
         className=" bg-transparent "
         onClick={() => {
           if (currentStep <= 1) {
             const isRecruiterPath = pathname.startsWith("/corporate") ||
-              pathname.startsWith("/edit-profile/recruiter");
+              pathname.startsWith("/edit-profile/recruiter") ||
+              pathname.startsWith("/edit-profile/individual") ||
+              pathname.startsWith("/individual");
             navigateBack(
               navigate,
               isEditMode
@@ -48,10 +50,10 @@ const OnboardingLayout = ({
         <img
           src="/assets/images/logo.png"
           alt="logo"
-          className="h-12 sm:h-16 "
+          className="h-10"
         />
       </button>
-      <div className="bg-white">
+      <div className="bg-white relative z-10">
         {steps && (
           <>
             <StepTabs

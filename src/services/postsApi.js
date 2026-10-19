@@ -6,6 +6,8 @@
 
 import axiosInstance from '../utils/axiosInstance';
 import { normalizePostsPayload } from '../utils/authorDisplay';
+import { getUploadSizeError } from '../utils/uploadLimits';
+import { extractMentionedUserIds } from '../utils/postBodyFormat';
 
 const POSTS_API_URL = '/api/posts';
 
@@ -14,30 +16,35 @@ const POSTS_API_URL = '/api/posts';
 // ============================================
 
 /**
- * Upload media (image or video) for posts
+ * Upload media (image or video) for posts via multipart.
  * @param {File} file - The file to upload
- * @returns {Object} - { url, kind }
+ * @returns {Object} - { url, kind, thumbnailUrl }
  */
 export const uploadMedia = async (file) => {
   try {
-    // Convert file to base64 data URL
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    const sizeError = getUploadSizeError(file);
+    if (sizeError) {
+      const err = new Error(sizeError);
+      err.response = { data: { error: sizeError, message: sizeError } };
+      throw err;
+    }
 
-    // Determine kind based on file type
-    const kind = file.type.startsWith('video/') ? 'video' : 'image';
+    const formData = new FormData();
+    formData.append("media", file);
 
-    const response = await axiosInstance.post(`${POSTS_API_URL}/upload`, {
-      dataUrl,
-      kind
-    });
-    return response.data;
+    const response = await axiosInstance.post(
+      `${POSTS_API_URL}/upload-media`,
+      formData,
+    );
+    const data = response.data || {};
+    const first = Array.isArray(data.media) ? data.media[0] : null;
+    return {
+      url: data.url || first?.url,
+      kind: data.kind || first?.kind || (file.type.startsWith("video/") ? "video" : "image"),
+      thumbnailUrl: data.thumbnailUrl ?? first?.thumbnailUrl ?? null,
+    };
   } catch (error) {
-    console.error('Error uploading media:', error.response?.data || error.message);
+    console.error("Error uploading media:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -51,15 +58,32 @@ export const uploadMedia = async (file) => {
  * @param {number} limit - Number of posts to fetch (default 20, max 50)
  * @param {string} cursor - Cursor for pagination
  */
-export const getFeed = async (limit = 20, cursor = null) => {
+export const getFeed = async (limit = 20, cursor = null, options = {}) => {
   try {
     const params = { limit };
     if (cursor) params.cursor = cursor;
+    if (options.hashtag) params.hashtag = options.hashtag;
     const response = await axiosInstance.get(`${POSTS_API_URL}/feed`, { params });
     return normalizePostsPayload(response.data);
   } catch (error) {
     console.error('Error fetching feed:', error);
     throw error;
+  }
+};
+
+export const searchMentionSuggestions = async (query, limit = 12, options = {}) => {
+  const q = String(query || "").trim().replace(/^@/, "");
+  if (options.exact && !q) return [];
+  try {
+    const response = await axiosInstance.get(`${POSTS_API_URL}/mention-suggestions`, {
+      params: { q, limit, exact: options.exact ? "1" : undefined },
+      signal: options.signal,
+    });
+    return Array.isArray(response.data?.users) ? response.data.users : [];
+  } catch (error) {
+    if (error?.code === "ERR_CANCELED" || error?.name === "CanceledError") return [];
+    console.error("Error searching mention suggestions:", error);
+    return [];
   }
 };
 
@@ -81,10 +105,11 @@ export const getDrafts = async () => {
  * @param {number} limit - Number of posts to fetch
  * @param {string} cursor - Cursor for pagination
  */
-export const getSavedPosts = async (limit = 20, cursor = null) => {
+export const getSavedPosts = async (limit = 20, cursor = null, options = {}) => {
   try {
     const params = { limit };
     if (cursor) params.cursor = cursor;
+    if (options.hashtag) params.hashtag = options.hashtag;
     const response = await axiosInstance.get(`${POSTS_API_URL}/saved`, { params });
     return normalizePostsPayload(response.data);
   } catch (error) {
@@ -147,6 +172,20 @@ export const getPost = async (postId) => {
     return normalizePostsPayload(response.data);
   } catch (error) {
     console.error('Error fetching post:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a post for shared links — works for public posts without login.
+ * @param {string} postId - Post UUID
+ */
+export const getPublicPost = async (postId) => {
+  try {
+    const response = await axiosInstance.get(`${POSTS_API_URL}/public/${postId}`);
+    return normalizePostsPayload(response.data);
+  } catch (error) {
+    console.error('Error fetching public post:', error);
     throw error;
   }
 };
@@ -249,9 +288,11 @@ export const getPostShares = async (postId) => {
  * @param {string} postId - Post UUID
  * @param {string} quote - Optional quote for the share
  */
-export const sharePost = async (postId, quote = null) => {
+export const sharePost = async (postId, quote = null, scheduledAt = null) => {
   try {
-    const response = await axiosInstance.post(`${POSTS_API_URL}/${postId}/share`, { quote });
+    const body = { quote };
+    if (scheduledAt) body.scheduledAt = scheduledAt;
+    const response = await axiosInstance.post(`${POSTS_API_URL}/${postId}/share`, body);
     return response.data;
   } catch (error) {
     console.error('Error sharing post:', error);
@@ -310,15 +351,29 @@ export const unsavePost = async (postId) => {
 // ============================================
 
 /**
- * Record post impression (deduped per user/post/UTC day)
+ * Record post impression (deduped per user/post/UTC day).
+ * Failures are swallowed so tracking never disrupts the feed.
  * @param {string} postId - Post UUID
  */
 export const recordImpression = async (postId) => {
   try {
-    const response = await axiosInstance.post(`${POSTS_API_URL}/${postId}/impression`);
+    const response = await axiosInstance.post(
+      `${POSTS_API_URL}/${postId}/impression`,
+    );
+    return response.data;
+  } catch {
+    return { counted: false, error: true };
+  }
+};
+
+export const voteOnPoll = async (postId, optionId) => {
+  try {
+    const response = await axiosInstance.post(`${POSTS_API_URL}/${postId}/poll/vote`, {
+      optionId,
+    });
     return response.data;
   } catch (error) {
-    console.error('Error recording impression:', error);
+    console.error('Error voting on poll:', error);
     throw error;
   }
 };
@@ -351,7 +406,8 @@ export const addComment = async (postId, body, parentCommentId = null) => {
   try {
     const response = await axiosInstance.post(`${POSTS_API_URL}/${postId}/comments`, {
       body,
-      parentCommentId
+      parentCommentId,
+      mentionedUserIds: extractMentionedUserIds(body),
     });
     return response.data;
   } catch (error) {
@@ -368,7 +424,10 @@ export const addComment = async (postId, body, parentCommentId = null) => {
  */
 export const updateComment = async (postId, commentId, body) => {
   try {
-    const response = await axiosInstance.patch(`${POSTS_API_URL}/${postId}/comments/${commentId}`, { body });
+    const response = await axiosInstance.patch(`${POSTS_API_URL}/${postId}/comments/${commentId}`, {
+      body,
+      mentionedUserIds: extractMentionedUserIds(body),
+    });
     return response.data;
   } catch (error) {
     console.error('Error updating comment:', error);
@@ -557,15 +616,24 @@ export const removeConnection = async (peerUserId) => {
 const METRICS_API_URL = '/api/metrics';
 
 /**
- * Get current user's metrics
- * Returns: postsPublished, likesGiven, commentsWritten, impressionsReceived
+ * Get current user's metrics (aggregate + per-post).
+ * @param {'all'|'week'|'month'} [period='all']
+ * @param {{ postIds?: string[], limit?: number, offset?: number }} [options]
  */
-export const getMyMetrics = async () => {
+export const getMyMetrics = async (period = "all", options = {}) => {
   try {
-    const response = await axiosInstance.get(`${METRICS_API_URL}/me`);
+    const params = { period };
+    if (Array.isArray(options.postIds) && options.postIds.length > 0) {
+      params.postIds = options.postIds.join(",");
+    }
+    if (options.limit != null) params.limit = options.limit;
+    if (options.offset != null) params.offset = options.offset;
+    const response = await axiosInstance.get(`${METRICS_API_URL}/me`, {
+      params,
+    });
     return response.data;
   } catch (error) {
-    console.error('Error fetching metrics:', error);
+    console.error("Error fetching metrics:", error);
     throw error;
   }
 };

@@ -1,53 +1,7 @@
 import CampaignStatusBadge from "../Ads/CampaignStatusBadge";
 import { getLandingHref, getLandingTypeLabel } from "../../utils/landingDestination";
-import { parseStateKey, parseCityKey } from "../../utils/countryStateData";
+import { getAudienceDisplayItems } from "../../utils/audienceDisplay";
 import { Check, X, Pause, Play, ExternalLink } from "lucide-react";
-
-const AUDIENCE_FIELDS = [
-  { key: "countries", label: "Countries" },
-  { key: "states", label: "States", geographic: "state" },
-  { key: "cities", label: "Cities", geographic: "city" },
-  { key: "lgas", label: "LGAs" },
-  { key: "gender", label: "Gender", single: true },
-  { key: "ageRange", label: "Age range" },
-  { key: "maritalStatus", label: "Marital status", single: true },
-  { key: "jobTitles", label: "Job titles" },
-  { key: "industries", label: "Industries" },
-  { key: "yearsExperience", label: "Years of experience" },
-  { key: "companySize", label: "Company size" },
-  { key: "qualifications", label: "Qualifications" },
-  { key: "activity", label: "Activity" },
-  { key: "jobSeekingStatus", label: "Job seeking status" },
-];
-
-function formatAudienceValue(value, single = false) {
-  if (single) {
-    if (!value || value === "any") return "Any";
-    return String(value);
-  }
-  if (!Array.isArray(value) || value.length === 0) return "Any";
-  return value.join(", ");
-}
-
-function formatGeographicAudienceValue(geographic, value) {
-  if (!Array.isArray(value) || value.length === 0) return null;
-
-  if (geographic === "state") {
-    const names = value
-      .map((entry) => parseStateKey(entry).state)
-      .filter(Boolean);
-    return names.length > 0 ? names.join(", ") : null;
-  }
-
-  if (geographic === "city") {
-    const names = value
-      .map((entry) => parseCityKey(entry).city)
-      .filter(Boolean);
-    return names.length > 0 ? names.join(", ") : null;
-  }
-
-  return null;
-}
 
 function DetailItem({ label, value, children }) {
   return (
@@ -243,22 +197,16 @@ export default function AdCampaignReviewCard({
 
         <Section title="Target Audience">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
-            {AUDIENCE_FIELDS.map(({ key, label, single, geographic }) => {
-              const rawValue = audience[key];
-              const displayValue = geographic
-                ? formatGeographicAudienceValue(geographic, rawValue)
-                : formatAudienceValue(rawValue, single);
-
-              if (geographic && !displayValue) return null;
-
-              return (
-                <DetailItem
-                  key={key}
-                  label={label}
-                  value={displayValue}
-                />
-              );
-            })}
+            {getAudienceDisplayItems(audience).length === 0 ? (
+              <DetailItem
+                label="Targeting"
+                value="All jobseekers on Bejite (no filters applied)"
+              />
+            ) : (
+              getAudienceDisplayItems(audience).map(({ key, label, displayValue }) => (
+                <DetailItem key={key} label={label} value={displayValue} />
+              ))
+            )}
           </div>
         </Section>
       </div>

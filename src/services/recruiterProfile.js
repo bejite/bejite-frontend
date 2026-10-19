@@ -47,14 +47,10 @@ const assertBearerAuth = () => {
   if (!token) {
     throw 'Not authenticated. Please sign in again.';
   }
-};
-
-const assertUserId = () => {
   const userId = getResolvedUserId();
   if (!userId) {
     throw 'Missing user ID. Please sign in again to continue profile setup.';
   }
-  return userId;
 };
 
 const useRecruiterProfile = () => {
@@ -122,12 +118,36 @@ const useRecruiterProfile = () => {
     }
   }, []);
 
-  const updateVerificationConsent = useCallback(async (consent) => {
+  const updateVerificationConsent = useCallback(async (consent = true) => {
     try {
-      const userId = assertUserId();
-      const response = await axiosInstance.put(`/auth/user/profile/${userId}/verification`, {
+      assertBearerAuth();
+      const response = await axiosInstance.put('/auth/user/profile/verification', {
         verification_consent: consent,
       });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+    }
+  }, []);
+
+  const updateIdType = useCallback(async (idType) => {
+    try {
+      assertBearerAuth();
+      const response = await axiosInstance.put('/auth/user/profile/id-type', {
+        id_type: idType,
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+    }
+  }, []);
+
+  const uploadIdDocument = useCallback(async (file) => {
+    try {
+      assertBearerAuth();
+      const formData = new FormData();
+      formData.append('idDocument', file);
+      const response = await axiosInstance.post('/auth/user/profile/id-document', formData);
       return response.data;
     } catch (error) {
       handleApiError(error);
@@ -142,6 +162,8 @@ const useRecruiterProfile = () => {
     updateLocation,
     uploadProfilePhoto,
     updateVerificationConsent,
+    updateIdType,
+    uploadIdDocument,
   };
 };
 

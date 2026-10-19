@@ -1,8 +1,5 @@
-import { useMemo } from "react";
-import {
-  getAllCountryNames,
-  getStateNamesByCountryName,
-} from "../utils/countryStateData";
+import { useEffect, useMemo, useState } from "react";
+import { getAllCountryNames, getStateNamesByCountryName } from "../utils/countryStateData";
 
 /**
  * Country list + dependent state list for a selected country name.
@@ -10,11 +7,34 @@ import {
  */
 export default function useCountryStateOptions(selectedCountryName = "") {
   const countries = useMemo(() => getAllCountryNames(), []);
+  const [states, setStates] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(false);
 
-  const states = useMemo(
-    () => getStateNamesByCountryName(selectedCountryName),
-    [selectedCountryName],
-  );
+  useEffect(() => {
+    if (!selectedCountryName?.trim()) {
+      setStates([]);
+      setLoadingStates(false);
+      return;
+    }
 
-  return { countries, states };
+    let cancelled = false;
+    setLoadingStates(true);
+
+    getStateNamesByCountryName(selectedCountryName)
+      .then((stateNames) => {
+        if (!cancelled) setStates(stateNames);
+      })
+      .catch(() => {
+        if (!cancelled) setStates([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingStates(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCountryName]);
+
+  return { countries, states, loadingStates };
 }

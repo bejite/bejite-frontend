@@ -1,14 +1,16 @@
 import { API_URL } from "../config";
 import { Eye, EyeOff } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearErrors } from "../features/auth/authSlice";
+import { loginUser, verifyTwoFactorLogin, clearErrors } from "../features/auth/authSlice";
 import { toast } from "react-toastify";
 const bejiteLogoUrl = "/assets/images/logo.png";
 const googleImgUrl = "/assets/images/google.png";
 import Hyperlinks from "../components/Hyperlinks";
+import TwoFactorCodeForm from "../components/auth/TwoFactorCodeForm";
 import { decodeToken } from "../utils/tokenManager";
+import { requestTwoFactorRecovery } from "../services/twoFactorApi";
 import {
   isEmailNotVerifiedError,
   emailVerificationPath,
@@ -21,11 +23,55 @@ function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [challengeId, setChallengeId] = useState("");
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, errors } = useSelector((state) => state.auth);
   const isDisabled = !email || !password || loading;
+
+  const finishLogin = (data) => {
+    const token = data.accessToken;
+    let user = data.confirmedUser || data.user;
+
+    if (!token) {
+      toast.error("Authentication failed. Please try again.");
+      return;
+    }
+
+    if (!user?.verified && !user?.role) {
+      const decodedToken = decodeToken(token);
+      user = {
+        ...user,
+        verified: decodedToken?.verified,
+        isEmailVerified:
+          decodedToken?.isEmailVerified || decodedToken?.verified,
+        role: decodedToken?.role,
+      };
+    }
+
+    toast.success("Login successful! Redirecting...");
+
+    const isVerified = user?.verified || user?.isEmailVerified;
+    const hasCompletedSignup =
+      user?.role !== null && user?.role !== undefined;
+
+    setTimeout(() => {
+      if (!isVerified) {
+        navigate(emailVerificationPath(user?.email || email));
+      } else if (!hasCompletedSignup) {
+        navigate(
+          `/complete-signup?email=${encodeURIComponent(
+            user.email
+          )}&status=verified`
+        );
+      } else {
+        navigate("/news-feed");
+      }
+    }, 500);
+  };
 
 // Clear errors when component mounts - but preserve session data to prevent auto-logout
   useEffect(() => {
@@ -51,72 +97,13 @@ function SignIn() {
     dispatch(loginUser({ email, password }))
       .unwrap()
       .then((data) => {
-        console.log("Login API response:", data);
-
-        const token = data.accessToken;
-        let user = data.confirmedUser || data.user;
-
-        if (!token) {
-          toast.error("Authentication failed. Please try again.");
+        if (data?.requiresTwoFactor) {
+          setTwoFactorToken(data.twoFactorToken || "");
+          setChallengeId(data.challengeId || "");
+          toast.info("Enter the code from your authenticator app.");
           return;
         }
-
-        // If user data is incomplete, decode the JWT token to get full user info
-        if (!user?.verified && !user?.role) {
-          const decodedToken = decodeToken(token);
-          console.log("Decoded token data:", decodedToken);
-          user = {
-            ...user,
-            verified: decodedToken?.verified,
-            isEmailVerified:
-              decodedToken?.isEmailVerified || decodedToken?.verified,
-            role: decodedToken?.role,
-          };
-          console.log("Enhanced user data:", user);
-        }
-
-        // Tokens are already stored in localStorage by authSlice
-        console.log("Tokens stored successfully");
-
-        // Show success toast
-        toast.success("Login successful! Redirecting...");
-
-        // Check user verification and role status
-        const isVerified = user?.verified || user?.isEmailVerified;
-        const hasCompletedSignup =
-          user?.role !== null && user?.role !== undefined;
-        const hasCompletedProfile = data.profileCompleted;
-        const userRole = user?.role;
-
-        console.log("User verification status:", {
-          isVerified,
-          hasCompletedSignup,
-          hasCompletedProfile,
-          userRole,
-          user,
-        });
-
-        setTimeout(() => {
-          if (!isVerified) {
-            navigate(emailVerificationPath(user?.email || email));
-          } else if (!hasCompletedSignup) {
-            // User is verified but hasn't completed signup
-            navigate(
-              `/complete-signup?email=${encodeURIComponent(
-                user.email
-              )}&status=verified`
-            );
-          } else if (userRole === 'recruiter') {
-            // User is a recruiter, redirect to employer dashboard
-            navigate("/news-feed");
-          } else if (hasCompletedProfile) {
-            // User is a jobseeker and has completed profile, redirect to dashboard
-            navigate("/news-feed");
-          } else {
-            // User is a jobseeker who hasn't completed profile
-            navigate("/resume");
-          }
-        }, 500);
+        finishLogin(data);
       })
       .catch((err) => {
         console.error("[Login] Failed:", err);
@@ -147,6 +134,37 @@ function SignIn() {
       });
   };
 
+  const handleTwoFactorVerify = (code) => {
+    dispatch(verifyTwoFactorLogin({ twoFactorToken, challengeId, code }))
+      .unwrap()
+      .then((data) => {
+        setTwoFactorToken("");
+        setChallengeId("");
+        finishLogin(data);
+      })
+      .catch((err) => {
+        const errorMessage = err.error || err.message;
+        toast.error(errorMessage || "Invalid authentication code.");
+        if (err.code === "TWO_FACTOR_EXPIRED") {
+          setTwoFactorToken("");
+          setChallengeId("");
+        }
+      });
+  };
+
+  const handleTwoFactorRecovery = async () => {
+    if (recoveryLoading) return;
+    setRecoveryLoading(true);
+    try {
+      const data = await requestTwoFactorRecovery({ twoFactorToken, challengeId });
+      toast.success(data.message || "Check your email for a recovery link.");
+    } catch (error) {
+      toast.error(error.message || "Could not send recovery email.");
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
   // -----------------------------
   // Google OAuth login
   // -----------------------------
@@ -162,18 +180,15 @@ function SignIn() {
       <div className="w-full lg:w-[70%] px-4 py-6 mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 lg:absolute lg:right-4 lg:left-4 lg:top-1/12 lg:transform lg:-translate-y-1/2 lg:z-10">
         <img src={bejiteLogoUrl} alt="Logo" className="h-10" />
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
-          <h1 className="text-[#828282] text-base sm:text-xl font-medium text-center sm:text-left">
+          <h1 className="text-[#828282] text-base sm:text-base font-medium text-center sm:text-left">
             Don't have an account?
           </h1>
-          <button
-            className="bg-[#16730F] py-2 px-5 sm:py-3 sm:px-7 rounded-2xl shadow text-white cursor-pointer"
-            onClick={() => {
-              console.log("Navigating to signup page");
-              navigate("/signup");
-            }}
+          <Link
+            className="text-[#16730F] text-base sm:text-base font-medium text-center sm:text-left hover:underline"
+            to="/signup"
           >
             Register
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -195,27 +210,51 @@ function SignIn() {
         <div className="w-full lg:w-[40%] flex lg:justify-start items-center justify-center px-6 py-10">
           <div className="w-full max-w-md space-y-5 mt-9">
             <h2 className="text-3xl font-norican font-semibold text-[#16730F] text-center">
-              Welcome Back!
+              {twoFactorToken || challengeId ? "Two-Factor Authentication" : "Welcome Back!"}
             </h2>
-            <p className="text-center text-[#1A3E32] text-md">
-              Sign in to continue
+            <p className="text-center text-[#16730F] text-md">
+              {twoFactorToken || challengeId
+                ? "Enter the code from your authenticator app"
+                : "Sign in to continue"}
             </p>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            {twoFactorToken || challengeId ? (
+              <TwoFactorCodeForm
+                onSubmit={handleTwoFactorVerify}
+                loading={loading}
+                error={errors?.error}
+                onRequestRecovery={handleTwoFactorRecovery}
+                recoveryLoading={recoveryLoading}
+                onBack={() => {
+                  setTwoFactorToken("");
+                  setChallengeId("");
+                  dispatch(clearErrors());
+                }}
+              />
+            ) : (
+            <form
+              onSubmit={handleLogin}
+              className="space-y-4"
+              data-testid="signin-form"
+            >
               <input
                 type="email"
+                data-testid="signin-email"
                 placeholder="Email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-[#1A3E32] rounded-xl outline-none"
+                className="w-full px-4 py-3 border border-[#d3d3d3] rounded-xl outline-none shadow-sm focus:ring-2 focus:ring-[#16730F] focus:border-[#16730F]"
               />
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  data-testid="signin-password"
                   placeholder="Password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-[#1A3E32] rounded-xl outline-none"
+                  className="w-full px-4 py-3 border border-[#d3d3d3] rounded-xl outline-none shadow-sm focus:ring-2 focus:ring-[#16730F] focus:border-[#16730F]"
                 />
                 <button
                   type="button"
@@ -230,7 +269,13 @@ function SignIn() {
               </div>
 
               {errors?.error && (
-                <p className="text-sm text-red-500">{errors.error}</p>
+                <p
+                  data-testid="signin-error"
+                  role="alert"
+                  className="text-sm text-red-500"
+                >
+                  {errors.error}
+                </p>
               )}
 
               <div className="text-right">
@@ -247,6 +292,7 @@ function SignIn() {
 
               <button
                 type="submit"
+                data-testid="signin-submit"
                 disabled={isDisabled}
                 className={`w-full py-4 rounded-full text-white font-semibold shadow-md transition ${
                   isDisabled
@@ -257,8 +303,11 @@ function SignIn() {
                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>
+            )}
 
-            <p className="text-[#1A3E32] text-center text-xl">
+            {!twoFactorToken && !challengeId && (
+              <>
+            <p className="text-[#16730F] text-center text-xl">
               ...or sign in with
             </p>
             <div className="flex justify-center gap-6 mt-4">
@@ -277,6 +326,8 @@ function SignIn() {
                 )}
               </button>
             </div>
+              </>
+            )}
             <Hyperlinks />
           </div>
         </div>

@@ -10,6 +10,7 @@ import { useOutletContext, useNavigate } from "react-router-dom";
 import NavigationButtons from "../components/NavigationButtons";
 import { FaPlus, FaCheckCircle, FaChevronDown, FaTrash } from "react-icons/fa";
 import { FaDeleteLeft } from "react-icons/fa6";
+import { RecruiterSelect } from "../components/recruiter/recruiterOnboardingUi";
 
 // Updated for better clarity
 const skillOptions = [
@@ -103,28 +104,14 @@ const experienceOptions = [
 ];
 
 
-const SelectWithIcon = ({ value, onChange, options, placeholder }) => (
-  <div className="relative w-full">
-    <select
-      value={value}
-      onChange={onChange}
-      className={`w-full h-12 border-2 rounded-[10px] pl-4 pr-10 appearance-none ${
-        value ? "border-[#828282]" : "border-[#F5F5F5]"
-      }`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
-    {value ? (
-      <FaCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg" />
-    ) : (
-      <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
-    )}
-  </div>
+const SelectWithIcon = ({ name, value, onChange, options, placeholder }) => (
+  <RecruiterSelect
+    name={name}
+    value={value}
+    onChange={onChange}
+    options={options || []}
+    placeholder={placeholder || "Select option"}
+  />
 );
 
 function Education() {
@@ -213,7 +200,7 @@ function Education() {
 
       {allFilled && (
         <div className="max-w-4xl px-4 mt-6  m-auto">
-          <div className="max-w-2xs m-auto  bg-[#E63357] text-white rounded-lg flex flex-col sm:flex-row justify-between  sm:items-center p-4 space-y-2 sm:space-y-0">
+          <div className="max-w-2xs m-auto  bg-[#16730F] text-white rounded-lg flex flex-col sm:flex-row justify-between  sm:items-center p-4 space-y-2 sm:space-y-0">
             <div>
               <p className="font-semibold">{category}</p>
               <p className="text-sm">{experience} Experience</p>

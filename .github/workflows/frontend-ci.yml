@@ -24,6 +24,12 @@ jobs:
     env:
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
       VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      # Playwright defaults to localhost:3001; in CI hit the same API as the app build.
+      E2E_API_URL: ${{ secrets.VITE_API_URL }}
 
     steps:
 
@@ -34,12 +40,12 @@ jobs:
         uses: actions/checkout@v4
 
       # -------------------------------------------------------------
-      # 2. Setup Node.js (using version 18)
+      # 2. Setup Node.js (20+ required by Playwright)
       # -------------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
           cache: npm
 
       # -------------------------------------------------------------
@@ -78,7 +84,31 @@ jobs:
           retention-days: 7
 
       # -------------------------------------------------------------
-      # 8. Trigger DevOps CI ONLY when main is updated
+      # 8. Playwright E2E — user app (happy paths skip if E2E_* unset)
+      # -------------------------------------------------------------
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run user app E2E
+        run: npm run test:e2e
+
+      # -------------------------------------------------------------
+      # 9. Playwright E2E — admin app
+      # -------------------------------------------------------------
+      - name: Install admin dependencies
+        working-directory: Admin-frontend
+        run: npm ci
+
+      - name: Install Admin Playwright Chromium
+        working-directory: Admin-frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run admin app E2E
+        working-directory: Admin-frontend
+        run: npm run test:e2e
+
+      # -------------------------------------------------------------
+      # 10. Trigger DevOps CI ONLY when main is updated
       # -------------------------------------------------------------
       - name: Trigger DevOps CI
         if: github.ref == 'refs/heads/main'

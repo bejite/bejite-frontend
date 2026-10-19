@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { FaCheck, FaPlus } from "react-icons/fa";
 import axiosInstance from "../../utils/axiosInstance";
+import {
+  getPortaledMenuStyle,
+  usePortaledMenu,
+} from "../../hooks/usePortaledMenu";
 
 export function AutocompleteInput({
   value,
@@ -15,6 +20,12 @@ export function AutocompleteInput({
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const { triggerRef, menuRef, menuPos } = usePortaledMenu({
+    isOpen: open,
+    onClose: () => setOpen(false),
+    maxHeight: 208,
+    extraContainRefs: [containerRef],
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -38,16 +49,6 @@ export function AutocompleteInput({
       cancelled = true;
     };
   }, [formName, fieldName, value]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const filteredOptions = useMemo(() => {
     const merged = [
@@ -85,6 +86,7 @@ export function AutocompleteInput({
       ref={containerRef}
     >
       <input
+        ref={triggerRef}
         type={type}
         value={value}
         onChange={onChange}
@@ -99,35 +101,46 @@ export function AutocompleteInput({
         <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg pointer-events-none" />
       )}
 
-      {showDropdown && (
-        <ul className="absolute z-[9999] left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl isolate">
-          {filteredOptions.map((option) => (
-            <li key={option} className="bg-white">
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => selectOption(option)}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 bg-white hover:bg-gray-50"
-              >
-                {option}
-              </button>
-            </li>
-          ))}
-          {showAddOption && (
-            <li className="bg-white">
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => selectOption(trimmedValue)}
-                className="w-full text-left px-4 py-2.5 text-sm text-[#1A3E32] font-medium bg-white hover:bg-green-50 flex items-center gap-2 border-t border-gray-100"
-              >
-                <FaPlus className="text-xs" />
-                Add &quot;{trimmedValue}&quot;
-              </button>
-            </li>
-          )}
-        </ul>
-      )}
+      {showDropdown &&
+        menuPos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            className="overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl isolate"
+            style={{
+              ...getPortaledMenuStyle(menuPos),
+              maxHeight: menuPos.maxHeight,
+            }}
+          >
+            {filteredOptions.map((option) => (
+              <li key={option} className="bg-white">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectOption(option)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  {option}
+                </button>
+              </li>
+            ))}
+            {showAddOption && (
+              <li className="bg-white">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectOption(trimmedValue)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-[#1A3E32] font-medium bg-white hover:bg-green-50 flex items-center gap-2 border-t border-gray-100"
+                >
+                  <FaPlus className="text-xs" />
+                  Add &quot;{trimmedValue}&quot;
+                </button>
+              </li>
+            )}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 }

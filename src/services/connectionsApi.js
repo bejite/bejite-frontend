@@ -9,16 +9,38 @@ import { filterAdminUsersFromSearch } from '../utils/filterAdminUsers';
 /**
  * Get user's accepted connections
  */
-export const getConnections = async (page = 1, limit = 10) => {
+export const getConnections = async (page = 1, limit = 10, q = '') => {
   try {
     const response = await axiosInstance.get('/api/connections', {
-      params: { page, limit },
+      params: {
+        page,
+        limit,
+        ...(String(q || '').trim() ? { q: String(q).trim() } : {}),
+      },
     });
     console.log('getConnections response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching connections:', error);
     console.error('Error response:', error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Get mutual connections with another user
+ */
+export const getMutualConnections = async (otherUserId, page = 1, limit = 20) => {
+  try {
+    const response = await axiosInstance.get(
+      `/api/connections/mutual/${encodeURIComponent(String(otherUserId))}`,
+      {
+        params: { page, limit },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching mutual connections:', error);
     throw error;
   }
 };
@@ -101,6 +123,21 @@ export const acceptConnectionRequest = async (requestId) => {
 };
 
 /**
+ * Accept pending request from a specific user (profile Accept).
+ */
+export const acceptConnectionRequestFromUser = async (fromUserId) => {
+  try {
+    const response = await axiosInstance.post(
+      `/api/connections/requests/from/${encodeURIComponent(String(fromUserId))}/accept`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error accepting connection request from user:', error);
+    throw error;
+  }
+};
+
+/**
  * Reject incoming connection request
  */
 export const rejectConnectionRequest = async (requestId) => {
@@ -145,7 +182,7 @@ export const removeConnection = async (peerUserId) => {
 export const discoverUsers = async (limit = 20, offset = 0) => {
   try {
     const response = await axiosInstance.get('/api/connections/discover', {
-      params: { limit, offset }
+      params: { limit, offset, _t: Date.now() }
     });
     console.log('discoverUsers response:', response.data);
     return response.data;

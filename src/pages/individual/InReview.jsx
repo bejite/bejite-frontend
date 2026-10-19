@@ -1,8 +1,11 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { FaArrowLeft } from "react-icons/fa";
+
+import { SIGNUP_BTN_ENABLED } from "../../constants/signupTheme";
+
+const btnPrimary =
+  `w-full max-w-md min-h-[44px] px-6 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-full shadow-md transition-colors ${SIGNUP_BTN_ENABLED}`;
 
 const InReview = () => {
   const navigate = useNavigate();
@@ -12,35 +15,37 @@ const InReview = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen relative">
+    <div className="bg-white min-h-screen min-h-[100dvh] flex flex-col w-full min-w-0 overflow-x-hidden">
       <Header />
 
-      <div className="w-full max-w-xl mx-auto p-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-        <div className="w-full bg-white rounded-2xl p-5 flex flex-col gap-y-6 items-center">
+      <main className="flex-1 w-full min-w-0 flex items-center justify-center px-3 sm:px-4 md:px-6 py-6 sm:py-10 pb-8">
+        <div className="w-full max-w-xl mx-auto flex flex-col gap-5 sm:gap-6 items-center text-center">
           <img
             src="/assets/images/verified.png"
             alt="Verified Icon"
-            className="object-contain w-24 h-24 sm:w-28 sm:h-28 mb-3"
+            className="object-contain w-24 h-24 sm:w-28 sm:h-28"
           />
 
-          <div className="text-center">
-            <h1 className="text-[#1A3E32] font-semibold text-xl sm:text-2xl">Thank you!</h1>
-            <h1 className="text-[#1A3E32] font-semibold text-xl sm:text-2xl">
-              Your ID has been submitted for review
+          <div className="px-1">
+            <h1 className="text-[#16730F] font-semibold text-xl sm:text-2xl leading-snug">
+              Thank you!
             </h1>
+            <p className="text-[#16730F] font-semibold text-xl sm:text-2xl leading-snug mt-1">
+              Your ID has been submitted for review
+            </p>
           </div>
 
           <button
-            className="bg-[#16730F] w-full sm:w-1/2 text-white text-base sm:text-lg py-3 sm:py-4 rounded-3xl shadow-md font-medium"
+            type="button"
+            className={btnPrimary}
             onClick={handleContinue}
           >
             Proceed to Login
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
 
 export default InReview;
-

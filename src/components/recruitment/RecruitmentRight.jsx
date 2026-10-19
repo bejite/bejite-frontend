@@ -1,20 +1,30 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { getUserProfileImage } from "../../utils/profileImageUtils";
-import { formatDisplayPersonName } from "../../utils/personDisplayName";
+import {
+  formatDisplayPersonName,
+  formatDisplayHandle,
+} from "../../utils/personDisplayName";
+import DisplayNameWithBadge from "../DisplayNameWithBadge";
 import useRecruitmentRightStats from "../../hooks/useRecruitmentRightStats";
 import { RECRUITMENT_RIGHT_LINKS } from "./recruitmentRightLinks";
+import { formatCompactCount as formatNetworkCount } from "../../utils/formatCompactCount";
 
 function RecruitmentRight() {
   const navigate = useNavigate();
-  const { userData, postCount, connectionCount } = useRecruitmentRightStats();
+  const {
+    userData,
+    postCount,
+    connectionCount,
+    postCountLoading,
+    networkCountLoading,
+  } = useRecruitmentRightStats();
 
   const displayName = userData
     ? formatDisplayPersonName(userData, "User")
     : "Osakwe Prisca";
-  const username = userData?.username
-    ? `@${userData.username}`
-    : "@nd_creations";
+  const username = formatDisplayHandle(userData);
 
   return (
     <div className="bg-[#F5F5F5] px-2 py-2 lg:h-full">
@@ -31,9 +41,22 @@ function RecruitmentRight() {
                 alt=""
               />
             </div>
-            <div className="text-[#FFFFFF] text-center mt-[-40px]">
-              <p className="text-[16px] font-bold">{displayName}</p>
-              <p className="text-[11px] font-bold">{username}</p>
+            <div className="text-[#FFFFFF] text-center mt-[-40px] w-full px-2 min-w-0">
+              <div className="text-[14px] sm:text-[16px] font-bold min-w-0">
+                <DisplayNameWithBadge
+                  user={userData}
+                  fallback={displayName}
+                  badgeSize="xs"
+                  badgePlacement="below"
+                  responsiveBadge={false}
+                  as="div"
+                  className="items-center w-full justify-center"
+                  nameClassName="whitespace-normal break-words text-center leading-snug"
+                />
+              </div>
+              {username && (
+                <p className="text-[11px] font-bold break-words mt-0.5">{username}</p>
+              )}
             </div>
           </div>
           <div className="mt-6 px-1">
@@ -57,7 +80,16 @@ function RecruitmentRight() {
                     Total
                   </p>
                 </div>
-                <p className="text-[15px] font-bold text-white">{postCount}</p>
+                <p className="text-[15px] font-bold text-white min-h-[1.25rem] flex items-center justify-center">
+                  {postCountLoading ? (
+                    <Loader2
+                      className="w-4 h-4 animate-spin text-white/80"
+                      aria-label="Loading post count"
+                    />
+                  ) : (
+                    postCount
+                  )}
+                </p>
                 <p className="text-[10px] font-medium text-white/60 mt-0.5">
                   Posts Created
                 </p>
@@ -82,11 +114,21 @@ function RecruitmentRight() {
                     Network
                   </p>
                 </div>
-                <p className="text-[15px] font-bold text-white">
-                  {connectionCount}
+                <p className="text-[15px] font-bold text-white min-h-[1.25rem] flex items-center justify-center">
+                  {networkCountLoading ? (
+                    <Loader2
+                      className="w-4 h-4 animate-spin text-white/80"
+                      aria-label="Loading network count"
+                    />
+                  ) : (
+                    formatNetworkCount(connectionCount)
+                  )}
                 </p>
                 <p className="text-[10px] font-medium text-white/60 mt-0.5">
-                  Connections Made
+                  {String(userData?.role || "").toLowerCase() === "recruiter" &&
+                  String(userData?.mode || "").toLowerCase() === "corporate"
+                    ? "Followers"
+                    : "Connections Made"}
                 </p>
               </div>
             </div>
@@ -108,6 +150,7 @@ function RecruitmentRight() {
             {RECRUITMENT_RIGHT_LINKS.map((item) => (
               <div
                 key={item.path}
+                data-tour-id={item.tourId || undefined}
                 className="flex items-center space-x-3 hover:bg-white/5 p-2 rounded-lg transition-all duration-200"
                 onClick={() => navigate(item.path)}
                 onKeyDown={(e) => e.key === "Enter" && navigate(item.path)}
@@ -117,11 +160,7 @@ function RecruitmentRight() {
                 <img src={item.icon} alt="" />
                 <p className="text-[#F5F5F5] font-bold">{item.label}</p>
                 {item.secondaryIcon && (
-                  <img
-                    src={item.secondaryIcon}
-                    className="w-4"
-                    alt=""
-                  />
+                  <img src={item.secondaryIcon} className="w-4" alt="" />
                 )}
               </div>
             ))}

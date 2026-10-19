@@ -3,6 +3,7 @@ import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import RecruitmentMiddle from "../../components/recruitment/RecruitmentMiddle";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import TwoFactorAnnouncementModal from "../../components/modal/TwoFactorAnnouncementModal";
 
 export default function Recruitment() {
   const location = useLocation();
@@ -19,6 +20,7 @@ export default function Recruitment() {
   return (
     <NewsFeedLayout showSidebars={true}>
       <RecruitmentMiddle />
+      <TwoFactorAnnouncementModal />
     </NewsFeedLayout>
   );
 }

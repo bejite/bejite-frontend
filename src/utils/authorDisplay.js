@@ -153,13 +153,24 @@ export async function hydratePostsAuthors(posts = []) {
   const normalized = posts.map((post) => ({
     ...post,
     author: enrichPostAuthor(post.author, post.authorId),
+    repostedBy: post.repostedBy
+      ? enrichPostAuthor(post.repostedBy, post.repostedBy.id)
+      : null,
   }));
 
   const idsToFetch = [
     ...new Set(
       normalized
-        .filter((post) => post.authorId && authorNeedsHydration(post.author))
-        .map((post) => String(post.authorId)),
+        .flatMap((post) => {
+          const ids = [];
+          if (post.authorId && authorNeedsHydration(post.author)) {
+            ids.push(String(post.authorId));
+          }
+          if (post.repostedBy?.id && authorNeedsHydration(post.repostedBy)) {
+            ids.push(String(post.repostedBy.id));
+          }
+          return ids;
+        }),
     ),
   ];
 
@@ -167,8 +178,10 @@ export async function hydratePostsAuthors(posts = []) {
   const ownPostNeedsHydration = normalized.some(
     (post) =>
       currentUser?.id != null &&
-      String(post.authorId) === String(currentUser.id) &&
-      authorNeedsHydration(post.author),
+      ((String(post.authorId) === String(currentUser.id) &&
+        authorNeedsHydration(post.author)) ||
+        (String(post.repostedBy?.id) === String(currentUser.id) &&
+          authorNeedsHydration(post.repostedBy))),
   );
 
   if (ownPostNeedsHydration) {
@@ -182,6 +195,9 @@ export async function hydratePostsAuthors(posts = []) {
   return normalized.map((post) => ({
     ...post,
     author: enrichPostAuthor(post.author, post.authorId),
+    repostedBy: post.repostedBy
+      ? enrichPostAuthor(post.repostedBy, post.repostedBy.id)
+      : null,
   }));
 }
 

@@ -12,34 +12,45 @@ function Chat() {
   const [currentView, setCurrentView] = useState('chatList'); // 'chatList', 'chatView', 'chatInfo'
 
   useEffect(() => {
-    const openConversationId = location.state?.openConversationId;
+    const params = new URLSearchParams(location.search);
+    const openConversationId =
+      location.state?.openConversationId || params.get('conversation');
     if (!openConversationId) return;
 
     let cancelled = false;
 
     (async () => {
       try {
-        const conversations = await messagingService.getConversations();
-        const match = (conversations || []).find(
+        const page = await messagingService.getConversations();
+        const match = (page.conversations || []).find(
           (c) => String(c.id) === String(openConversationId),
         );
-        if (!cancelled && match) {
-          setSelectedChat(match);
+        const conversation = match
+          || (await messagingService.getConversation(openConversationId).catch(() => null));
+        if (!cancelled && conversation) {
+          setSelectedChat(conversation);
           setCurrentView('chatView');
         }
       } catch (err) {
-        console.error('Error opening conversation from profile:', err);
+        console.error('Error opening conversation from notification/profile:', err);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [location.state?.openConversationId]);
+  }, [location.state?.openConversationId, location.search]);
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     setCurrentView('chatView');
+  };
+
+  const handleConversationHidden = (conversationId) => {
+    if (selectedChat && String(selectedChat.id) === String(conversationId)) {
+      setSelectedChat(null);
+      setCurrentView('chatList');
+    }
   };
 
   const showChatList = () => {
@@ -56,61 +67,69 @@ function Chat() {
 
   return (
     <NewsFeedLayout scrollable={false} classes={false} showSidebars={false}>
-      <div className="h-[calc(100vh-72px)] w-full overflow-hidden p-2 sm:p-4">
-        <div className="h-full w-full max-w-screen-xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] lg:grid-cols-[1fr_3fr_1fr] gap-4 h-full min-h-0">
+      <div className="flex-1 min-h-0 w-full overflow-hidden overscroll-none p-2 sm:p-4 flex flex-col">
+        <div className="flex-1 min-h-0 w-full max-w-screen-xl mx-auto flex flex-col overflow-hidden">
 
-            {/* Desktop Layout */}
-            <div className="hidden lg:grid lg:grid-cols-subgrid lg:col-span-3 lg:gap-4 h-full min-h-0">
-              {/* Left Sidebar - Chat List */}
-              <div className="bg-[#1A3E32] rounded-lg overflow-hidden h-full min-h-0">
-                <ChatsLeft
-                  onSelectChat={handleSelectChat}
-                  selectedChat={selectedChat}
-                />
-              </div>
-
-              {/* Middle Chat Section - Message Area */}
-              <div className="bg-white rounded-lg overflow-hidden h-full min-h-0">
-                <ChatsMiddle
-                  selectedChat={selectedChat}
-                  onShowChatList={showChatList}
-                  onShowChatInfo={showChatInfo}
-                />
-              </div>
-
-              {/* Right Sidebar - Chat Info */}
-              <div className="bg-[#F5F5F5] rounded-lg overflow-hidden h-full min-h-0">
-                <ChatsRight
-                  selectedChat={selectedChat}
-                  onBack={showChatView}
-                />
-              </div>
+          {/* Phone: keep list/thread mounted so back restores scroll */}
+          <div className="md:hidden relative flex-1 min-h-0 overflow-hidden">
+            <div
+              className={`absolute inset-0 bg-[#1A3E32] rounded-lg overflow-hidden ${
+                currentView === 'chatList' ? 'z-10' : 'invisible pointer-events-none'
+              }`}
+              aria-hidden={currentView !== 'chatList'}
+            >
+              <ChatsLeft
+                onSelectChat={handleSelectChat}
+                selectedChat={selectedChat}
+                onConversationHidden={handleConversationHidden}
+                isVisible={currentView === 'chatList'}
+              />
             </div>
 
-            {/* Mobile/Tablet Layout */}
-            <div className="lg:hidden h-full min-h-0">
-              {currentView === 'chatList' && (
-                <div className="bg-[#1A3E32] rounded-lg overflow-hidden h-full min-h-0">
-                  <ChatsLeft
-                    onSelectChat={handleSelectChat}
-                    selectedChat={selectedChat}
-                  />
-                </div>
-              )}
+            <div
+              className={`absolute inset-0 bg-white rounded-lg overflow-hidden flex flex-col ${
+                currentView === 'chatView' ? 'z-10' : 'invisible pointer-events-none'
+              }`}
+              aria-hidden={currentView !== 'chatView'}
+            >
+              <ChatsMiddle
+                selectedChat={selectedChat}
+                onShowChatList={showChatList}
+                onShowChatInfo={showChatInfo}
+              />
+            </div>
 
-              {currentView === 'chatView' && (
-                <div className="bg-white rounded-lg overflow-hidden h-full min-h-0">
-                  <ChatsMiddle
-                    selectedChat={selectedChat}
-                    onShowChatList={showChatList}
-                    onShowChatInfo={showChatInfo}
-                  />
-                </div>
-              )}
+            <div
+              className={`absolute inset-0 bg-[#F5F5F5] rounded-lg overflow-hidden ${
+                currentView === 'chatInfo' ? 'z-10' : 'invisible pointer-events-none'
+              }`}
+              aria-hidden={currentView !== 'chatInfo'}
+            >
+              <ChatsRight
+                selectedChat={selectedChat}
+                onBack={showChatView}
+              />
+            </div>
+          </div>
 
+          {/* Tablet: conversation list + messages side by side */}
+          <div className="hidden md:grid lg:hidden grid-cols-[minmax(240px,300px)_1fr] gap-3 flex-1 min-h-0 overflow-hidden">
+            <div className="bg-[#1A3E32] rounded-lg overflow-hidden min-h-0 h-full">
+              <ChatsLeft
+                onSelectChat={handleSelectChat}
+                selectedChat={selectedChat}
+                onConversationHidden={handleConversationHidden}
+              />
+            </div>
+
+            <div className="relative bg-white rounded-lg overflow-hidden min-h-0 h-full flex flex-col">
+              <ChatsMiddle
+                selectedChat={selectedChat}
+                onShowChatList={showChatList}
+                onShowChatInfo={showChatInfo}
+              />
               {currentView === 'chatInfo' && (
-                <div className="bg-[#F5F5F5] rounded-lg overflow-hidden h-full min-h-0">
+                <div className="absolute inset-0 z-40 bg-[#F5F5F5] rounded-lg overflow-hidden min-h-0">
                   <ChatsRight
                     selectedChat={selectedChat}
                     onBack={showChatView}
@@ -119,6 +138,33 @@ function Chat() {
               )}
             </div>
           </div>
+
+          {/* Desktop: list + messages + profile */}
+          <div className="hidden lg:grid lg:grid-cols-[minmax(260px,320px)_1fr_minmax(240px,300px)] gap-4 flex-1 min-h-0 overflow-hidden">
+            <div className="bg-[#1A3E32] rounded-lg overflow-hidden min-h-0 h-full">
+              <ChatsLeft
+                onSelectChat={handleSelectChat}
+                selectedChat={selectedChat}
+                onConversationHidden={handleConversationHidden}
+              />
+            </div>
+
+            <div className="bg-white rounded-lg overflow-hidden min-h-0 h-full flex flex-col">
+              <ChatsMiddle
+                selectedChat={selectedChat}
+                onShowChatList={showChatList}
+                onShowChatInfo={showChatInfo}
+              />
+            </div>
+
+            <div className="bg-[#F5F5F5] rounded-lg overflow-hidden min-h-0 h-full">
+              <ChatsRight
+                selectedChat={selectedChat}
+                onBack={showChatView}
+              />
+            </div>
+          </div>
+
         </div>
       </div>
     </NewsFeedLayout>

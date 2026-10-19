@@ -1,15 +1,14 @@
 // src/redux/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-//import axios from 'axios';
-import axiosInstance from '../../utils/axiosInstance';
+import { loginUserRequest, signupUserRequest } from '../../services/authApi';
+import { verifyLoginTwoFactorRequest } from '../../services/twoFactorApi';
 
 // ✅ Async thunk for signup
 export const signupUser = createAsyncThunk(
   "auth/signupUser",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post('/auth/signup', userData);
-      const data = response.data;
+      const data = await signupUserRequest(userData);
       return {
         success: data?.success ?? true,
         message: data?.message,
@@ -31,11 +30,8 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post(
-        '/auth/login',
-        credentials
-      );
-      return response.data;
+      const data = await loginUserRequest(credentials);
+      return data;
     } catch (err) {
       console.error("Login API error:", err);
       if (err.response?.data) {
@@ -49,6 +45,90 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
+export const verifyTwoFactorLogin = createAsyncThunk(
+  "auth/verifyTwoFactorLogin",
+  async ({ twoFactorToken, challengeId, code }, { rejectWithValue }) => {
+    try {
+      const data = await verifyLoginTwoFactorRequest({
+        twoFactorToken,
+        challengeId,
+        code,
+      });
+      return data;
+    } catch (err) {
+      if (err.response?.data) {
+        return rejectWithValue({
+          ...err.response.data,
+          status: err.response.status,
+        });
+      }
+      return rejectWithValue({ error: "Network Error", status: 0 });
+    }
+  }
+);
+
+function applyLoginSuccess(state, action) {
+  if (action.payload?.requiresTwoFactor) {
+    state.loading = false;
+    state.errors = {};
+    return;
+  }
+
+  state.loading = false;
+  state.token = action.payload.accessToken;
+  state.errors = {};
+
+  const userData = action.payload.confirmedUser || action.payload.user;
+  if (userData) {
+    const rawPhoto =
+      action.payload.profilePhoto ??
+      userData.profile_photo ??
+      userData.profilePhoto ??
+      userData.image ??
+      null;
+    const normalizedPhoto =
+      typeof rawPhoto === "string" && rawPhoto.trim()
+        ? rawPhoto.trim()
+        : null;
+
+    const userWithProfileStatus = {
+      ...userData,
+      profileCompleted: action.payload.profileCompleted || false,
+      hasVerifiedBadge: Boolean(
+        action.payload.user?.hasVerifiedBadge ??
+          userData.hasVerifiedBadge,
+      ),
+      twoFactorEnabled: Boolean(
+        action.payload.user?.twoFactorEnabled ?? userData.twoFactorEnabled,
+      ),
+      ...(normalizedPhoto
+        ? {
+            profile_photo: normalizedPhoto,
+            profilePhoto: normalizedPhoto,
+            image: normalizedPhoto,
+          }
+        : {
+            image:
+              userData.image ??
+              userData.profile_photo ??
+              userData.profilePhoto ??
+              null,
+          }),
+    };
+    state.user = userWithProfileStatus;
+    localStorage.setItem("user", JSON.stringify(userWithProfileStatus));
+  } else {
+    state.user = null;
+  }
+
+  if (action.payload.accessToken) {
+    localStorage.setItem("accessToken", action.payload.accessToken);
+  }
+  if (action.payload.refreshToken) {
+    localStorage.setItem("refreshToken", action.payload.refreshToken);
+  }
+}
 
 const authSlice = createSlice({
   name: "auth",
@@ -120,6 +200,7 @@ const authSlice = createSlice({
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      sessionStorage.removeItem("bejite_profile_reminder_dismissed_for");
     },
     // ✅ New reducer for Google login
     setGoogleAuth: (state, action) => {
@@ -131,7 +212,10 @@ const authSlice = createSlice({
         const userData = action.payload.user;
         const userWithImage = {
           ...userData,
-          image: action.payload.profilePhoto || userData.image || null
+          image: action.payload.profilePhoto || userData.image || null,
+          hasVerifiedBadge: Boolean(
+            userData.hasVerifiedBadge ?? userData.has_verified_badge,
+          ),
         };
         state.user = userWithImage;
         localStorage.setItem("user", JSON.stringify(userWithImage));
@@ -178,59 +262,17 @@ const authSlice = createSlice({
         state.loading = true;
         state.errors = {};
       })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.token = action.payload.accessToken;
-        state.errors = {};
-
-        // Build the merged user object with image and profileCompleted
-        const userData = action.payload.confirmedUser || action.payload.user;
-        if (userData) {
-          const rawPhoto =
-            action.payload.profilePhoto ??
-            userData.profile_photo ??
-            userData.profilePhoto ??
-            userData.image ??
-            null;
-          const normalizedPhoto =
-            typeof rawPhoto === 'string' && rawPhoto.trim()
-              ? rawPhoto.trim()
-              : null;
-
-          const userWithProfileStatus = {
-            ...userData,
-            profileCompleted: action.payload.profileCompleted || false,
-            ...(normalizedPhoto
-              ? {
-                  profile_photo: normalizedPhoto,
-                  profilePhoto: normalizedPhoto,
-                  image: normalizedPhoto,
-                }
-              : {
-                  image:
-                    userData.image ??
-                    userData.profile_photo ??
-                    userData.profilePhoto ??
-                    null,
-                }),
-          };
-          // Set Redux state with the merged user (includes image)
-          state.user = userWithProfileStatus;
-          // Also persist to localStorage
-          localStorage.setItem("user", JSON.stringify(userWithProfileStatus));
-        } else {
-          state.user = null;
-        }
-
-        // Store tokens in localStorage
-        if (action.payload.accessToken) {
-          localStorage.setItem("accessToken", action.payload.accessToken);
-        }
-        if (action.payload.refreshToken) {
-          localStorage.setItem("refreshToken", action.payload.refreshToken);
-        }
-      })
+      .addCase(loginUser.fulfilled, applyLoginSuccess)
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.errors = action.payload || { error: "Login failed" };
+      })
+      .addCase(verifyTwoFactorLogin.pending, (state) => {
+        state.loading = true;
+        state.errors = {};
+      })
+      .addCase(verifyTwoFactorLogin.fulfilled, applyLoginSuccess)
+      .addCase(verifyTwoFactorLogin.rejected, (state, action) => {
         state.loading = false;
         state.errors = action.payload || { error: "Login failed" };
       });

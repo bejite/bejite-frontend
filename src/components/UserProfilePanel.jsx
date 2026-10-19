@@ -139,7 +139,7 @@ const PostHeader = () => {
         <img
           src="/assets/images/photo_placeholder.png"
           alt="profile"
-          className="rounded-full w-[60px] h-[60px]"
+          className="rounded-full w-[60px] h-[60px] object-cover object-center"
         />
         <div>
           <p className="font-semibold text-[11px] text-lg text-[#16730F]">Osakwe Prisca</p>

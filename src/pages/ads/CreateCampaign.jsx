@@ -13,7 +13,10 @@ import StepIndicator from "../../components/Ads/StepIndicator";
 import MediaUploader from "../../components/Ads/MediaUploader";
 import AudienceEstimator from "../../components/Ads/AudienceEstimator";
 import AudienceFilterSection from "../../components/Ads/AudienceFilterSection";
-import { createAdProCampaign } from "../../services/adProApi";
+import AudienceSummary from "../../components/Ads/AudienceSummary";
+import { createAdProCampaign, estimateAdProAudience } from "../../services/adProApi";
+import { DEFAULT_CAMPAIGN_AUDIENCE } from "../../utils/campaignAudience";
+import { formatAdProCurrency } from "../../utils/formatAdProCurrency";
 
 const steps = [
   { number: 1, label: "Ad Content" },
@@ -29,8 +32,6 @@ const targetingSections = [
   { key: "behavioral", title: "Behavioral Targeting", icon: Activity },
 ];
 
-const COST_PER_USER = 0.01;
-
 export default function CreateCampaign() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -44,56 +45,65 @@ export default function CreateCampaign() {
     media: null,
     mediaPreview: null,
     mediaType: null,
-    audience: {
-      countries: [],
-      states: [],
-      cities: [],
-      lgas: [],
-      gender: "any",
-      ageRange: [],
-      maritalStatus: "any",
-      jobTitles: [],
-      industries: [],
-      yearsExperience: [],
-      companySize: [],
-      qualifications: [],
-      activity: [],
-      jobSeekingStatus: [],
-    },
+    audience: { ...DEFAULT_CAMPAIGN_AUDIENCE },
   });
 
   const [audienceEstimate, setAudienceEstimate] = useState({
     reach: 0,
     cost: 0,
     loading: false,
+    adCreditBalance: 0,
+    sufficientCredit: true,
   });
+  const [estimateError, setEstimateError] = useState(null);
   const [errors, setErrors] = useState({});
+  const [audienceError, setAudienceError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
 
   const calculateAudienceEstimate = useCallback(() => {
+    const audience = campaignData.audience;
     setAudienceEstimate((prev) => ({ ...prev, loading: true }));
-    setTimeout(() => {
-      let multiplier = 1;
-      if (campaignData.audience.gender !== "any") multiplier *= 0.5;
-      if (campaignData.audience.ageRange.length > 0) multiplier *= 0.4;
-      if (campaignData.audience.jobTitles.length > 0) multiplier *= 0.3;
-      if (campaignData.audience.industries.length > 0) multiplier *= 0.4;
-      const reach = Math.floor(100000 * Math.max(0.1, multiplier));
-      const cost = reach * COST_PER_USER;
-      setAudienceEstimate({
-        reach,
-        cost: parseFloat(cost.toFixed(2)),
-        loading: false,
-      });
-      setCampaignData((prev) => ({
-        ...prev,
-        budget: parseFloat(cost.toFixed(2)),
-      }));
+    setEstimateError(null);
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await estimateAdProAudience(audience);
+        if (!response?.success) {
+          throw new Error(response?.message || "Failed to estimate audience");
+        }
+
+        const reach = Number(response.data?.reach) || 0;
+        const cost = Number(response.data?.cost) || 0;
+        const adCreditBalance = Number(response.data?.adCreditBalance) || 0;
+        const sufficientCredit = response.data?.sufficientCredit !== false;
+
+        setAudienceEstimate({
+          reach,
+          cost,
+          loading: false,
+          adCreditBalance,
+          sufficientCredit,
+        });
+        setCampaignData((prev) => ({
+          ...prev,
+          budget: cost,
+        }));
+      } catch (err) {
+        console.error("Audience estimate error:", err);
+        setEstimateError(
+          err.response?.data?.message ||
+            err.message ||
+            "Could not load audience estimate",
+        );
+        setAudienceEstimate((prev) => ({ ...prev, loading: false }));
+      }
     }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [campaignData.audience]);
 
   useEffect(() => {
-    calculateAudienceEstimate();
+    return calculateAudienceEstimate();
   }, [calculateAudienceEstimate]);
 
   const handleMediaUpload = (file, error, type) => {
@@ -111,9 +121,13 @@ export default function CreateCampaign() {
   };
 
   const handleAudienceUpdate = (filter, value) => {
+    setAudienceError(null);
     setCampaignData((prev) => ({
       ...prev,
-      audience: { ...prev.audience, [filter]: value },
+      audience:
+        typeof filter === "object" && filter !== null && !Array.isArray(filter)
+          ? { ...prev.audience, ...filter }
+          : { ...prev.audience, [filter]: value },
     }));
   };
 
@@ -136,14 +150,57 @@ export default function CreateCampaign() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateAudienceStep = () => {
+    if (audienceEstimate.loading) {
+      setAudienceError(
+        "Please wait for the audience estimate to finish loading.",
+      );
+      return false;
+    }
+    if (estimateError) {
+      setAudienceError(estimateError);
+      return false;
+    }
+    if (audienceEstimate.reach <= 0) {
+      setAudienceError(
+        "Your targeting matches no users. Broaden your filters to continue.",
+      );
+      return false;
+    }
+    setAudienceError(null);
+    return true;
+  };
+
   const validateStep = () => {
-    if (currentStep !== 1) return true;
-    return validateCampaign();
+    if (currentStep === 1) return validateCampaign();
+    if (currentStep === 2) return validateAudienceStep();
+    return true;
+  };
+
+  const validateLaunch = () => {
+    if (!validateCampaign()) {
+      setCurrentStep(1);
+      return false;
+    }
+    if (!validateAudienceStep()) {
+      setCurrentStep(2);
+      return false;
+    }
+    if (
+      audienceEstimate.cost > 0 &&
+      audienceEstimate.adCreditBalance < audienceEstimate.cost
+    ) {
+      setSubmitError(
+        `Insufficient AdPro credit. Available: ${formatAdProCurrency(audienceEstimate.adCreditBalance)}, required: ${formatAdProCurrency(audienceEstimate.cost)}. Wait until next month or subscribe / upgrade your ASE plan for more ad credit.`,
+      );
+      setCurrentStep(3);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
-    if (!validateCampaign()) {
-      setCurrentStep(1);
+    if (!validateLaunch()) {
       return;
     }
 
@@ -185,7 +242,7 @@ export default function CreateCampaign() {
   const renderStepContent = () => {
     if (currentStep === 1) {
       return (
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Campaign Name <span className="text-red-500">*</span>
@@ -298,7 +355,7 @@ export default function CreateCampaign() {
                   onClick={() =>
                     setCampaignData((prev) => ({ ...prev, landingType: type }))
                   }
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg capitalize text-sm transition-all ${
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg capitalize text-xs sm:text-sm transition-all ${
                     campaignData.landingType === type
                       ? "bg-[#1A3E32] text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -342,8 +399,8 @@ export default function CreateCampaign() {
 
     if (currentStep === 2) {
       return (
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 min-w-0">
+          <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 order-2 lg:order-1">
             {targetingSections.map((section) => (
               <AudienceFilterSection
                 key={section.key}
@@ -354,12 +411,22 @@ export default function CreateCampaign() {
               />
             ))}
           </div>
-          <div className="lg:w-80 xl:w-96">
-            <div className="sticky top-24">
+          <div className="w-full lg:w-80 xl:w-96 shrink-0 min-w-0 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-24 space-y-3">
               <AudienceEstimator
                 estimate={audienceEstimate}
                 loading={audienceEstimate.loading}
               />
+              {estimateError && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  {estimateError}
+                </p>
+              )}
+              {audienceError && (
+                <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  {audienceError}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -367,54 +434,84 @@ export default function CreateCampaign() {
     }
 
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+      <div className="w-full min-w-0 max-w-2xl mx-auto space-y-4 sm:space-y-6">
+        <div className="bg-gray-50 rounded-xl p-3 sm:p-6 min-w-0">
           <h3 className="font-semibold text-gray-900 mb-4 text-base sm:text-lg">
             Campaign Summary
           </h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b">
-              <span className="text-gray-500 text-xs sm:text-sm">
+          <div className="space-y-3 text-sm min-w-0">
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start py-2 border-b min-w-0">
+              <span className="text-gray-500 text-xs sm:text-sm shrink-0">
                 Campaign Name
               </span>
-              <span className="font-medium text-gray-900 text-sm sm:text-base break-all">
+              <span className="font-medium text-gray-900 text-sm sm:text-base break-words min-w-0 sm:text-right sm:max-w-[60%]">
                 {campaignData.name || "Not specified"}
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b">
-              <span className="text-gray-500 text-xs sm:text-sm">Headline</span>
-              <span className="font-medium text-gray-900 text-sm sm:text-base break-all">
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start py-2 border-b min-w-0">
+              <span className="text-gray-500 text-xs sm:text-sm shrink-0">Headline</span>
+              <span className="font-medium text-gray-900 text-sm sm:text-base break-words min-w-0 sm:text-right sm:max-w-[60%]">
                 {campaignData.headline || "Not specified"}
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b">
-              <span className="text-gray-500 text-xs sm:text-sm">
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start py-2 border-b min-w-0">
+              <span className="text-gray-500 text-xs sm:text-sm shrink-0">
                 Landing URL
               </span>
-              <span className="font-medium text-[#1A3E32] text-sm sm:text-base break-all">
+              <span className="font-medium text-[#1A3E32] text-sm sm:text-base break-all min-w-0 sm:text-right sm:max-w-[60%]">
                 {campaignData.landingDestination || "Not specified"}
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b">
-              <span className="text-gray-500 text-xs sm:text-sm">
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start py-2 border-b min-w-0">
+              <span className="text-gray-500 text-xs sm:text-sm shrink-0">
                 Target Audience
               </span>
-              <span className="font-medium text-gray-900 text-sm sm:text-base">
+              <span className="font-medium text-gray-900 text-sm sm:text-base sm:text-right">
                 {audienceEstimate.reach.toLocaleString()} users
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between py-3 bg-[#1A3E32]/5 rounded-lg px-3 -mx-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center py-3 bg-[#1A3E32]/5 rounded-lg px-3 -mx-1 min-w-0">
               <span className="text-gray-700 text-sm font-medium">
                 Total Cost
               </span>
-              <span className="font-bold text-xl sm:text-2xl text-[#1A3E32]">
-                ${audienceEstimate.cost.toFixed(2)}
+              <span className="font-bold text-xl sm:text-2xl text-[#1A3E32] break-words">
+                {formatAdProCurrency(audienceEstimate.cost)}
               </span>
             </div>
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center py-2 min-w-0">
+              <span className="text-gray-500 text-xs sm:text-sm shrink-0">
+                Available Ad Credit
+              </span>
+              <span
+                className={`font-semibold text-sm sm:text-base ${
+                  audienceEstimate.adCreditBalance >= audienceEstimate.cost
+                    ? "text-emerald-700"
+                    : "text-red-600"
+                }`}
+              >
+                {formatAdProCurrency(audienceEstimate.adCreditBalance)}
+              </span>
+            </div>
+            {audienceEstimate.adCreditBalance < audienceEstimate.cost && (
+              <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                You need more AdPro credit to launch this campaign. Wait until
+                next month or{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscription-pricing")}
+                  className="underline font-medium hover:text-red-900"
+                >
+                  view ASE plans
+                </button>
+                .
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
+        <AudienceSummary audience={campaignData.audience} className="min-w-0" />
+
+        <div className="bg-blue-50 rounded-xl p-3 sm:p-4 flex items-start gap-3 min-w-0">
           <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-blue-800">
             You only pay for guaranteed reach. No extra charges for clicks or
@@ -426,25 +523,25 @@ export default function CreateCampaign() {
   };
 
   return (
-    <NewsFeedLayout classes={false} showSidebars={false}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+    <NewsFeedLayout showSidebars={false}>
+      <div className="bg-[#F8FAFC] w-full min-w-0 overflow-x-hidden">
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 min-w-0">
             <div className="py-3 sm:py-4">
               <button
                 onClick={() => navigate("/adpro")}
                 className="flex items-center gap-2 text-gray-500 hover:text-[#1A3E32] transition-colors text-sm sm:text-base"
               >
-                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                Back to Dashboard
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="break-words">Back to Dashboard</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10 min-w-0">
+          <div className="mb-4 sm:mb-8 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
               Create New Campaign
             </h1>
             <p className="text-sm sm:text-base text-gray-500 mt-1 sm:mt-2">
@@ -455,12 +552,12 @@ export default function CreateCampaign() {
           <StepIndicator currentStep={currentStep} steps={steps} />
 
           {submitError && (
-            <div className="mt-6 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+            <div className="mt-4 sm:mt-6 rounded-xl bg-red-50 border border-red-100 px-3 sm:px-4 py-3 text-sm text-red-700 break-words">
               {submitError}
             </div>
           )}
 
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8 mt-6 sm:mt-8">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 lg:p-8 mt-4 sm:mt-8 min-w-0 overflow-hidden">
             {renderStepContent()}
 
             {/* Navigation Buttons */}
@@ -480,14 +577,18 @@ export default function CreateCampaign() {
                       setCurrentStep((prev) => prev + 1);
                     }
                   }}
-                  className="px-5 py-2.5 bg-[#1A3E32] text-white rounded-xl hover:bg-[#2d6a54] transition-colors flex items-center justify-center gap-2 text-sm font-medium sm:ml-auto"
+                  disabled={currentStep === 2 && audienceEstimate.loading}
+                  className="px-5 py-2.5 bg-[#1A3E32] text-white rounded-xl hover:bg-[#2d6a54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm font-medium sm:ml-auto"
                 >
                   Continue <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    audienceEstimate.adCreditBalance < audienceEstimate.cost
+                  }
                   className="px-5 py-2.5 bg-[#1A3E32] text-white rounded-xl hover:bg-[#2d6a54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm font-medium sm:ml-auto"
                 >
                   {isSubmitting ? (

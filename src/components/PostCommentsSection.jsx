@@ -1,16 +1,80 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaHeart, FaTrash } from "react-icons/fa";
+import PostActionIcon from "./feed/PostActionIcon";
+import EmojiPickerButton from "./common/EmojiPickerButton";
 import {
   addComment,
   deleteComment,
   likeComment,
   unlikeComment,
+  updateComment,
 } from "../services/postsApi";
 import { getAuthorProfileImageUrl } from "../utils/profileImageUtils";
 import { formatDisplayPersonName } from "../utils/personDisplayName";
+import DisplayNameWithBadge from "./DisplayNameWithBadge";
+import FormattedPostBody from "./feed/FormattedPostBody";
+import MentionComposerField from "./feed/MentionComposerField";
 
 const getDisplayName = (user) => formatDisplayPersonName(user);
+
+function CommentComposerBox({
+  textareaRef,
+  value,
+  onValueChange,
+  placeholder,
+  autoFocus = false,
+  maxHeightClass = "max-h-32",
+  textSizeClass = "text-sm",
+  submitLabel,
+  submitAriaLabel,
+  submitButtonClassName,
+}) {
+  const fallbackRef = React.useRef(null);
+  const fieldRef = textareaRef || fallbackRef;
+  const canSubmit = Boolean(value.trim());
+
+  return (
+    <>
+      <div className="relative flex-1 min-w-0 border border-[#D3D3D3] rounded-2xl px-2 pt-1 focus-within:border-[#16730F]">
+        <MentionComposerField
+          ref={fieldRef}
+          value={value}
+          onChange={onValueChange}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          className={`w-full min-w-0 min-h-[40px] ${maxHeightClass} overflow-y-auto px-2 py-1.5 pb-9 ${textSizeClass} leading-relaxed`}
+        />
+        <div className="absolute bottom-1 left-1 z-[2]">
+          <EmojiPickerButton
+            onEmojiSelect={(emoji) => {
+              fieldRef.current?.insertText?.(emoji);
+            }}
+            buttonClassName="p-0.5"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className="sm:hidden absolute bottom-1 right-1 z-[2] inline-flex items-center justify-center p-0.5 disabled:opacity-40"
+          aria-label={submitAriaLabel}
+        >
+          <img
+            src="/assets/images/chat_send.svg"
+            alt=""
+            className="block w-7 h-7"
+          />
+        </button>
+      </div>
+      <button
+        type="submit"
+        disabled={!canSubmit}
+        className={`hidden sm:inline-flex bg-[#16730F] text-white rounded-full hover:bg-[#145a0c] disabled:opacity-50 mt-1 ${submitButtonClassName}`}
+      >
+        {submitLabel}
+      </button>
+    </>
+  );
+}
 
 function collectDescendantCommentIds(commentId, allComments) {
   const ids = new Set([commentId]);
@@ -31,6 +95,39 @@ function collectDescendantCommentIds(commentId, allComments) {
   return ids;
 }
 
+function CommentEditForm({ value, onChange, onCancel, onSave, saving }) {
+  const fieldRef = React.useRef(null);
+
+  return (
+    <form onSubmit={onSave} className="space-y-2">
+      <MentionComposerField
+        ref={fieldRef}
+        value={value}
+        onChange={onChange}
+        autoFocus
+        className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus-within:border-[#16730F] min-h-[64px]"
+      />
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="px-3 py-1 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={saving || !value.trim()}
+          className="px-3 py-1 rounded-full text-xs font-medium bg-[#16730F] text-white hover:bg-[#145a0c] disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function CommentItem({
   comment,
   currentUserPhotoUrl,
@@ -42,15 +139,23 @@ function CommentItem({
   onCancelReply,
   onSubmitReply,
   onLike,
+  onEdit,
+  onCancelEdit,
+  onSaveEdit,
   onDelete,
   onViewProfile,
   deletingCommentId,
+  editingCommentId,
+  savingCommentId,
+  editDraft,
+  onEditDraftChange,
   getReplies,
   getCommentById,
   depth = 0,
 }) {
   const replies = getReplies(comment.id);
   const isReplying = replyingTo === comment.id;
+  const isEditing = editingCommentId === comment.id;
   const isReply = depth > 0;
   const isOwner = String(comment.authorId) === String(currentUserId);
   const parentComment = isReply ? getCommentById(comment.parentCommentId) : null;
@@ -69,38 +174,40 @@ function CommentItem({
 
   return (
     <div>
-      <div className="flex gap-2.5">
-        <button
-          type="button"
-          onClick={goToAuthorProfile}
-          disabled={!comment.authorId}
-          className="rounded-full shrink-0 disabled:cursor-default"
-          aria-label={`View ${getDisplayName(comment.author)}'s profile`}
+      <div className="flex-1 min-w-0">
+        <div
+          className={`rounded-2xl px-3 py-2 ${
+            isReply
+              ? "bg-white border border-gray-100 shadow-sm"
+              : "bg-gray-50"
+          }`}
         >
-          <img
-            src={authorImage}
-            alt=""
-            className={`rounded-full object-cover ${
-              isReply ? "w-7 h-7 mt-0.5" : "w-8 h-8"
-            } ${comment.authorId ? "cursor-pointer hover:opacity-90" : ""}`}
-          />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div
-            className={`rounded-2xl px-3 py-2 ${
-              isReply
-                ? "bg-white border border-gray-100 shadow-sm"
-                : "bg-gray-50"
-            }`}
-          >
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          {/* Avatar + name inside the card, above the comment */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={goToAuthorProfile}
+              disabled={!comment.authorId}
+              className="rounded-full shrink-0 disabled:cursor-default self-center"
+              aria-label={`View ${getDisplayName(comment.author)}'s profile`}
+            >
+              <img
+                src={authorImage}
+                alt=""
+                className={`rounded-full object-cover ${
+                  isReply ? "w-6 h-6 sm:w-7 sm:h-7" : "w-7 h-7 sm:w-8 sm:h-8"
+                } ${comment.authorId ? "cursor-pointer hover:opacity-90" : ""}`}
+              />
+            </button>
+
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 flex-1">
               <button
                 type="button"
                 onClick={goToAuthorProfile}
                 disabled={!comment.authorId}
-                className="font-semibold text-sm text-[#16730F] hover:underline text-left disabled:cursor-default disabled:no-underline"
+                className="font-semibold text-sm text-[#16730F] hover:underline text-left disabled:cursor-default disabled:no-underline min-w-0 max-w-full"
               >
-                {getDisplayName(comment.author)}
+                <DisplayNameWithBadge user={comment.author} badgeSize="xs" />
               </button>
               {parentComment && depth > 1 && (
                 <p className="text-xs text-gray-500">
@@ -109,42 +216,63 @@ function CommentItem({
                     type="button"
                     onClick={goToParentProfile}
                     disabled={!parentComment.authorId}
-                    className="font-medium text-[#16730F] hover:underline disabled:cursor-default disabled:no-underline"
+                    className="font-medium text-[#16730F] hover:underline disabled:cursor-default disabled:no-underline inline-flex items-center gap-1"
                   >
-                    {getDisplayName(parentComment.author)}
+                    <DisplayNameWithBadge
+                      user={parentComment.author}
+                      badgeSize="xs"
+                    />
                   </button>
                 </p>
               )}
             </div>
-            <p className="text-sm break-words text-gray-800 mt-0.5">
-              {comment.body}
-            </p>
           </div>
 
-          <div className="flex flex-row justify-start items-center gap-4 sm:gap-3 mt-1 px-1">
-            <button
-              type="button"
-              onClick={() => onLike(comment)}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-                comment.likedByMe
-                  ? "text-red-500"
-                  : "text-gray-500 hover:text-red-500"
-              }`}
-              aria-label={comment.likedByMe ? "Unlike comment" : "Like comment"}
-            >
-              <FaHeart
-                className={comment.likedByMe ? "fill-current text-red-500" : ""}
+          <div className="text-sm break-words text-gray-800 mt-1.5 whitespace-pre-wrap">
+            {isEditing ? (
+              <CommentEditForm
+                value={editDraft}
+                onChange={onEditDraftChange}
+                onCancel={onCancelEdit}
+                onSave={(e) => onSaveEdit(e, comment)}
+                saving={savingCommentId === comment.id}
               />
-              <span className="text-xs tabular-nums sm:hidden">
-                {comment.likesCount || 0}
-              </span>
-              <span className="hidden sm:inline">
-                {comment.likesCount > 0 && (
-                  <span className="tabular-nums mr-1">{comment.likesCount}</span>
-                )}
-                {comment.likedByMe ? "Liked" : "Like"}
-              </span>
-            </button>
+            ) : (
+              <FormattedPostBody
+                body={comment.body}
+                className="text-sm text-gray-800 whitespace-pre-wrap break-words"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-row justify-start items-center gap-3 sm:gap-3 mt-1 px-1">
+          <button
+            type="button"
+            onClick={() => onLike(comment)}
+            className={`flex items-center gap-1 sm:gap-1.5 text-xs font-medium transition-colors ${
+              comment.likedByMe
+                ? "text-red-500"
+                : "text-gray-500 hover:text-red-500"
+            }`}
+            aria-label={comment.likedByMe ? "Unlike comment" : "Like comment"}
+          >
+            <PostActionIcon
+              type="like"
+              active={comment.likedByMe}
+              compact
+            />
+            <span className="text-xs tabular-nums sm:hidden">
+              {comment.likesCount || 0}
+            </span>
+            <span className="hidden sm:inline">
+              {comment.likesCount > 0 && (
+                <span className="tabular-nums mr-1">{comment.likesCount}</span>
+              )}
+              {comment.likedByMe ? "Liked" : "Like"}
+            </span>
+          </button>
+          {!isEditing && (
             <button
               type="button"
               onClick={() =>
@@ -155,54 +283,64 @@ function CommentItem({
             >
               Reply
             </button>
-            {isOwner && (
+          )}
+          {isOwner && !isEditing && (
+            <>
+              <button
+                type="button"
+                onClick={() => onEdit(comment)}
+                className="text-xs font-medium text-gray-500 hover:text-[#16730F] transition-colors"
+                aria-label="Edit comment"
+              >
+                Edit
+              </button>
               <button
                 type="button"
                 onClick={() => onDelete(comment)}
                 disabled={deletingCommentId === comment.id}
-                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 sm:gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50"
                 aria-label={
                   deletingCommentId === comment.id
                     ? "Deleting comment"
                     : "Delete comment"
                 }
               >
-                <FaTrash />
+                <PostActionIcon
+                  type="delete"
+                  compact
+                  active={deletingCommentId === comment.id}
+                />
                 <span className="hidden sm:inline">
                   {deletingCommentId === comment.id ? "Deleting..." : "Delete"}
                 </span>
               </button>
-            )}
-          </div>
-
-          {isReplying && (
-            <form
-              onSubmit={(e) => onSubmitReply(e, comment.id)}
-              className="flex flex-wrap sm:flex-nowrap gap-2 mt-2 items-center"
-            >
-              <img
-                src={currentUserPhotoUrl}
-                alt=""
-                className="w-7 h-7 rounded-full object-cover shrink-0"
-              />
-              <input
-                type="text"
-                placeholder={`Reply to ${getDisplayName(comment.author)}...`}
-                value={replyText}
-                onChange={(e) => onReplyTextChange(e.target.value)}
-                className="flex-1 min-w-[140px] border rounded-full px-3 py-1.5 text-sm focus:outline-none focus:border-[#16730F]"
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={!replyText.trim()}
-                className="bg-[#16730F] text-white px-3 py-1.5 rounded-full text-xs hover:bg-[#145a0c] disabled:opacity-50"
-              >
-                Reply
-              </button>
-            </form>
+            </>
           )}
         </div>
+
+        {isReplying && (
+          <form
+            onSubmit={(e) => onSubmitReply(e, comment.id)}
+            className="flex gap-2 mt-2 items-start"
+          >
+            <img
+              src={currentUserPhotoUrl}
+              alt=""
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover shrink-0 mt-1"
+            />
+            <CommentComposerBox
+              value={replyText}
+              onValueChange={onReplyTextChange}
+              placeholder={`Reply to ${getDisplayName(comment.author)}...`}
+              autoFocus
+              maxHeightClass="max-h-28"
+              textSizeClass="text-xs sm:text-sm"
+              submitLabel="Reply"
+              submitAriaLabel={`Reply to ${getDisplayName(comment.author)}`}
+              submitButtonClassName="px-3 py-1.5 text-xs"
+            />
+          </form>
+        )}
       </div>
 
       {replies.length > 0 && (
@@ -226,9 +364,16 @@ function CommentItem({
               onCancelReply={onCancelReply}
               onSubmitReply={onSubmitReply}
               onLike={onLike}
+              onEdit={onEdit}
+              onCancelEdit={onCancelEdit}
+              onSaveEdit={onSaveEdit}
               onDelete={onDelete}
               onViewProfile={onViewProfile}
               deletingCommentId={deletingCommentId}
+              editingCommentId={editingCommentId}
+              savingCommentId={savingCommentId}
+              editDraft={editDraft}
+              onEditDraftChange={onEditDraftChange}
               getReplies={getReplies}
               getCommentById={getCommentById}
               depth={depth + 1}
@@ -246,14 +391,20 @@ export default function PostCommentsSection({
   setComments,
   loading,
   onReload,
+  onCommentCountChange,
   currentUserPhotoUrl,
   currentUserId,
+  inputRef = null,
+  sectionRef = null,
 }) {
   const navigate = useNavigate();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [savingCommentId, setSavingCommentId] = useState(null);
 
   const topLevelComments = comments.filter((c) => !c.parentCommentId);
   const getReplies = (parentId) =>
@@ -269,9 +420,14 @@ export default function PostCommentsSection({
     e.preventDefault();
     if (!newComment.trim()) return;
     try {
-      await addComment(postId, newComment);
+      const data = await addComment(postId, newComment);
       setNewComment("");
-      await onReload();
+      if (data?.comment) {
+        setComments((prev) => [data.comment, ...prev]);
+        onCommentCountChange?.(1);
+      } else {
+        await onReload();
+      }
     } catch (err) {
       console.error("Error adding comment:", err);
     }
@@ -281,10 +437,15 @@ export default function PostCommentsSection({
     e.preventDefault();
     if (!replyText.trim()) return;
     try {
-      await addComment(postId, replyText, parentCommentId);
+      const data = await addComment(postId, replyText, parentCommentId);
       setReplyText("");
       setReplyingTo(null);
-      await onReload();
+      if (data?.comment) {
+        setComments((prev) => [data.comment, ...prev]);
+        onCommentCountChange?.(1);
+      } else {
+        await onReload();
+      }
     } catch (err) {
       console.error("Error adding reply:", err);
     }
@@ -325,6 +486,54 @@ export default function PostCommentsSection({
     }
   };
 
+  const handleEdit = (comment) => {
+    setReplyingTo(null);
+    setReplyText("");
+    setEditingCommentId(comment.id);
+    setEditDraft(comment.body || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditDraft("");
+  };
+
+  const handleSaveEdit = async (e, comment) => {
+    e.preventDefault();
+    const trimmed = editDraft.trim();
+    if (!trimmed || savingCommentId) return;
+
+    setSavingCommentId(comment.id);
+    setComments((prev) =>
+      prev.map((entry) =>
+        entry.id === comment.id ? { ...entry, body: trimmed } : entry,
+      ),
+    );
+
+    try {
+      const data = await updateComment(postId, comment.id, trimmed);
+      if (data?.comment) {
+        setComments((prev) =>
+          prev.map((entry) =>
+            entry.id === comment.id ? { ...entry, ...data.comment } : entry,
+          ),
+        );
+      }
+      setEditingCommentId(null);
+      setEditDraft("");
+    } catch (err) {
+      console.error("Error updating comment:", err);
+      setComments((prev) =>
+        prev.map((entry) =>
+          entry.id === comment.id ? { ...entry, body: comment.body } : entry,
+        ),
+      );
+      await onReload();
+    } finally {
+      setSavingCommentId(null);
+    }
+  };
+
   const handleDelete = async (comment) => {
     if (deletingCommentId) return;
 
@@ -342,46 +551,47 @@ export default function PostCommentsSection({
       setReplyingTo(null);
       setReplyText("");
     }
+    if (editingCommentId && idsToRemove.has(editingCommentId)) {
+      setEditingCommentId(null);
+      setEditDraft("");
+    }
 
     setComments((prev) => prev.filter((entry) => !idsToRemove.has(entry.id)));
+    onCommentCountChange?.(-idsToRemove.size);
 
     try {
       await deleteComment(postId, comment.id);
-      await onReload();
     } catch (err) {
       console.error("Error deleting comment:", err);
       await onReload();
+      onCommentCountChange?.(idsToRemove.size);
     } finally {
       setDeletingCommentId(null);
     }
   };
 
   return (
-    <div className="border-t pt-4 mt-4">
+    <div ref={sectionRef} className="border-t border-[#A9A9A9] pt-4 mt-4">
       <form
         onSubmit={handleAddComment}
-        className="flex flex-wrap sm:flex-nowrap gap-2 mb-4 items-center"
+        className="flex gap-2 mb-4 items-start"
       >
         {currentUserPhotoUrl && (
           <img
             src={currentUserPhotoUrl}
             alt="Your profile"
-            className="w-8 h-8 rounded-full object-cover shrink-0"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 mt-1"
           />
         )}
-        <input
-          type="text"
-          placeholder="Write a comment..."
+        <CommentComposerBox
+          textareaRef={inputRef}
           value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          className="flex-1 min-w-[180px] border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-[#16730F]"
+          onValueChange={setNewComment}
+          placeholder="Write a comment..."
+          submitLabel="Post"
+          submitAriaLabel="Post comment"
+          submitButtonClassName="px-4 py-2 text-sm"
         />
-        <button
-          type="submit"
-          className="bg-[#16730F] text-white px-4 py-2 rounded-full text-sm hover:bg-[#145a0c]"
-        >
-          Post
-        </button>
       </form>
 
       {loading ? (
@@ -406,9 +616,16 @@ export default function PostCommentsSection({
               }}
               onSubmitReply={handleSubmitReply}
               onLike={handleLike}
+              onEdit={handleEdit}
+              onCancelEdit={handleCancelEdit}
+              onSaveEdit={handleSaveEdit}
               onDelete={handleDelete}
               onViewProfile={handleViewProfile}
               deletingCommentId={deletingCommentId}
+              editingCommentId={editingCommentId}
+              savingCommentId={savingCommentId}
+              editDraft={editDraft}
+              onEditDraftChange={setEditDraft}
               getReplies={getReplies}
               getCommentById={getCommentById}
             />

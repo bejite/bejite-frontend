@@ -15,6 +15,7 @@ const AuthFailure = () => {
     const errorMessages = {
       'normal_signup_user': 'This email is already signed up with a regular account. Please sign in using your email and password instead.',
       'google_auth_failed': 'Google authentication failed. Please try again.',
+      'google_auth_expired': 'Google sign-in expired or was already used. Please try again.',
       'user_cancelled': 'Authentication was cancelled.',
       'email_already_exists': 'An account with this email already exists. Please sign in instead.',
       'invalid_credentials': 'Invalid credentials provided.',

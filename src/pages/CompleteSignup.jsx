@@ -19,10 +19,16 @@ export default function CompleteSignup() {
 
   const [_, setRole] = useState("");
 
-  // OAuth redirects include tokens in the URL — persist before role selection.
+  // OAuth redirects include a one-time code (or legacy tokens) — persist before role selection.
   useEffect(() => {
-    captureOAuthSessionFromUrl(location.search);
-    dispatch(hydrateAuth());
+    let cancelled = false;
+    (async () => {
+      await captureOAuthSessionFromUrl(location.search);
+      if (!cancelled) dispatch(hydrateAuth());
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, dispatch]);
 
   const handleRoleSelect = (selectedRole) => {
@@ -54,16 +60,16 @@ export default function CompleteSignup() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
-      <div className="w-full px-4 py-6 flex items-center max-w-screen-xl mx-auto">
+      <div className="w-full px-4 py-6 flex items-center max-w-screen-xl mx-auto shrink-0">
         <img src="/assets/images/logo.png" alt="logo" className="h-10" />
       </div>
 
-      <div className="flex flex-col items-center justify-center w-full px-4 py-10 sm:py-20 mt-[5%]">
+      <div className="flex flex-1 flex-col items-center justify-center w-full px-4 py-10">
         <p className="text-3xl sm:text-5xl font-norican font-semibold text-[#16730F] text-center">
           Sign Up As
         </p>
 
-        <div className="mt-20 flex flex-col sm:flex-row gap-10 flex-wrap justify-center items-center w-full max-w-5xl">
+        <div className="mt-12 sm:mt-16 flex flex-col sm:flex-row gap-10 flex-wrap justify-center items-center w-full max-w-5xl mx-auto">
           <RoleCard
             imageSrc="/assets/images/user-octagon.svg"
             title="JOBSEEKER"

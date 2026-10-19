@@ -4,8 +4,9 @@ import { useDispatch } from 'react-redux';
 import MemberCard from '../components/MemberCard';
 import { toast } from 'react-toastify';
 import Loader from '../components/ui/Loader';
-import axiosPublic from '../services/axiosPublic';
+import axiosInstance from '../utils/axiosInstance';
 import { updateUser } from '../features/auth/authSlice';
+import { getAccessToken } from '../utils/tokenManager';
 
 const EmployerOpt = () => {
     const navigate = useNavigate();
@@ -48,7 +49,6 @@ const EmployerOpt = () => {
         }
 
         const payload = {
-            email: resolvedEmail.trim(),
             role: resolvedRole,
             mode,
             followings: [],
@@ -61,8 +61,13 @@ const EmployerOpt = () => {
         
         try {
             setShow(true);
+            if (!getAccessToken()) {
+                toast.error('Session expired. Please verify your email or sign in again.');
+                setShow(false);
+                return;
+            }
             console.log('[EmployerOpt] Sending complete-signup payload:', payload);
-            const response = await axiosPublic.post('/auth/complete-signup', payload, {
+            const response = await axiosInstance.post('/auth/complete-signup', payload, {
                 headers: { 'Content-Type': 'application/json' },
             });
             console.log('[EmployerOpt] Complete-signup API success');
@@ -104,6 +109,7 @@ const EmployerOpt = () => {
                     firstName: responseUser?.firstName || resolvedFirstName || storedUser?.firstName || '',
                     lastName: responseUser?.lastName || resolvedLastName || storedUser?.lastName || '',
                     role: responseUser?.role || resolvedRole,
+                    mode: responseUser?.mode || mode,
                 }
                 : {
                     ...storedUser,
@@ -111,6 +117,7 @@ const EmployerOpt = () => {
                     firstName: storedUser?.firstName || resolvedFirstName || '',
                     lastName: storedUser?.lastName || resolvedLastName || '',
                     role: storedUser?.role || resolvedRole,
+                    mode,
                 };
 
             localStorage.setItem('user', JSON.stringify(normalizedUser));
@@ -172,8 +179,8 @@ const EmployerOpt = () => {
     }, []);
 
     return (
-        <div className="bg-white min-h-screen flex flex-col items-center">
-            <div className="w-full px-4 py-6 flex items-center max-w-screen-xl">
+        <div className="bg-white min-h-screen flex flex-col">
+            <div className="w-full px-4 py-6 flex items-center max-w-screen-xl mx-auto shrink-0">
                 <img
                     src="/assets/images/logo.png"
                     alt="logo"
@@ -181,7 +188,7 @@ const EmployerOpt = () => {
                 />
             </div>
 
-            <div className="flex flex-col items-center justify-center w-full px-4 py-10 sm:py-20 mt-[5%]">
+            <div className="flex flex-1 flex-col items-center justify-center w-full px-4 py-10 relative z-10">
                 <h1 className="lg:text-5xl text-2xl text-[#16730F] font-[500] leading-relaxed font-norican">
                     As an Employer
                 </h1>
@@ -189,9 +196,9 @@ const EmployerOpt = () => {
                     Choose the account type that fits your hiring needs
                 </p>
 
-                <div className="lg:w-[50%] w-full px-4 mt-12 flex flex-wrap justify-center gap-6 py-10 bg-[#E0E0E01A] rounded-2xl border border-[#82828226]">
+                <div className="lg:w-[50%] w-full px-4 mt-8 sm:mt-12 flex flex-wrap justify-center gap-6 py-10 bg-[#E0E0E01A] rounded-2xl border border-[#82828226]">
                     <MemberCard
-                        label="INDIVIDUAL"
+                        label="Individual"
                         iconSrc="/assets/images/user.svg"
                         infoText="Individual employers are people whose businesses are not registered with the federal, state, or local governments. 
                       They are micro, small, and medium scale enterprises (SMEs). They also include people who are HR consultants (they recruit for other companies); 

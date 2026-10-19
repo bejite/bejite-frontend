@@ -4,6 +4,10 @@ import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import axiosPublic from "../services/axiosPublic";
 import Header from "../components/Header";
+import {
+  isPasswordPolicyValid,
+  PASSWORD_POLICY_MESSAGE,
+} from "../utils/passwordPolicy";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -17,9 +21,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const passwordRegex =
-    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{7,}$/;
-    const isPasswordValid = passwordRegex.test(password);
+  const isPasswordValid = isPasswordPolicyValid(password);
 
   const isDisabled =
     !password ||
@@ -115,11 +117,8 @@ const ResetPassword = () => {
             </div>
 
              {/* Password warnings */}
-            {!isPasswordValid &&  (
-              <p className="text-red-500 text-sm">
-                Password must be at least 7 characters, include an uppercase
-                letter, a number, and a special character.
-              </p>
+            {!isPasswordValid && password && (
+              <p className="text-red-500 text-sm">{PASSWORD_POLICY_MESSAGE}</p>
             )}
             {confirmPassword && password !== confirmPassword && (
               <p className="text-red-500 text-sm">Passwords do not match</p>

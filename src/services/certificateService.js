@@ -1,11 +1,10 @@
 import { useCallback } from "react";
 import axiosInstance from "../utils/axiosInstance";
+import { apiErrorMessage } from "../utils/uploadLimits";
 
 export const useCreateCertificate = () => {
   const handleError = (error) => {
-    const errorMessage =
-      error.response?.data?.message || error.message || "An error occurred";
-    throw new Error(errorMessage);
+    throw new Error(apiErrorMessage(error));
   };
 
   const postCertficateData = useCallback(async (data) => {

@@ -37,6 +37,12 @@ export const registerForPartnerEvent = async (eventId) => {
   return response.data;
 };
 
+export const trackPartnerEventClick = async (eventId) => {
+  if (!eventId) return null;
+  const response = await axiosInstance.post(`${API}/events/${eventId}/click`);
+  return response.data;
+};
+
 export const getMonthlyReports = async () => {
   const response = await axiosInstance.get(`${API}/reports`);
   return response.data;
@@ -44,5 +50,13 @@ export const getMonthlyReports = async () => {
 
 export const openMonthlyReport = async (reportId) => {
   const response = await axiosInstance.get(`${API}/reports/${reportId}`);
+  return response.data;
+};
+
+export const getEmploymentMetrics = async (scope = 'month', options = {}) => {
+  const response = await axiosInstance.get(`${API}/employment-metrics`, {
+    params: { scope },
+    signal: options.signal,
+  });
   return response.data;
 };

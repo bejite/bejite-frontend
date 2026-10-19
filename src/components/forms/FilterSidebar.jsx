@@ -174,13 +174,13 @@ export const FilterSidebar = ({
         </button>
       </div>
 
-      <div className="hidden lg:block bg-white rounded-2xl border border-gray-200 p-5 sticky top-24 h-fit">
+      <div className="hidden lg:block bg-white rounded-2xl border border-gray-200 p-5 sticky top-4 self-start max-h-[calc(100dvh-8rem)] overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth pr-1">
         <FilterContent />
       </div>
 
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl p-5 overflow-y-auto">
+          <div className="absolute right-0 top-0 h-full w-[min(20rem,100vw)] bg-white shadow-xl p-5 overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold">Filters</h2>
               <button onClick={() => setIsMobileOpen(false)} className="p-2">

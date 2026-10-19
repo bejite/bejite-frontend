@@ -16,10 +16,10 @@ const Input = ({ type = 'text', placeholder, value, setValue, errorKey, localErr
           placeholder={placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className={`w-full px-4 py-2 rounded-xl outline-none border ${
+          className={`w-full px-4 py-2 rounded-xl outline-none border shadow-sm ${
             errorMessage
               ? 'border-red-500 focus:ring-2 focus:ring-red-300'
-              : 'border-[#1A3E32] focus:ring-2 focus:ring-green-300'
+              : 'border-[#d3d3d3] focus:ring-2 focus:ring-[#16730F] focus:border-[#16730F]'
           }`}
         />
         {type === 'password' && (

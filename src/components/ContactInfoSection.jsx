@@ -1,6 +1,9 @@
 import React from 'react';
 import { buildContactInfoItems } from '../utils/displayFormatUtils';
 
+const isEmailValue = (value) =>
+  typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 const ContactInfoField = ({ label, value, href, fullWidth }) => (
   <div className={`min-w-0 ${fullWidth ? 'sm:col-span-2' : ''}`}>
     <dt className="text-sm font-medium text-gray-500">{label}</dt>
@@ -11,6 +14,14 @@ const ContactInfoField = ({ label, value, href, fullWidth }) => (
           target="_blank"
           rel="noopener noreferrer"
           className="text-[#16730F] hover:underline break-words"
+        >
+          {value}
+        </a>
+      ) : isEmailValue(value) ? (
+        <a
+          href={`mailto:${value}`}
+          className="text-[#16730F] hover:underline break-all sm:break-normal"
+          title={value}
         >
           {value}
         </a>
@@ -34,9 +45,13 @@ export function ContactInfoSection({
   const items = itemsProp ?? buildContactInfoItems({ candidate, bio });
   if (items.length === 0) return null;
 
-  const primary = items.filter((item) =>
-    ['Phone', 'Email', 'Address'].includes(item.type),
-  );
+  const primary = items
+    .filter((item) => ['Phone', 'Email', 'Address'].includes(item.type))
+    .map((item) =>
+      item.type === 'Email'
+        ? { ...item, fullWidth: true }
+        : item,
+    );
   const links = items.filter((item) => item.href);
 
   return (

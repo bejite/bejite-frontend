@@ -323,13 +323,22 @@ export const formatTimeRemaining = (expiresAt) => {
 
 export const formatSalary = (job) => {
   if (job.salary) return job.salary;
-  if (job.salaryMin && job.salaryMax) {
+  if (job.salaryMin || job.salaryMax) {
     const currency = job.salaryCurrency === 'USD' ? '$' : 
                      job.salaryCurrency === 'NGN' ? '₦' :
                      job.salaryCurrency === 'KES' ? 'KES ' :
                      job.salaryCurrency === 'GHS' ? 'GH₵' :
                      job.salaryCurrency === 'ZAR' ? 'R' : '';
-    return `${currency}${job.salaryMin.toLocaleString()} - ${currency}${job.salaryMax.toLocaleString()}`;
+    const min = Number(job.salaryMin) || 0;
+    const max = Number(job.salaryMax) || 0;
+    if (min && max && min === max) {
+      return `${currency}${min.toLocaleString()}`;
+    }
+    if (min && max) {
+      return `${currency}${min.toLocaleString()} - ${currency}${max.toLocaleString()}`;
+    }
+    if (min) return `${currency}${min.toLocaleString()}`;
+    if (max) return `${currency}${max.toLocaleString()}`;
   }
   return 'Competitive';
 };

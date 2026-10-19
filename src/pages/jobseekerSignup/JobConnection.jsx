@@ -3,9 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import UserList from "../../components/UserList";
 import { discoverRecruitersForSignup } from "../../services/signupApi";
-import axiosPublic from "../../services/axiosPublic";
+import axiosInstance from "../../utils/axiosInstance";
 import * as connectionsApi from "../../services/connectionsApi";
+import * as followsApi from "../../services/followsApi";
 import { getProfileImageUrl } from "../../utils/profileImageUtils";
+import { getAccessToken } from "../../utils/tokenManager";
+import {
+  SIGNUP_BTN_DISABLED,
+  SIGNUP_BTN_ENABLED,
+} from "../../constants/signupTheme";
 
 const PAGE_SIZE = 20;
 
@@ -15,6 +21,7 @@ const mapRecruiterForList = (user) => ({
   role: user.companyName || user.jobTitle || "Recruiter",
   img:
     getProfileImageUrl(user.profilePhoto) || "/assets/images/photo_placeholder.png",
+  isCorporate: Boolean(user.isCorporate || user.mode === "corporate"),
 });
 
 const JobConnection = () => {
@@ -105,10 +112,15 @@ const JobConnection = () => {
     setLoading(true);
 
     try {
-      const response = await axiosPublic.post("/auth/complete-signup", {
-        email,
+      if (!getAccessToken()) {
+        toast.error("Session expired. Please verify your email again.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axiosInstance.post("/auth/complete-signup", {
         role: role?.toLowerCase(),
-        mode: mode?.toLowerCase(),
+        mode: mode,
         followings: addedUsers,
       });
 
@@ -131,18 +143,25 @@ const JobConnection = () => {
         localStorage.setItem("user", JSON.stringify(responseUser));
       }
 
-      const connectionResults = await Promise.allSettled(
-        addedUsers.map((userId) => connectionsApi.sendConnectionRequest(userId))
+      const byId = new Map(users.map((u) => [String(u.id), u]));
+      const networkResults = await Promise.allSettled(
+        addedUsers.map((userId) => {
+          const target = byId.get(String(userId));
+          if (target?.isCorporate) {
+            return followsApi.followUser(userId);
+          }
+          return connectionsApi.sendConnectionRequest(userId);
+        }),
       );
 
-      const failedCount = connectionResults.filter((r) => r.status === "rejected").length;
+      const failedCount = networkResults.filter((r) => r.status === "rejected").length;
       if (failedCount > 0) {
         console.warn(
-          `${failedCount} connection request(s) failed after signup`,
-          connectionResults
+          `${failedCount} follow/connection request(s) failed after signup`,
+          networkResults,
         );
         toast.warn(
-          `Signup complete, but ${failedCount} connection request(s) could not be sent.`
+          `Signup complete, but ${failedCount} request(s) could not be sent.`,
         );
       }
 
@@ -163,18 +182,18 @@ const JobConnection = () => {
   const isEnabled = addedUsers.length >= 10;
 
   return (
-    <div className="bg-white min-h-screen relative">
-      <div className="w-full px-4 py-6 flex justify-start items-center max-w-screen-xl mx-auto">
-        <img src="/assets/images/logo.png" alt="logo" className="h-12 sm:h-16" />
+    <div className="bg-white min-h-screen flex flex-col">
+      <div className="w-full px-4 py-6 flex justify-start items-center max-w-screen-xl mx-auto shrink-0">
+        <img src="/assets/images/logo.png" alt="logo" className="h-10" />
       </div>
 
-      <div className="flex flex-col items-center justify-start px-4 mx-auto w-full max-w-4xl pb-12">
-        <div className="w-full max-w-3xl text-center mb-10 mt-12">
+      <div className="flex flex-1 flex-col items-center justify-center w-full px-4 mx-auto max-w-4xl pb-12">
+        <div className="w-full max-w-3xl text-center mb-8">
           <p className="text-3xl sm:text-4xl md:text-5xl font-sarina font-semibold text-[#16730F]">
             Connect With Recruiters
           </p>
           <p className="text-[#333] font-normal text-sm sm:text-base md:text-lg mt-2">
-            Follow at least 10 recruiters to continue the signup process
+            Follow or connect with at least 10 recruiters to continue
           </p>
         </div>
 
@@ -215,10 +234,8 @@ const JobConnection = () => {
           </p>
 
           <button
-            className={`w-52 h-12 rounded-2xl font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 ${
-              isEnabled
-                ? "bg-[#16730F] hover:bg-[#0f4e0a]"
-                : "bg-[#1A3E32] opacity-25 cursor-not-allowed"
+            className={`w-52 h-12 rounded-full font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 ${
+              isEnabled ? SIGNUP_BTN_ENABLED : SIGNUP_BTN_DISABLED
             }`}
             disabled={!isEnabled || loading || loadingUsers}
             onClick={handleContinue}

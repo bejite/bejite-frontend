@@ -1,5 +1,17 @@
 {
   "rewrites": [
+    {
+      "source": "/p/:postId",
+      "destination": "https://bejite-backend-9mg2.onrender.com/share/post/:postId"
+    },
+    {
+      "source": "/j/:jobId",
+      "destination": "https://bejite-backend-9mg2.onrender.com/share/job/:jobId"
+    },
+    {
+      "source": "/a/:campaignId",
+      "destination": "https://bejite-backend-9mg2.onrender.com/share/ad/:campaignId"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

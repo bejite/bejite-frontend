@@ -1,6 +1,6 @@
 import React from 'react';
 import { getAuthorProfileImageUrl } from '../../utils/profileImageUtils';
-import VerifiedBadge from '../VerifiedBadge';
+import DisplayNameWithBadge from '../DisplayNameWithBadge';
 
 const ConnectionCard = ({ user, onRemove, onViewProfile, showRemoveButton = false }) => (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
@@ -15,12 +15,11 @@ const ConnectionCard = ({ user, onRemove, onViewProfile, showRemoveButton = fals
         className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full object-cover"
       />
       <div className="min-w-0 flex-1">
-        <h3 className="font-semibold text-[#1A3E32] text-sm sm:text-base truncate hover:text-[#16730F] flex items-center gap-1">
-          <span className="truncate">{user.name}</span>
-          {user.hasVerifiedBadge && <VerifiedBadge size="xs" />}
+        <h3 className="font-semibold text-[#1A3E32] text-sm sm:text-base truncate hover:text-[#16730F]">
+          <DisplayNameWithBadge user={user} fallback={user.name} badgeSize="xs" />
         </h3>
         <p className="text-xs sm:text-sm text-gray-600 truncate">
-          {user.jobTitle || user.role || 'Professional'}
+          {user.jobTitle || 'Professional'}
         </p>
       </div>
     </button>

@@ -3,6 +3,10 @@ import React, { useState, useEffect } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "../../utils/tokenManager";
+import {
+  SIGNUP_BTN_DISABLED,
+  SIGNUP_BTN_ENABLED,
+} from "../../constants/signupTheme";
 
 function SaveProgress() {
   const [email, setEmail] = useState("");
@@ -33,7 +37,7 @@ function SaveProgress() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-[#1A3E32] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A3E32] placeholder-[#1A3E32]"
+            className="w-full px-4 py-3 border border-[#16730F] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F] placeholder-[#16730F]"
           />
 
           <div className="relative">
@@ -42,7 +46,7 @@ function SaveProgress() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-[#1A3E32] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A3E32] placeholder-[#1A3E32] pr-12"
+              className="w-full px-4 py-3 border border-[#16730F] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F] placeholder-[#16730F] pr-12"
             />
             <button
               type="button"
@@ -57,9 +61,7 @@ function SaveProgress() {
         <button
           disabled={isDisabled}
           className={`w-full py-4 rounded-full text-white font-semibold transition shadow-md ${
-            isDisabled
-              ? "bg-[#1A3E32] cursor-not-allowed"
-              : "bg-[#16730F] hover:opacity-90"
+            isDisabled ? SIGNUP_BTN_DISABLED : SIGNUP_BTN_ENABLED
           }`}
           onClick={()=>navigate('/post-page')}
         >

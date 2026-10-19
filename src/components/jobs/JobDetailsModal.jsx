@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   FaArrowLeft,
   FaShareAlt,
@@ -12,18 +13,30 @@ import {
   FaLinkedin,
   FaTwitter,
   FaInstagram,
+  FaUser,
 } from "react-icons/fa";
-import { MdLocationOn, MdWork, MdVerified } from "react-icons/md";
+import { MdLocationOn, MdWork } from "react-icons/md";
 import { formatTimeRemaining, formatSalary } from "../../utils/checksFormat";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
 import { ApplicationForm } from "./ApplicationForm";
+import SharePostModal from "../SharePostModal";
+import VerifiedBadge from "../VerifiedBadge";
+import { userHasVerifiedBadge, userShowsUnverifiedRecruiterPill } from "../../utils/verifiedBadge";
+import { getJobPlatformHref, copyJobLink } from "../../utils/jobShare";
+import { formatJobDescriptionText } from "../../utils/jobDescription";
+import { formatStoredRequirements } from "../../utils/jobRequirements";
+
+const JOB_DETAIL_LIST_CLASS =
+  "list-disc list-outside pl-5 space-y-1.5 sm:space-y-2 text-sm sm:text-base text-gray-700 break-words";
 
 export const JobDetailsModal = ({ job, onClose, onApply }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [showShareModal, setShowShareModal] = useState(false);
   const modalRef = useRef(null);
 
   const salary = formatSalary(job);
+  const requirements = formatStoredRequirements(job?.requirements);
   const timeRemaining = formatTimeRemaining(job.expiresAt);
   const companyLogoSrc = profilePhotoUrl(
     job.recruiterProfilePhoto || job.companyLogo,
@@ -31,6 +44,21 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
   const recruiterPhotoSrc = profilePhotoUrl(
     job.recruiter?.profilePhoto || job.recruiterProfilePhoto || job.companyLogo,
   );
+  const hasExternalApplication = Boolean(job.applicationUrl?.trim());
+  const applyLabel = hasExternalApplication
+    ? "Apply on Company Website"
+    : "Apply Now";
+  const isIndividualPoster =
+    String(job.posterMode || "").toLowerCase() === "individual";
+  const PosterIcon = isIndividualPoster ? FaUser : FaBuilding;
+
+  const handleApplyClick = () => {
+    if (hasExternalApplication) {
+      window.open(job.applicationUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setIsApplying(true);
+  };
 
   const socialLinks = [
     { key: "linkedin", href: job.companyLinkedin, icon: FaLinkedin, label: "LinkedIn" },
@@ -44,6 +72,8 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (showShareModal) return;
+      if (event.target.closest("[data-share-modal]")) return;
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         onClose();
       }
@@ -51,6 +81,10 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
 
     const handleEscapeKey = (event) => {
       if (event.key === "Escape") {
+        if (showShareModal) {
+          setShowShareModal(false);
+          return;
+        }
         onClose();
       }
     };
@@ -65,19 +99,17 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
       document.removeEventListener("keydown", handleEscapeKey);
       document.body.style.overflow = "unset";
     };
-  }, [onClose]);
+  }, [onClose, showShareModal]);
 
   const shareJob = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: job.title,
-        text: `Check out this job: ${job.title} at ${job.company}`,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+    setShowShareModal(true);
+  };
+
+  const handleShareOption = (platform) => {
+    if (platform === "copy") {
+      copyJobLink(job.id);
     }
+    setShowShareModal(false);
   };
 
   const jobSummaryCard = (
@@ -122,10 +154,11 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
       </p>
       <button
         type="button"
-        onClick={() => setIsApplying(true)}
-        className="w-full bg-[#16730F] text-white py-2.5 sm:py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base"
+        onClick={handleApplyClick}
+        className="w-full bg-[#16730F] text-white py-2.5 sm:py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base inline-flex items-center justify-center gap-2"
       >
-        Apply Now
+        {applyLabel}
+        {hasExternalApplication && <FaExternalLinkAlt size={12} />}
       </button>
     </div>
   );
@@ -159,10 +192,11 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsApplying(true)}
-                  className="hidden sm:inline-flex bg-[#16730F] text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base"
+                  onClick={handleApplyClick}
+                  className="hidden sm:inline-flex items-center gap-2 bg-[#16730F] text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base"
                 >
-                  Apply Now
+                  {applyLabel}
+                  {hasExternalApplication && <FaExternalLinkAlt size={12} />}
                 </button>
               </div>
             </div>
@@ -188,15 +222,18 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                       <h1 className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
                         {job.title}
                       </h1>
-                      {job.isVerified && (
-                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
-                          <MdVerified className="shrink-0" /> Verified
-                        </span>
-                      )}
+                      {userHasVerifiedBadge(job) ? (
+                        <VerifiedBadge size="xs" role="recruiter" />
+                      ) : userShowsUnverifiedRecruiterPill(
+                          { ...job, role: job.posterRole || job.role },
+                          { forceRecruiter: job.posterRole !== "jobseeker" },
+                        ) ? (
+                        <VerifiedBadge size="xs" role="recruiter" unverified />
+                      ) : null}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1.5 sm:gap-x-4 sm:gap-y-2 text-xs sm:text-sm text-gray-600">
                       <span className="flex items-center gap-1 min-w-0">
-                        <FaBuilding className="shrink-0 text-[#16730F]" />
+                        <PosterIcon className="shrink-0 text-[#16730F]" />
                         <span className="truncate">{job.company}</span>
                       </span>
                       <span className="flex items-center gap-1 min-w-0">
@@ -272,48 +309,91 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                 {activeTab === "details" ? (
                   <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
                     <div className="lg:col-span-2 space-y-5 sm:space-y-6 order-2 lg:order-1">
-                      {job.rolesText?.trim() && (
+                      {job.about?.trim() ? (
                         <section>
                           <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
-                            Roles
+                            About
                           </h2>
-                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                            {job.rolesText}
+                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line break-words">
+                            {job.about}
                           </p>
                         </section>
-                      )}
+                      ) : null}
 
-                      {!job.rolesText?.trim() && job.description?.trim() && (
+                      {job.responsibilities?.length > 0 ? (
                         <section>
                           <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
-                            Job Description
+                            Responsibilities
                           </h2>
-                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                            {job.description}
-                          </p>
-                        </section>
-                      )}
-
-                      {job.responsibilities?.length > 0 && (
-                        <section>
-                          <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
-                            Key Responsibilities
-                          </h2>
-                          <ul className="list-disc list-inside space-y-1.5 sm:space-y-2 text-sm sm:text-base text-gray-700">
+                          <ul className={JOB_DETAIL_LIST_CLASS}>
                             {job.responsibilities.map((resp, idx) => (
                               <li key={idx}>{resp}</li>
                             ))}
                           </ul>
                         </section>
-                      )}
-
-                      {job.requirements?.length > 0 && (
+                      ) : job.responsibilitiesText?.trim() ||
+                        (job.description?.trim() &&
+                          !job.qualificationsText?.trim() &&
+                          !job.rolesText?.trim()) ? (
                         <section>
                           <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
-                            Requirements
+                            Responsibilities
+                          </h2>
+                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                            {formatJobDescriptionText(
+                              job.responsibilitiesText || job.description,
+                            )}
+                          </p>
+                        </section>
+                      ) : null}
+
+                      {(job.qualificationsText?.trim() ||
+                        job.rolesText?.trim() ||
+                        job.qualifications?.length > 0) && (
+                        <section>
+                          <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
+                            Qualifications
+                          </h2>
+                          {job.qualifications?.length > 0 ||
+                          job.roles?.length > 0 ? (
+                            <ul className={JOB_DETAIL_LIST_CLASS}>
+                              {(job.qualifications?.length
+                                ? job.qualifications
+                                : job.roles
+                              ).map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                              {formatJobDescriptionText(
+                                job.qualificationsText || job.rolesText,
+                              )}
+                            </p>
+                          )}
+                        </section>
+                      )}
+
+                      {requirements.length > 0 && (
+                          <section>
+                            <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
+                              Requirements
+                            </h2>
+                            <ul className={JOB_DETAIL_LIST_CLASS}>
+                              {requirements.map((req, idx) => (
+                                <li key={idx}>{req}</li>
+                              ))}
+                            </ul>
+                          </section>
+                        )}
+
+                      {job.skillRequirements?.length > 0 && (
+                        <section>
+                          <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
+                            Skills
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                            {job.requirements.map((req, idx) => (
+                            {job.skillRequirements.map((req, idx) => (
                               <div
                                 key={idx}
                                 className="bg-gray-50 rounded-xl p-3"
@@ -328,9 +408,11 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                                  {req.experience}+ years experience
-                                </p>
+                                {req.experience > 0 && (
+                                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                                    {req.experience}+ years experience
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -507,10 +589,11 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
             <div className="sm:hidden shrink-0 border-t border-gray-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
-                onClick={() => setIsApplying(true)}
-                className="w-full bg-[#16730F] text-white py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm"
+                onClick={handleApplyClick}
+                className="w-full bg-[#16730F] text-white py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm inline-flex items-center justify-center gap-2"
               >
-                Apply Now
+                {applyLabel}
+                {hasExternalApplication && <FaExternalLinkAlt size={12} />}
               </button>
             </div>
           </>
@@ -528,6 +611,17 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
           </div>
         )}
       </div>
+
+      {createPortal(
+        <SharePostModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          onShare={handleShareOption}
+          getPlatformHref={(platform) => getJobPlatformHref(job, platform)}
+          title="Share job"
+        />,
+        document.body,
+      )}
     </div>
   );
 };

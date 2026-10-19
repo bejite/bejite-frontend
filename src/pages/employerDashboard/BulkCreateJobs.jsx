@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaUpload,
@@ -12,13 +12,15 @@ import {
   FaMapMarkerAlt,
   FaClock,
   FaFileCsv,
-  FaFileWord,
-  FaFilePdf,
-  FaFileAlt,
-  FaFile,
+  FaExclamationCircle,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import { toast } from "react-toastify";
+import { createEmployerJob } from "../../services/employerApi";
+import {
+  downloadBulkJobTemplate,
+  parseBulkJobsFile,
+} from "../../utils/parseBulkJobsCsv";
 
 const BulkCreateJobs = () => {
   const navigate = useNavigate();
@@ -26,243 +28,71 @@ const BulkCreateJobs = () => {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [publishedCount, setPublishedCount] = useState(0);
   const [fileName, setFileName] = useState("");
 
-  const dummyJobs = {
-    csv: [
-      {
-        id: 1,
-        title: "Senior Frontend Developer",
-        industry: "Technology",
-        skills: [
-          { skill: "React", experience: "3" },
-          { skill: "TypeScript", experience: "2" },
-          { skill: "Tailwind CSS", experience: "2" },
-          { skill: "Next.js", experience: "1" },
-        ],
-        responsibilities:
-          "Build responsive web applications using React and modern frameworks.",
-        workMode: "Remote",
-        country: "Nigeria",
-      },
-      {
-        id: 2,
-        title: "Backend Engineer",
-        industry: "Technology",
-        skills: [
-          { skill: "Node.js", experience: "4" },
-          { skill: "Python", experience: "3" },
-          { skill: "PostgreSQL", experience: "3" },
-        ],
-        responsibilities:
-          "Design and maintain scalable backend services and APIs.",
-        workMode: "Remote",
-        country: "Kenya",
-      },
-    ],
-    excel: [
-      {
-        id: 1,
-        title: "Product Manager",
-        industry: "Technology",
-        skills: [
-          { skill: "Agile", experience: "5" },
-          { skill: "Product Strategy", experience: "4" },
-          { skill: "Data Analysis", experience: "3" },
-        ],
-        responsibilities: "Lead product development from conception to launch.",
-        workMode: "Hybrid",
-        country: "South Africa",
-      },
-      {
-        id: 2,
-        title: "UI/UX Designer",
-        industry: "Design",
-        skills: [
-          { skill: "Figma", experience: "3" },
-          { skill: "Adobe XD", experience: "2" },
-          { skill: "User Research", experience: "2" },
-        ],
-        responsibilities: "Create beautiful and intuitive user interfaces.",
-        workMode: "Remote",
-        country: "Ghana",
-      },
-    ],
-    word: [
-      {
-        id: 1,
-        title: "DevOps Engineer",
-        industry: "Technology",
-        skills: [
-          { skill: "AWS", experience: "4" },
-          { skill: "Docker", experience: "3" },
-          { skill: "Kubernetes", experience: "2" },
-          { skill: "Jenkins", experience: "2" },
-        ],
-        responsibilities: "Manage cloud infrastructure and CI/CD pipelines.",
-        workMode: "Remote",
-        country: "Nigeria",
-      },
-      {
-        id: 2,
-        title: "Data Scientist",
-        industry: "Technology",
-        skills: [
-          { skill: "Python", experience: "4" },
-          { skill: "Machine Learning", experience: "3" },
-          { skill: "TensorFlow", experience: "2" },
-        ],
-        responsibilities: "Develop and implement machine learning models.",
-        workMode: "Remote",
-        country: "Kenya",
-      },
-    ],
-    pdf: [
-      {
-        id: 1,
-        title: "QA Engineer",
-        industry: "Technology",
-        skills: [
-          { skill: "Selenium", experience: "3" },
-          { skill: "Jest", experience: "2" },
-          { skill: "Cypress", experience: "2" },
-        ],
-        responsibilities:
-          "Ensure quality through automated and manual testing.",
-        workMode: "Hybrid",
-        country: "South Africa",
-      },
-      {
-        id: 2,
-        title: "Technical Writer",
-        industry: "Technology",
-        skills: [
-          { skill: "Documentation", experience: "4" },
-          { skill: "Markdown", experience: "3" },
-          { skill: "Technical Communication", experience: "3" },
-        ],
-        responsibilities: "Create and maintain technical documentation.",
-        workMode: "Remote",
-        country: "Nigeria",
-      },
-    ],
-    txt: [
-      {
-        id: 1,
-        title: "Full Stack Developer",
-        industry: "Technology",
-        skills: [
-          { skill: "React", experience: "3" },
-          { skill: "Node.js", experience: "3" },
-          { skill: "MongoDB", experience: "2" },
-        ],
-        responsibilities: "Build end-to-end web applications.",
-        workMode: "Remote",
-        country: "Ghana",
-      },
-    ],
-    default: [
-      {
-        id: 1,
-        title: "Software Engineer",
-        industry: "Technology",
-        skills: [
-          { skill: "JavaScript", experience: "3" },
-          { skill: "React", experience: "2" },
-          { skill: "Node.js", experience: "2" },
-        ],
-        responsibilities: "Develop and maintain software applications.",
-        workMode: "Remote",
-        country: "Nigeria",
-      },
-    ],
-  };
+  const validJobs = useMemo(
+    () => jobs.filter((job) => job.isValid),
+    [jobs],
+  );
+  const invalidJobs = useMemo(
+    () => jobs.filter((job) => !job.isValid),
+    [jobs],
+  );
 
-  const getFileIcon = (fileName) => {
-    const extension = fileName?.split(".").pop()?.toLowerCase();
-    switch (extension) {
-      case "csv":
-        return <FaFileCsv className="text-4xl text-green-600 mx-auto mb-3" />;
-      case "xlsx":
-      case "xls":
-        return <FaFileExcel className="text-4xl text-green-600 mx-auto mb-3" />;
-      case "doc":
-      case "docx":
-        return <FaFileWord className="text-4xl text-blue-600 mx-auto mb-3" />;
-      case "pdf":
-        return <FaFilePdf className="text-4xl text-red-600 mx-auto mb-3" />;
-      case "txt":
-        return <FaFileAlt className="text-4xl text-gray-600 mx-auto mb-3" />;
-      default:
-        return <FaFile className="text-4xl text-gray-600 mx-auto mb-3" />;
-    }
-  };
-
-  const parseFileContent = (file, fileType) => {
-    switch (fileType) {
-      case "csv":
-        return dummyJobs.csv;
-      case "xlsx":
-      case "xls":
-        return dummyJobs.excel;
-      case "doc":
-      case "docx":
-        return dummyJobs.word;
-      case "pdf":
-        return dummyJobs.pdf;
-      case "txt":
-        return dummyJobs.txt;
-      default:
-        return dummyJobs.default;
-    }
-  };
-
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    const supportedFormats = [
-      "csv",
-      "xlsx",
-      "xls",
-      "doc",
-      "docx",
-      "pdf",
-      "txt",
-    ];
+    const supportedFormats = ["csv", "txt", "xlsx", "xls"];
 
     if (!supportedFormats.includes(fileExtension)) {
       toast.error(
-        `Unsupported file format: ${fileExtension}. Please upload CSV, Excel, Word, PDF, or TXT files.`,
-        {
-          position: "top-right",
-          autoClose: 4000,
-        },
+        "Unsupported file format. Upload CSV, TXT, or Excel (.xlsx/.xls).",
+        { position: "top-right", autoClose: 4000 },
       );
+      event.target.value = "";
       return;
     }
 
     setFileName(file.name);
+    setJobs([]);
     setUploading(true);
 
-    setTimeout(() => {
-      const parsedJobs = parseFileContent(file, fileExtension);
+    try {
+      const parsedJobs = await parseBulkJobsFile(file);
       setJobs(parsedJobs);
+
+      const validCount = parsedJobs.filter((job) => job.isValid).length;
+      const invalidCount = parsedJobs.length - validCount;
+
+      if (invalidCount > 0) {
+        toast.warn(
+          `Loaded ${parsedJobs.length} rows. ${validCount} valid, ${invalidCount} need fixes.`,
+          { position: "top-right", autoClose: 4000 },
+        );
+      } else {
+        toast.success(
+          `Successfully loaded ${parsedJobs.length} jobs from ${file.name}`,
+          { position: "top-right", autoClose: 3000 },
+        );
+      }
+    } catch (error) {
+      console.error("Bulk CSV parse error:", error);
+      setJobs([]);
+      toast.error(error.message || "Failed to parse CSV file", {
+        position: "top-right",
+        autoClose: 4000,
+      });
+    } finally {
       setUploading(false);
-      toast.success(
-        `Successfully loaded ${parsedJobs.length} jobs from ${file.name}!`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-        },
-      );
-    }, 1500);
+      event.target.value = "";
+    }
   };
 
   const handleRemoveJob = (index) => {
-    const updatedJobs = jobs.filter((_, i) => i !== index);
-    setJobs(updatedJobs);
+    setJobs((current) => current.filter((_, i) => i !== index));
     toast.info("Job removed from list", {
       position: "top-right",
       autoClose: 2000,
@@ -270,52 +100,75 @@ const BulkCreateJobs = () => {
   };
 
   const handleSubmitAll = async () => {
-    setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      setSuccess(true);
-      toast.success(`Successfully published ${jobs.length} jobs!`, {
+    if (!validJobs.length) {
+      toast.error("Fix validation errors before publishing.", {
         position: "top-right",
         autoClose: 3000,
       });
-      setTimeout(() => {
-        navigate("/employer/dashboard");
-      }, 2000);
-    }, 3000);
-  };
+      return;
+    }
 
-  const downloadTemplate = () => {
-    const templateData = [
-      {
-        title: "Example Job Title",
-        industry: "Technology",
-        skills: "React,JavaScript,Node.js",
-        experience: "3",
-        responsibilities: "Job responsibilities go here...",
-        workMode: "Remote",
-        country: "Nigeria",
-      },
-    ];
+    setProcessing(true);
 
-    const csvContent =
-      Object.keys(templateData[0]).join(",") +
-      "\n" +
-      templateData.map((row) => Object.values(row).join(",")).join("\n");
+    const failures = [];
+    let createdCount = 0;
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "job_template.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    for (const job of validJobs) {
+      try {
+        const response = await createEmployerJob({
+          title: job.payload.title.trim(),
+          industry: job.payload.industry.trim(),
+          about: job.payload.about?.trim() || undefined,
+          roles: job.payload.roles.trim(),
+          responsibilities: job.payload.responsibilities.trim(),
+          workMode: job.payload.workMode,
+          country: job.payload.country.trim(),
+          state: job.payload.state.trim() || undefined,
+          skills: job.payload.skills,
+        });
 
-    toast.success(
-      "Template downloaded successfully! You can edit this CSV file.",
-      {
+        if (!response?.success) {
+          throw new Error(response?.message || "Failed to publish job");
+        }
+
+        createdCount += 1;
+      } catch (error) {
+        failures.push({
+          rowNumber: job.rowNumber,
+          title: job.payload.title,
+          message:
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to publish job",
+        });
+      }
+    }
+
+    setProcessing(false);
+
+    if (createdCount > 0 && failures.length === 0) {
+      setPublishedCount(createdCount);
+      setSuccess(true);
+      toast.success(`Successfully published ${createdCount} jobs!`, {
         position: "top-right",
         autoClose: 3000,
-      },
+      });
+      return;
+    }
+
+    if (createdCount > 0) {
+      toast.warn(
+        `Published ${createdCount} jobs, but ${failures.length} failed.`,
+        { position: "top-right", autoClose: 5000 },
+      );
+      setPublishedCount(createdCount);
+      setSuccess(true);
+      return;
+    }
+
+    toast.error(
+      failures[0]?.message || "Failed to publish jobs. Please try again.",
+      { position: "top-right", autoClose: 5000 },
     );
   };
 
@@ -331,7 +184,7 @@ const BulkCreateJobs = () => {
               Jobs Created Successfully!
             </h2>
             <p className="text-gray-500 mb-6">
-              {jobs.length} job vacancies have been published.
+              {publishedCount} job vacancies have been published.
             </p>
             <button
               onClick={() => navigate("/employer/dashboard")}
@@ -357,19 +210,24 @@ const BulkCreateJobs = () => {
         </button>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Upload Section */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-20 shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Bulk Upload
               </h2>
               <p className="text-gray-500 text-sm mb-6">
-                Upload any document (CSV, Excel, Word, PDF, or TXT) with job
-                details. We'll automatically parse the content.
+                Upload a CSV or Excel file with your job rows. Preview shows only
+                what was parsed from your file.
               </p>
 
               <button
-                onClick={downloadTemplate}
+                onClick={() => {
+                  downloadBulkJobTemplate();
+                  toast.success("Template downloaded successfully!", {
+                    position: "top-right",
+                    autoClose: 3000,
+                  });
+                }}
                 className="w-full mb-4 px-4 py-3 border-2 border-[#16730F] text-[#16730F] rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
               >
                 <FaDownload />
@@ -379,10 +237,10 @@ const BulkCreateJobs = () => {
               <div className="relative">
                 <input
                   type="file"
-                  accept=".csv,.xlsx,.xls,.doc,.docx,.pdf,.txt"
+                  accept=".csv,.txt,.xlsx,.xls"
                   onChange={handleFileUpload}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={uploading}
+                  disabled={uploading || processing}
                 />
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#16730F] transition-colors cursor-pointer">
                   {uploading ? (
@@ -390,21 +248,23 @@ const BulkCreateJobs = () => {
                       <FaSpinner className="text-4xl text-[#16730F] mx-auto mb-3 animate-spin" />
                       <p className="text-gray-600">Processing {fileName}...</p>
                       <p className="text-xs text-gray-400 mt-2">
-                        Extracting job data
+                        Parsing uploaded file
                       </p>
                     </>
                   ) : (
                     <>
                       {fileName ? (
-                        getFileIcon(fileName)
+                        <FaFileCsv className="text-4xl text-green-600 mx-auto mb-3" />
                       ) : (
                         <FaUpload className="text-4xl text-gray-400 mx-auto mb-3" />
                       )}
                       <p className="text-gray-600">
-                        {fileName ? fileName : "Click or drag file here"}
+                        {fileName
+                          ? fileName
+                          : "Click or drag a CSV or Excel file here"}
                       </p>
                       <p className="text-xs text-gray-400 mt-2">
-                        Supports: CSV, Excel, Word, PDF, TXT
+                        Supported: CSV, TXT, Excel (.xlsx, .xls)
                       </p>
                     </>
                   )}
@@ -418,44 +278,53 @@ const BulkCreateJobs = () => {
                       Ready to publish:
                     </span>
                     <span className="bg-[#16730F] text-white px-3 py-1 rounded-full text-sm font-bold">
-                      {jobs.length} jobs
+                      {validJobs.length} jobs
                     </span>
                   </div>
 
-                  <div className="bg-green-50 rounded-xl p-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-green-800">
-                      <FaCheckCircle />
-                      <span>All jobs validated successfully</span>
+                  {invalidJobs.length > 0 ? (
+                    <div className="bg-amber-50 rounded-xl p-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-amber-800">
+                        <FaExclamationCircle />
+                        <span>
+                          {invalidJobs.length} row
+                          {invalidJobs.length !== 1 ? "s" : ""} need fixes
+                          before publishing
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-green-50 rounded-xl p-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <FaCheckCircle />
+                        <span>All rows validated successfully</span>
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     onClick={handleSubmitAll}
-                    disabled={processing}
+                    disabled={processing || validJobs.length === 0}
                     className="w-full bg-[#16730F] text-white py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {processing ? (
                       <>
                         <FaSpinner className="animate-spin" />
-                        Publishing {jobs.length} jobs...
+                        Publishing {validJobs.length} jobs...
                       </>
                     ) : (
                       <>
                         <FaUpload />
-                        Publish All Jobs (${jobs.length * 10})
+                        Publish {validJobs.length} Job
+                        {validJobs.length !== 1 ? "s" : ""}
                       </>
                     )}
                   </button>
-
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    Total cost: ${jobs.length * 10} / ₦{jobs.length * 10000}
-                  </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Preview Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
@@ -466,7 +335,8 @@ const BulkCreateJobs = () => {
                   </h3>
                   {jobs.length > 0 && (
                     <span className="text-sm text-gray-500">
-                      {jobs.length} job{jobs.length !== 1 ? "s" : ""} loaded
+                      {jobs.length} row{jobs.length !== 1 ? "s" : ""} from{" "}
+                      {fileName || "uploaded file"}
                     </span>
                   )}
                 </div>
@@ -481,37 +351,44 @@ const BulkCreateJobs = () => {
                     No jobs uploaded yet
                   </p>
                   <p className="text-sm text-gray-400 mt-1">
-                    Upload any document to extract job data
-                  </p>
-                  <p className="text-xs text-gray-400 mt-4">
-                    Supported formats: CSV, Excel, Word, PDF, TXT
+                    Download the template, add your job rows, then upload the
+                    file to preview them here
                   </p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                   {jobs.map((job, index) => (
                     <div
-                      key={job.id || index}
-                      className="p-5 hover:bg-gray-50 transition-colors group"
+                      key={job.id}
+                      className={`p-5 transition-colors group ${
+                        job.isValid ? "hover:bg-gray-50" : "bg-amber-50/60"
+                      }`}
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h4 className="font-bold text-gray-900 text-lg">
-                              {job.title}
+                              {job.payload.title || `Row ${job.rowNumber}`}
                             </h4>
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
-                              {job.workMode}
+                              {job.payload.workMode}
                             </span>
                             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
-                              {job.industry}
+                              {job.payload.industry || "No industry"}
                             </span>
+                            {!job.isValid && (
+                              <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-medium">
+                                Row {job.rowNumber}
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
                             <span className="flex items-center gap-1">
                               <FaMapMarkerAlt className="text-xs" />
-                              {job.country}
+                              {[job.payload.state, job.payload.country]
+                                .filter(Boolean)
+                                .join(", ") || "No location"}
                             </span>
                             <span className="flex items-center gap-1">
                               <FaClock className="text-xs" />
@@ -519,12 +396,26 @@ const BulkCreateJobs = () => {
                             </span>
                           </div>
 
+                          {job.payload.about?.trim() && (
+                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                              {job.payload.about}
+                            </p>
+                          )}
+
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {job.payload.responsibilities ||
+                              "No responsibilities provided"}
+                          </p>
+
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {job.responsibilities}
+                            <span className="font-medium text-gray-700">
+                              Roles:
+                            </span>{" "}
+                            {job.payload.roles || "No roles provided"}
                           </p>
 
                           <div className="flex flex-wrap gap-2">
-                            {job.skills.slice(0, 4).map((skill, idx) => (
+                            {job.payload.skills.slice(0, 4).map((skill, idx) => (
                               <span
                                 key={idx}
                                 className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs"
@@ -532,16 +423,22 @@ const BulkCreateJobs = () => {
                                 {skill.skill} • {skill.experience}y
                               </span>
                             ))}
-                            {job.skills.length > 4 && (
+                            {job.payload.skills.length > 4 && (
                               <span className="px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-500">
-                                +{job.skills.length - 4} more
+                                +{job.payload.skills.length - 4} more
                               </span>
                             )}
                           </div>
+
+                          {job.errors.length > 0 && (
+                            <div className="mt-3 text-sm text-amber-800">
+                              {job.errors.join(" • ")}
+                            </div>
+                          )}
                         </div>
                         <button
                           onClick={() => handleRemoveJob(index)}
-                          className="text-gray-400 hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-all"
+                          className="text-gray-400 hover:text-red-500 p-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                           title="Remove job"
                         >
                           <FaTrash />
@@ -555,15 +452,15 @@ const BulkCreateJobs = () => {
               {jobs.length > 0 && (
                 <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Total Jobs</span>
+                    <span className="text-gray-600">Valid Jobs</span>
                     <span className="font-semibold text-gray-900">
-                      {jobs.length}
+                      {validJobs.length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-gray-600">Total Investment</span>
-                    <span className="font-semibold text-[#16730F]">
-                      ${jobs.length * 10} / ₦{jobs.length * 10000}
+                    <span className="text-gray-600">Rows Needing Fixes</span>
+                    <span className="font-semibold text-amber-700">
+                      {invalidJobs.length}
                     </span>
                   </div>
                 </div>

@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import AboutPageHeader from "../../components/AboutPageHeader";
 import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import {
   Mail,
   Phone,
-  MapPin,
   Send,
   User,
   AtSign,
@@ -13,13 +11,16 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import axiosInstance from "../../utils/axiosInstance";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: "",
+    website: "",
   });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -28,15 +29,51 @@ export default function Contact() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (sending) return;
+
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const message = formData.message.trim();
+
+    if (!name || !email || !message) {
+      toast.error("Name, email, and message are required.");
+      return;
+    }
+    if (message.length < 10) {
+      toast.error("Message must be at least 10 characters.");
+      return;
+    }
+
     setSending(true);
-    setTimeout(() => {
-      setSending(false);
+    try {
+      const { data } = await axiosInstance.post("/api/contact", {
+        name,
+        email,
+        message,
+        website: formData.website || "",
+      });
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Failed to send message");
+      }
+
       setSent(true);
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", message: "", website: "" });
+      toast.success(
+        data.message || "Message sent. Our team will get back to you soon.",
+      );
       setTimeout(() => setSent(false), 4000);
-    }, 1500);
+    } catch (err) {
+      const messageText =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to send message. Please try again.";
+      toast.error(messageText);
+    } finally {
+      setSending(false);
+    }
   };
 
   const socials = [
@@ -49,7 +86,7 @@ export default function Contact() {
     {
       href: "https://x.com",
       icon: FaXTwitter,
-      label: "X (Twitter)",
+      label: "Twitter",
       hoverColor: "hover:bg-gray-900 hover:text-white hover:border-gray-900",
     },
     {
@@ -67,43 +104,60 @@ export default function Contact() {
   ];
 
   return (
-    <NewsFeedLayout scrollable={false} showSidebars={false}>
+    <NewsFeedLayout showSidebars={false}>
       {/* <AboutPageHeader headerText="CONTACT US" /> */}
-      <main className="bg-gradient-to-b from-gray-50 to-white min-h-screen">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A3E32] tracking-tight">
+      <main className="bg-gradient-to-b from-gray-50 to-white min-h-screen min-w-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-6 sm:pb-8 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1A3E32] tracking-tight">
             Get in Touch
           </h2>
-          <p className="text-gray-500 mt-3 max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
+          <p className="text-gray-500 mt-3 max-w-xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-1">
             Have a question, feedback, or partnership inquiry? We'd love to hear
             from you. Fill out the form below and our team will respond within
             24 hours.
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
-                <div className="bg-[#1A3E32] px-8 py-6 relative overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
+            <div className="lg:col-span-3 min-w-0">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
+                <div className="bg-[#1A3E32] px-5 py-5 sm:px-8 sm:py-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                        <Send className="w-5 h-5 text-[#6B8E23]" />
-                      </div>
-                      <h3 className="text-white font-bold text-xl">
+                  <div className="relative flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                      <Send className="w-5 h-5 text-[#6B8E23]" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-white font-bold text-lg sm:text-xl">
                         Send a Message
                       </h3>
+                      <p className="text-green-100/70 text-sm mt-1">
+                        We typically respond within a few hours
+                      </p>
                     </div>
-                    <p className="text-green-100/70 text-sm mt-1 ml-[52px]">
-                      We typically respond within a few hours
-                    </p>
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="relative p-5 sm:p-8 space-y-5 sm:space-y-6">
+                  {/* Honeypot — leave empty; hidden from real users */}
+                  <div
+                    className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
+                    aria-hidden="true"
+                  >
+                    <label htmlFor="contact-website">Website</label>
+                    <input
+                      id="contact-website"
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={handleChange}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-400" />
@@ -115,6 +169,7 @@ export default function Contact() {
                       value={formData.name}
                       onChange={handleChange}
                       required
+                      maxLength={200}
                       placeholder="Enter your full name"
                       className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 focus:border-[#1A3E32] focus:bg-white transition-all"
                     />
@@ -131,6 +186,7 @@ export default function Contact() {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      maxLength={255}
                       placeholder="you@example.com"
                       className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 focus:border-[#1A3E32] focus:bg-white transition-all"
                     />
@@ -146,6 +202,8 @@ export default function Contact() {
                       value={formData.message}
                       onChange={handleChange}
                       required
+                      minLength={10}
+                      maxLength={5000}
                       rows={5}
                       placeholder="Tell us how we can help..."
                       className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-900 placeholder-gray-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 focus:border-[#1A3E32] focus:bg-white transition-all"
@@ -190,24 +248,24 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 p-6 space-y-1">
-                <h4 className="text-lg font-bold text-[#1A3E32] mb-5">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 p-5 sm:p-6 space-y-1">
+                <h4 className="text-base sm:text-lg font-bold text-[#1A3E32] mb-4 sm:mb-5">
                   Contact Information
                 </h4>
 
                 <a
                   href="mailto:complaint@bejite.com"
-                  className="flex items-start gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors group"
+                  className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center shrink-0 group-hover:bg-[#1A3E32] group-hover:border-[#1A3E32] transition-colors">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center shrink-0 group-hover:bg-[#1A3E32] group-hover:border-[#1A3E32] transition-colors">
                     <Mail className="w-5 h-5 text-[#16730F] group-hover:text-white transition-colors" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Email
                     </p>
-                    <p className="text-sm font-semibold text-[#1A3E32] mt-0.5 group-hover:underline">
+                    <p className="text-sm font-semibold text-[#1A3E32] mt-0.5 group-hover:underline break-all">
                       complaint@bejite.com
                     </p>
                   </div>
@@ -215,12 +273,12 @@ export default function Contact() {
 
                 <a
                   href="tel:+2348068735953"
-                  className="flex items-start gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors group"
+                  className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 group-hover:bg-[#1A3E32] group-hover:border-[#1A3E32] transition-colors">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 group-hover:bg-[#1A3E32] group-hover:border-[#1A3E32] transition-colors">
                     <Phone className="w-5 h-5 text-blue-600 group-hover:text-white transition-colors" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Phone
                     </p>
@@ -230,11 +288,11 @@ export default function Contact() {
                   </div>
                 </a>
 
-                <div className="flex items-start gap-4 p-4 rounded-2xl">
-                  <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+                <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
                     <Clock className="w-5 h-5 text-amber-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Response Time
                     </p>
@@ -248,24 +306,24 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 p-6">
-                <h4 className="text-lg font-bold text-[#1A3E32] mb-4">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 p-5 sm:p-6">
+                <h4 className="text-base sm:text-lg font-bold text-[#1A3E32] mb-3 sm:mb-4">
                   Follow Us
                 </h4>
-                <p className="text-sm text-gray-500 mb-5">
+                <p className="text-sm text-gray-500 mb-4 sm:mb-5">
                   Stay connected with the latest updates and community news.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {socials.map(({ href, icon: Icon, label, hoverColor }) => (
                     <a
                       key={label}
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 text-gray-600 transition-all duration-200 ${hoverColor} group`}
+                      className={`flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-xl border border-gray-200 text-gray-600 transition-all duration-200 min-w-0 ${hoverColor} group`}
                     >
                       <Icon className="w-5 h-5 shrink-0" />
-                      <span className="text-sm font-medium">{label}</span>
+                      <span className="text-sm font-medium truncate">{label}</span>
                     </a>
                   ))}
                 </div>

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { API_URL } from "../../config";
 import { LuSend } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
+import { getEmployerDashboard } from "../../services/employerApi";
 
 const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
   const [formData, setFormData] = useState({
+    job_id: "",
     job_title: "",
     interview_date: "",
     interview_time: "",
@@ -13,23 +15,70 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
     meeting_link: "",
     message: "",
   });
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (candidate) {
-      setFormData((prev) => ({
+    if (!isOpen) return;
+
+    let cancelled = false;
+    const loadJobs = async () => {
+      setJobsLoading(true);
+      try {
+        // Same source as Recruitment Management (not job-board "active" only).
+        // Closed / expired exercises still need to accept invites into the pipeline.
+        const response = await getEmployerDashboard({
+          status: "all",
+          listing_kind: "recruitment",
+        });
+        const list = response?.data?.jobs || [];
+        if (!cancelled) setJobs(list);
+      } catch {
+        if (!cancelled) setJobs([]);
+      } finally {
+        if (!cancelled) setJobsLoading(false);
+      }
+    };
+    loadJobs();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!candidate || !isOpen) return;
+
+    setFormData((prev) => {
+      const hint = candidate.jobTitle || "";
+      const matched = jobs.find(
+        (j) =>
+          String(j.title || "").toLowerCase() === String(hint).toLowerCase(),
+      );
+      return {
         ...prev,
-        job_title: candidate.jobTitle || "",
-      }));
-    }
-  }, [candidate]);
+        job_id: matched ? String(matched.id) : prev.job_id,
+        job_title: matched?.title || hint || prev.job_title,
+      };
+    });
+  }, [candidate, isOpen, jobs]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleJobSelect = (e) => {
+    const jobId = e.target.value;
+    const selected = jobs.find((j) => String(j.id) === String(jobId));
+    setFormData((prev) => ({
+      ...prev,
+      job_id: jobId,
+      job_title: selected?.title || prev.job_title,
     }));
   };
 
@@ -48,7 +97,10 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("authToken") || localStorage.getItem("token");
+      const token =
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token");
 
       if (!token) {
         setError("You must be logged in to send invitations");
@@ -83,12 +135,14 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
         credentials: "include",
         body: JSON.stringify({
           candidate_id: candidate.id,
-          job_title: formData.job_title,
+          job_id: formData.job_id ? Number(formData.job_id) : null,
+          job_title: formData.job_title || null,
           interview_date: formData.interview_date,
           interview_time: formData.interview_time,
           interview_type: formData.interview_type,
           venue: formData.interview_type === "offline" ? formData.venue : null,
-          meeting_link: formData.interview_type === "online" ? formData.meeting_link : null,
+          meeting_link:
+            formData.interview_type === "online" ? formData.meeting_link : null,
           message: formData.message,
         }),
       });
@@ -104,6 +158,7 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
       }
 
       setFormData({
+        job_id: "",
         job_title: "",
         interview_date: "",
         interview_time: "",
@@ -126,8 +181,13 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto nfl-scroll scroll-smooth">
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-[#16730F]">Send Interview Invite</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
+          <h2 className="text-xl font-semibold text-[#16730F]">
+            Send Interview Invite
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full"
+          >
             <RxCross1 className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -155,20 +215,47 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-[#16730F] mb-1">Job Title</label>
-            <input
-              type="text"
-              name="job_title"
-              value={formData.job_title}
-              onChange={handleChange}
-              placeholder="Enter job title"
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]"
-            />
+            <label className="block text-sm font-medium text-[#16730F] mb-1">
+              Recruitment / Job{" "}
+              <span className="font-normal text-gray-500">(optional)</span>
+            </label>
+            <select
+              name="job_id"
+              value={formData.job_id}
+              onChange={handleJobSelect}
+              disabled={jobsLoading}
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F] bg-white"
+            >
+              <option value="">
+                {jobsLoading
+                  ? "Loading recruitments…"
+                  : "Select a recruitment exercise (optional)"}
+              </option>
+              {jobs.map((job) => {
+                const closed =
+                  job.status !== "active" ||
+                  String(job.dbStatus || "").toLowerCase() === "closed";
+                return (
+                  <option key={job.id} value={job.id}>
+                    {job.title}
+                    {closed ? " (Closed)" : ""}
+                  </option>
+                );
+              })}
+            </select>
+            {jobs.length === 0 && !jobsLoading && (
+              <p className="text-xs text-gray-500 mt-1">
+                No recruitments found. You can still send the invite without
+                linking one.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#16730F] mb-1">Interview Date *</label>
+              <label className="block text-sm font-medium text-[#16730F] mb-1">
+                Interview Date *
+              </label>
               <input
                 type="date"
                 name="interview_date"
@@ -179,7 +266,9 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#16730F] mb-1">Interview Time *</label>
+              <label className="block text-sm font-medium text-[#16730F] mb-1">
+                Interview Time *
+              </label>
               <input
                 type="time"
                 name="interview_time"
@@ -192,7 +281,9 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#16730F] mb-2">Interview Type *</label>
+            <label className="block text-sm font-medium text-[#16730F] mb-2">
+              Interview Type *
+            </label>
             <div className="flex gap-4">
               <button
                 type="button"
@@ -221,7 +312,9 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
 
           {formData.interview_type === "offline" ? (
             <div>
-              <label className="block text-sm font-medium text-[#16730F] mb-1">Venue Address *</label>
+              <label className="block text-sm font-medium text-[#16730F] mb-1">
+                Venue Address *
+              </label>
               <input
                 type="text"
                 name="venue"
@@ -234,7 +327,9 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-[#16730F] mb-1">Meeting Link *</label>
+              <label className="block text-sm font-medium text-[#16730F] mb-1">
+                Meeting Link *
+              </label>
               <input
                 type="url"
                 name="meeting_link"
@@ -248,13 +343,15 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-[#16730F] mb-1">Custom Message (Optional)</label>
+            <label className="block text-sm font-medium text-[#16730F] mb-1">
+              Message (optional)
+            </label>
             <textarea
               name="message"
               value={formData.message}
               onChange={handleChange}
-              placeholder="Write a custom message to the candidate..."
               rows={3}
+              placeholder="Add a personal note..."
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F] resize-none"
             />
           </div>
@@ -263,23 +360,17 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 px-4 border-2 border-[#EB5757] text-[#EB5757] rounded-xl font-medium hover:bg-red-50 transition-colors"
+              className="flex-1 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 px-4 bg-[#16730F] text-white rounded-xl font-medium hover:bg-[#125a0c] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 bg-[#16730F] text-white rounded-xl font-medium hover:bg-[#125B0C] disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <LuSend className="w-4 h-4" />
-                  Send Invite
-                </>
-              )}
+              <LuSend className="w-4 h-4" />
+              {loading ? "Sending…" : "Send Invite"}
             </button>
           </div>
         </form>

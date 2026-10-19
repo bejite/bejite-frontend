@@ -52,7 +52,6 @@ function ChatsRight({ onBack }) {
           <div className="bg-[#16730F] px-6 py-6 space-y-6 h-full">
             {[
               { label: "Email", value: "osakweprsca@gmail.com" },
-              { label: "Phone", value: "+234 7061410614" },
               { label: "Website", value: "https://linktree.com" },
             ].map((item, idx) => (
               <div key={idx}>

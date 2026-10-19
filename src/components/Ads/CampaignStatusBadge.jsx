@@ -16,7 +16,8 @@ export default function CampaignStatusBadge({ status }) {
   const config = statusConfig[status] || statusConfig.draft;
   return (
     <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${config.className}`}
+      className={`inline-flex max-w-full px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap truncate ${config.className}`}
+      title={config.label}
     >
       {config.label}
     </span>

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { FaTimes } from 'react-icons/fa';
-import { getUser, isAuthenticated } from '../utils/tokenManager';
+import { getAccessToken, getUser, isAuthenticated } from '../utils/tokenManager';
 import useProfileCompletionStatus from '../hooks/useProfileCompletionStatus';
 
-const DISMISS_KEY = 'profileCompletionReminderDismissed';
+const REMINDER_DISMISS_PREFIX = 'bejite_profile_update_dismissed_';
 
 const SKIP_EXACT = new Set([
   '/',
@@ -15,6 +16,7 @@ const SKIP_EXACT = new Set([
   '/confirmpassword',
 ]);
 
+/** Onboarding / auth flows — hide popup here, but still show on main app (e.g. news-feed). */
 const SKIP_PREFIXES = [
   '/auth/',
   '/admin',
@@ -28,6 +30,8 @@ const SKIP_PREFIXES = [
   '/job-type',
   '/save-progress',
   '/edit-profile',
+  '/individual/',
+  '/corporate/',
   '/jobseeker-option',
   '/employer-option',
   '/jobconnection',
@@ -41,77 +45,147 @@ function shouldSkipPath(pathname) {
   return SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
-function getProfileSetupPath(role) {
-  if (role === 'recruiter') {
+function normalizeRole(role) {
+  return String(role || '').trim().toLowerCase();
+}
+
+function resolveRecruiterMode(user) {
+  const mode = String(user?.mode || '').toLowerCase();
+  if (mode === 'individual' || mode === 'corporate') return mode;
+  return null;
+}
+
+function getProfileSetupPath(role, mode) {
+  if (role === 'recruiter' || role === 'employer') {
+    if (mode === 'individual') {
+      return '/edit-profile/individual/basic-details';
+    }
     return '/edit-profile/recruiter/basic-details';
   }
   if (role === 'jobseeker') {
-    return '/resume';
+    return '/edit-profile/bio';
   }
   return '/complete-signup';
 }
 
+function readDismissedForUser(userId) {
+  if (!userId) return false;
+  try {
+    return localStorage.getItem(`${REMINDER_DISMISS_PREFIX}${userId}`) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function isFeatureTourActive() {
+  try {
+    return sessionStorage.getItem('bejite_feature_tour_active') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function useFeatureTourSuppressed() {
+  const [suppressed, setSuppressed] = useState(() => isFeatureTourActive());
+
+  useEffect(() => {
+    const onTour = (e) => {
+      setSuppressed(Boolean(e?.detail?.active) || isFeatureTourActive());
+    };
+    window.addEventListener('bejite:feature-tour', onTour);
+    return () => window.removeEventListener('bejite:feature-tour', onTour);
+  }, []);
+
+  return suppressed;
+}
+
 /**
- * Fixed corner popup reminding authenticated users to complete their profile.
+ * Fixed corner popup reminding authenticated users to update/complete their profile.
+ *
+ * - Incomplete profile: shows on app routes if profileCompleted !== true.
+ * - When user clicks cancel / "Later": permanently dismisses for this user via localStorage.
+ * - If user logs in as another user: checks that user's status and shows if incomplete.
+ * - Complete profile: hides automatically when profileCompleted === true.
  */
 export default function ProfileCompletionReminder() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [dismissed, setDismissed] = useState(
-    () => sessionStorage.getItem(DISMISS_KEY) === '1',
-  );
+  const reduxToken = useSelector((state) => state.auth?.token);
+  const reduxUser = useSelector((state) => state.auth?.user);
+  const [dismissed, setDismissed] = useState(false);
+  const tourActive = useFeatureTourSuppressed();
 
+  const token = reduxToken || getAccessToken() || '';
+  const authenticated = Boolean(token) || isAuthenticated();
   const onAppRoute = !shouldSkipPath(location.pathname);
-  const authenticated = isAuthenticated();
+
   const { profileCompleted, loading } = useProfileCompletionStatus({
     enabled: authenticated && onAppRoute,
+    authKey: token || null,
   });
 
-  const user = getUser();
-  const role = user?.role;
+  const user = reduxUser || getUser();
+  const role = normalizeRole(user?.role);
+  const userId = user?._id || user?.id || user?.email;
+  const recruiterMode =
+    role === 'recruiter' || role === 'employer'
+      ? resolveRecruiterMode(user)
+      : null;
+
+  // Check persistent localStorage dismissal for this user
+  const dismissedForUser = useMemo(() => {
+    return readDismissedForUser(userId) || dismissed;
+  }, [userId, dismissed]);
 
   const visible = useMemo(() => {
-    if (!authenticated || !onAppRoute || dismissed || loading) return false;
+    if (!authenticated || !onAppRoute || loading) return false;
     if (!role) return false;
-    return profileCompleted !== true;
+    if (profileCompleted === true) return false;
+    if (dismissedForUser) return false;
+    if (tourActive) return false;
+    return true;
   }, [
     authenticated,
     onAppRoute,
-    dismissed,
     loading,
     role,
     profileCompleted,
+    dismissedForUser,
+    tourActive,
   ]);
 
-  useEffect(() => {
-    if (profileCompleted === true) {
-      sessionStorage.removeItem(DISMISS_KEY);
+  const handleDismiss = () => {
+    if (userId) {
+      try {
+        localStorage.setItem(`${REMINDER_DISMISS_PREFIX}${userId}`, 'true');
+      } catch {
+        /* ignore */
+      }
     }
-  }, [profileCompleted]);
+    setDismissed(true);
+  };
 
   if (!visible) return null;
 
-  const setupPath = getProfileSetupPath(role);
-  const title =
-    role === 'recruiter'
-      ? 'Complete your recruiter profile'
-      : 'Complete your jobseeker profile';
-  const description =
-    role === 'recruiter'
-      ? 'Add your company details so candidates can find and trust you.'
-      : 'Add your bio, skills, and experience to get better job matches.';
-
-  const handleDismiss = () => {
-    sessionStorage.setItem(DISMISS_KEY, '1');
-    setDismissed(true);
-  };
+  const setupPath = getProfileSetupPath(role, recruiterMode);
+  const isIndividualRecruiter = recruiterMode === 'individual';
+  const isRecruiter = role === 'recruiter' || role === 'employer';
+  const title = isRecruiter
+    ? 'Update your recruiter profile'
+    : 'Update your jobseeker profile';
+  const description = isIndividualRecruiter
+    ? 'Finish every profile step and upload your ID to match Bejite\'s hiring process. Skip does not count as complete.'
+    : isRecruiter
+      ? 'Finish every company step and upload your registration document to match Bejite\'s hiring process. Skip does not count as complete.'
+      : 'Update your profile to match Bejite\'s hiring process for recruiters. Finish every CV step, including photo and certificate uploads. Skip does not count as complete.';
 
   return (
     <div
       role="dialog"
       aria-live="polite"
-      aria-label="Profile completion reminder"
-      className="fixed bottom-4 right-4 z-[100] w-[min(100vw-2rem,22rem)] rounded-xl border border-[#16730F]/30 bg-white p-4 shadow-lg"
+      aria-label="Profile update reminder"
+      data-testid="profile-completion-reminder"
+      className="fixed bottom-3 right-3 left-3 sm:left-auto sm:right-4 sm:bottom-4 z-[90] sm:w-[22rem] max-w-full rounded-xl border border-[#16730F]/30 bg-white p-3.5 sm:p-4 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-200"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -123,7 +197,7 @@ export default function ProfileCompletionReminder() {
         <button
           type="button"
           onClick={handleDismiss}
-          className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer transition-colors"
           aria-label="Dismiss reminder"
         >
           <FaTimes size={14} />
@@ -133,14 +207,14 @@ export default function ProfileCompletionReminder() {
         <button
           type="button"
           onClick={() => navigate(setupPath)}
-          className="flex-1 rounded-lg bg-[#16730F] px-3 py-2 text-sm font-medium text-white hover:bg-[#125c0c]"
+          className="flex-1 rounded-lg bg-[#16730F] px-3 py-2 text-sm font-medium text-white hover:bg-[#125c0c] transition-colors cursor-pointer text-center"
         >
-          Complete profile
+          Update profile
         </button>
         <button
           type="button"
           onClick={handleDismiss}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
         >
           Later
         </button>

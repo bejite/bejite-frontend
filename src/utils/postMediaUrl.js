@@ -1,8 +1,9 @@
-import { profilePhotoUrl } from './profilePhotoUrl';
+import { ensureCloudinaryHttps, profilePhotoUrl } from './profilePhotoUrl';
 
 /** Resolve post media URLs (Cloudinary, relative paths, etc.). */
 export function resolvePostMediaUrl(url) {
-  return profilePhotoUrl(url) || (url ? String(url).trim() : undefined);
+  const resolved = profilePhotoUrl(url) || (url ? String(url).trim() : undefined);
+  return resolved ? ensureCloudinaryHttps(resolved) : undefined;
 }
 
 /** Derive a poster frame for videos when thumbnailUrl is missing (Cloudinary). */
@@ -17,7 +18,9 @@ export function getVideoPosterUrl(item) {
     const [origin, rest] = videoUrl.split('/video/upload/');
     if (!rest) return undefined;
     const framePath = rest.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
-    return `${origin}/video/upload/so_0,w_800,h_450,c_fill/${framePath}`;
+    return ensureCloudinaryHttps(
+      `${origin}/video/upload/so_0,w_800,h_450,c_fill/${framePath}`,
+    );
   }
 
   return undefined;

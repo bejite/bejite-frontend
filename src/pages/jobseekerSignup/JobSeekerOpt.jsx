@@ -85,7 +85,7 @@ const JobSeekerOpt = () => {
           showInfo={showActiveInfo}
           setShowInfo={setShowActiveInfo}
           containerRef={activeRef}
-          onClick={() => handleSelectMode("active_member")}
+          onClick={() => handleSelectMode("active_jobseeker")}
         />
 
         <MemberCard
@@ -107,7 +107,7 @@ const JobSeekerOpt = () => {
           showInfo={showInactiveInfo}
           setShowInfo={setShowInactiveInfo}
           containerRef={inactiveRef}
-          onClick={() => handleSelectMode("inactive_member")}
+          onClick={() => handleSelectMode("inactive_jobseeker")}
         />
       </div>
     </div>

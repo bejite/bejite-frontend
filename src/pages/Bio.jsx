@@ -28,16 +28,32 @@ const countries = [
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     nickname: "", phone: "", gender: "", maritalStatus: "",
-    age: "", country: "", street: "", city: "", tribe: "", zip: "", bio: "",
+    age: "", dob: "", country: "", street: "", city: "", tribe: "", zip: "", bio: "",
   });
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) setImagePreview(URL.createObjectURL(file));
   };
 
-  const isFormComplete = Object.values(formData).every((v) => v.trim() !== "") && imagePreview;
+  const requiredFields = [
+    "nickname",
+    "phone",
+    "gender",
+    "maritalStatus",
+    "country",
+    "street",
+    "city",
+    "bio",
+  ];
+
+  const isFormComplete =
+    requiredFields.every((key) => {
+      const v = formData[key];
+      const str = typeof v === "string" ? v : String(v || "");
+      return str.trim() !== "";
+    }) && imagePreview;
 
   return (
     <div className="bg-white">
@@ -46,14 +62,14 @@ const countries = [
       <StepTabs steps={steps} currentStep={currentStep} />
       <ProgressBar currentStep={currentStep} totalSteps={steps.length} />
 
-      <section className="max-w-3xl mx-auto px-4 mt-4 text-[#E63357] text-2xl font-semibold">
+      <section className="max-w-3xl mx-auto px-4 text-[#E63357] text-2xl font-semibold">
         Bio/Personal Information
       </section>
       <p className="max-w-3xl mx-auto px-4 text-[#333] text-[15px]">
         Tell us who you are. This is the first impression employers get.
       </p>
 
-      <div className="max-w-4xl mx-auto mt-6 border-2 border-[#E0E0E0] flex flex-col lg:flex-row gap-8 p-4">
+      <div className="max-w-4xl mx-auto border-2 border-[#E0E0E0] flex flex-col lg:flex-row gap-8 p-4">
         <ImageUpload
           imagePreview={imagePreview}
           handleImageChange={handleImageChange}

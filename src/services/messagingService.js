@@ -1,15 +1,46 @@
 import axiosInstance from '../utils/axiosInstance';
 import { filterAdminUsersFromSearch } from '../utils/filterAdminUsers';
+import { getUploadSizeError, maxBytesForChatFile } from '../utils/uploadLimits';
+import { notifyChatConversationUpdated } from '../utils/headerBadgeEvents';
 
 // Messaging API service
 const messagingService = {
   // Get user conversations
-  async getConversations() {
+  async getConversations({ limit = 20, cursor } = {}) {
     try {
-      const response = await axiosInstance.get('/conversations');
-      return response.data.conversations || [];
+      const response = await axiosInstance.get('/conversations', {
+        params: {
+          limit,
+          ...(cursor ? { cursor } : {}),
+        },
+      });
+      return {
+        conversations: response.data.conversations || [],
+        nextCursor: response.data.next_cursor ?? null,
+        hasMore: Boolean(response.data.has_more),
+      };
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      throw error;
+    }
+  },
+
+  async getConversation(conversationId) {
+    try {
+      const response = await axiosInstance.get(`/conversations/${conversationId}`);
+      return response.data.conversation || null;
+    } catch (error) {
+      console.error('Error fetching conversation:', error);
+      throw error;
+    }
+  },
+
+  async hideConversation(conversationId) {
+    try {
+      const response = await axiosInstance.delete(`/conversations/${conversationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error hiding conversation:', error);
       throw error;
     }
   },
@@ -51,13 +82,19 @@ async startConversation(otherUserId) {
     }
   },
 
-  // Upload chat attachment (image, video, audio, document)
-  async uploadChatMedia(dataUrl, kind = 'image') {
+  // Upload chat attachment (multipart file)
+  async uploadChatMedia(file, kind = 'image') {
     try {
-      const response = await axiosInstance.post('/messages/upload', {
-        dataUrl,
-        kind,
-      });
+      const sizeError = getUploadSizeError(file, maxBytesForChatFile(file));
+      if (sizeError) {
+        const err = new Error(sizeError);
+        err.response = { data: { error: sizeError, message: sizeError } };
+        throw err;
+      }
+      const form = new FormData();
+      form.append('file', file);
+      form.append('kind', kind);
+      const response = await axiosInstance.post('/messages/upload', form);
       return response.data;
     } catch (error) {
       console.error('Error uploading chat media:', error);
@@ -66,7 +103,7 @@ async startConversation(otherUserId) {
   },
 
   // Send a message
-  async sendMessage(conversationId, content, imageUrl = null) {
+  async sendMessage(conversationId, content, imageUrl = null, attachment = null, replyToMessageId = null) {
     try {
       const messageData = {
         conversation_id: conversationId,
@@ -74,6 +111,14 @@ async startConversation(otherUserId) {
       };
       if (imageUrl) {
         messageData.image_url = imageUrl;
+      }
+      if (attachment?.kind) {
+        messageData.attachment_kind = attachment.kind;
+        messageData.attachment_name = attachment.name || null;
+        messageData.attachment_mime = attachment.mime || null;
+      }
+      if (replyToMessageId) {
+        messageData.reply_to_message_id = replyToMessageId;
       }
       const response = await axiosInstance.post('/messages', messageData);
       return response.data.message;
@@ -122,6 +167,7 @@ async startConversation(otherUserId) {
   async markConversationRead(conversationId) {
     try {
       const response = await axiosInstance.post(`/conversations/${conversationId}/read`);
+      notifyChatConversationUpdated({ conversationId });
       return response.data;
     } catch (error) {
       console.error('Error marking conversation as read:', error);

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import axiosInstance from '../utils/axiosInstance';
 import { API_URL } from "../config";
+import { apiErrorMessage } from '../utils/uploadLimits';
 
 const BASE_URL = API_URL; 
 
@@ -9,10 +10,8 @@ const BASE_URL = API_URL;
 const CreateBio = () => {
     const { id: userId } = useLocalStorage('user'); 
 
-    // Helper for toast.promise error structure
     const handleApiError = (error) => {
-        const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
-        throw errorMessage;
+        throw apiErrorMessage(error);
     };
 
     // posting the main bio data (JSON)

@@ -9,6 +9,7 @@ import axiosInstance from "../../../utils/axiosInstance";
 import Loader from "../../../components/ui/Loader";
 import useAuth from "../../../hooks/useAuth";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
+import FormLabel from "../../../components/forms/FormLabel";
 import {
   FaLinkedin,
   FaTwitter,
@@ -138,6 +139,7 @@ function Link() {
       placeholder: "linkedin.com/in/username",
       bgColor: "bg-[#0077B5]/10",
       borderColor: "hover:border-[#0077B5] focus:border-[#0077B5]",
+      tooltip: "Your LinkedIn profile URL to showcase your professional network and recommendations",
     },
     {
       name: "twitter",
@@ -147,6 +149,7 @@ function Link() {
       placeholder: "x.com/username",
       bgColor: "bg-[#1DA1F2]/10",
       borderColor: "hover:border-[#1DA1F2] focus:border-[#1DA1F2]",
+      tooltip: "Your Twitter/X handle or profile link to highlight your industry presence",
     },
     {
       name: "instagram",
@@ -156,6 +159,7 @@ function Link() {
       placeholder: "instagram.com/username",
       bgColor: "bg-[#E4405F]/10",
       borderColor: "hover:border-[#E4405F] focus:border-[#E4405F]",
+      tooltip: "Your professional or creative Instagram profile link",
     },
     {
       name: "portfolio",
@@ -164,7 +168,8 @@ function Link() {
       iconColor: "text-[#4A5568]",
       placeholder: "yourwebsite.com",
       bgColor: "bg-gray-100",
-      borderColor: "hover:border-gray-400 focus:border-[#1A3E32]",
+      borderColor: "hover:border-gray-400 focus:border-[#16730F]",
+      tooltip: "Your personal website, GitHub, Behance, or online portfolio link",
     },
   ];
 
@@ -185,10 +190,10 @@ function Link() {
       <div className="min-h-screen pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1A3E32] to-[#2A5E4A] rounded-2xl shadow-lg mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#16730F] to-[#145a0c] rounded-2xl shadow-lg mb-4">
               <FaLink className="text-3xl text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-[#1A3E32] mb-2">
+            <h1 className="text-3xl font-bold text-[#16730F] mb-2">
               Professional Links
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -198,7 +203,7 @@ function Link() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#1A3E32] to-[#2A5E4A] px-6 py-4">
+            <div className="bg-gradient-to-r from-[#16730F] to-[#145a0c] px-6 py-4">
               <h2 className="text-white text-lg font-semibold flex items-center gap-2">
                 <FaLink className="text-white/80" />
                 Add Your Links
@@ -213,12 +218,12 @@ function Link() {
                 const FieldIcon = field.icon;
                 return (
                 <div key={field.name} className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    {field.label}
-                    <span className="text-gray-400 text-xs font-normal ml-2">
-                      (Optional)
-                    </span>
-                  </label>
+                  <FormLabel
+                    label={field.label}
+                    optional={true}
+                    tooltip={field.tooltip}
+                    className="text-gray-700 text-sm mb-2"
+                  />
                   <div className="relative">
                     <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${field.iconColor} transition-all duration-200 group-focus-within:scale-110`}>
                       <FieldIcon className="text-xl" />
@@ -236,7 +241,7 @@ function Link() {
                     />
                     {formLinks[field.name] && !errors[field.name] && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-[#16730F] rounded-full flex items-center justify-center">
                           <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -253,7 +258,7 @@ function Link() {
                     </p>
                   )}
                   {!errors[field.name] && formLinks[field.name] && (
-                    <p className="text-green-600 text-xs mt-2 flex items-center gap-1">
+                    <p className="text-[#16730F] text-xs mt-2 flex items-center gap-1">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>

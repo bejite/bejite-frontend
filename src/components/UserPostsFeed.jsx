@@ -8,8 +8,9 @@ import {
   unsavePost,
   updatePost,
   deletePost,
+  voteOnPoll,
 } from "../services/postsApi";
-import { recordPostShare } from "../utils/postShare";
+import { recordPostShare, togglePostRepost } from "../utils/postShare";
 import PostCard from "./feed/PostCard";
 import FeedLoadMoreButton from "./FeedLoadMoreButton";
 
@@ -146,12 +147,20 @@ const UserPostsFeed = ({
     try {
       await recordPostShare(postId);
       const current = posts.find((post) => post.id === postId);
-      patchPost(postId, {
-        sharesCount: (current?.sharesCount || 0) + 1,
-      });
+      if (!current?.sharedByMe) {
+        patchPost(postId, {
+          sharesCount: (current?.sharesCount || 0) + 1,
+          sharedByMe: true,
+        });
+      }
     } catch (err) {
       console.error("Error sharing post:", err);
     }
+  };
+
+  const handleRepost = async (postId, currentlyShared, quote = null, scheduledAt = null) => {
+    await togglePostRepost(postId, currentlyShared, quote, scheduledAt);
+    await fetchPosts(true);
   };
 
   const handleUpdatePost = async (postId, postData) => {
@@ -162,6 +171,14 @@ const UserPostsFeed = ({
   const handleDeletePost = async (postId) => {
     await deletePost(postId);
     setPosts((prev) => prev.filter((post) => post.id !== postId));
+  };
+
+  const handleVotePoll = async (postId, optionId) => {
+    const data = await voteOnPoll(postId, optionId);
+    if (data?.poll) {
+      patchPost(postId, { poll: data.poll });
+    }
+    return data;
   };
 
   const visiblePosts = useMemo(() => {
@@ -234,14 +251,16 @@ const UserPostsFeed = ({
         <div className="space-y-4">
           {visiblePosts.map((post) => (
             <PostCard
-              key={post.id}
+              key={post.feedItemKey || post.id}
               post={post}
               currentUserId={currentUserId}
               onLike={handleLike}
               onSave={handleSave}
               onShare={handleShare}
+              onRepost={handleRepost}
               onUpdate={handleUpdatePost}
               onDelete={handleDeletePost}
+              onVotePoll={handleVotePoll}
             />
           ))}
 

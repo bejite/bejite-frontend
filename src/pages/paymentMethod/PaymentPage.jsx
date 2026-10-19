@@ -95,15 +95,17 @@ export default function PaymentPage() {
     {
       name: "Free Plan",
       subtitle:
-        "First-Time Users: Enjoy 2 free searches to explore our platform",
+        "Monthly free ASE quota for employers — no card required",
       price: "0",
       description:
-        "Test-drive our AI-powered recruitment engine. Access full candidate profiles and CV.",
-      buttonLabel: "Start Free Trial",
-      sectionLabel: "Limitations",
+        "Use Bejite recruiting each month with included searches, job posts, recruitment exercises, and AdPro credit.",
+      buttonLabel: "Use Free Quota",
+      sectionLabel: "Includes each month",
       items: [
-        "Free searches expire in 7 days.",
-        "Maximum 5 candidate views per search.",
+        "5 ASE searches (20 results each).",
+        "5 job posts and 2 recruitment exercises.",
+        "₦5,000 AdPro credit.",
+        "When used up, wait until next month or subscribe to continue.",
       ],
     },
     {
@@ -163,7 +165,8 @@ export default function PaymentPage() {
               <p className={`${planSubtitleClass} mt-2`}>{plan.subtitle}</p>
               <p className={priceClass}>
                 {plan.price}
-                <span className={priceUnitClass}>us$</span>
+                {/* USD not activated yet — <span className={priceUnitClass}>us$</span> */}
+                <span className={priceUnitClass}>₦</span>
               </p>
               <p className={descriptionClass}>{plan.description}</p>
               <button

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import NavigationButtons from "../../components/NavigationButtons";
 import useRecruiterProfile from "../../services/recruiterProfile";
 import OnboardingLayout from "../../components/layout/onboardingLayout";
 import { COUNTRY_OPTIONS } from "../../data/jobTypeData";
+import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 import {
   RecruiterFormShell,
   RecruiterPageHero,
@@ -16,7 +17,10 @@ import { RECRUITER_ONBOARDING_STEPS } from "../../components/recruiter/recruiter
 
 const CoperateLocation = () => {
   const navigate = useNavigate();
-  const { currentStep, isEditMode, recruiterData, getPath } = useOutletContext();
+  const { currentStep, isEditMode, recruiterData, getPath } =
+    useOutletContext();
+  const location = useLocation();
+  const isIndividual = location.pathname.includes("individual");
 
   const [dataLoaded, setDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,6 +28,7 @@ const CoperateLocation = () => {
     city: "",
     country: "",
   });
+  const [isManualCity, setIsManualCity] = useState(false);
 
   const { updateLocation } = useRecruiterProfile();
 
@@ -31,19 +36,44 @@ const CoperateLocation = () => {
     if (path) navigate(path);
   };
 
+  const { states: stateOptions } = useCountryStateOptions(formData.country);
+
   useEffect(() => {
     if (isEditMode && recruiterData && !dataLoaded) {
+      const country = recruiterData.country || "";
+      const city = recruiterData.city || "";
       setFormData({
         address: recruiterData.address || "",
-        city: recruiterData.city || "",
-        country: recruiterData.country || "",
+        city: city,
+        country: country,
       });
       setDataLoaded(true);
     }
   }, [isEditMode, recruiterData, dataLoaded]);
 
+  useEffect(() => {
+    if (!formData.country) return;
+    if (stateOptions.length === 0) {
+      setIsManualCity(true);
+      return;
+    }
+    if (formData.city) {
+      setIsManualCity(!stateOptions.includes(formData.city));
+    }
+  }, [formData.country, formData.city, stateOptions]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "country") {
+      setFormData({
+        ...formData,
+        country: value,
+        city: "",
+      });
+      setIsManualCity(false);
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const isFormComplete = Object.values(formData).every((v) => v.trim() !== "");
@@ -77,7 +107,7 @@ const CoperateLocation = () => {
       if (isEditMode) {
         navigate(getPath(currentStep + 1));
       } else {
-        navigate("/corporate/verify");
+        navigate(isIndividual ? "/individual/verify" : "/corporate/verify");
       }
     } catch (error) {
       console.error(error);
@@ -88,7 +118,7 @@ const CoperateLocation = () => {
     if (isEditMode) {
       navigate(getPath(currentStep + 1));
     } else {
-      navigate("/corporate/verify");
+      navigate(isIndividual ? "/individual/verify" : "/corporate/verify");
     }
   };
 
@@ -123,14 +153,7 @@ const CoperateLocation = () => {
               required
               hint="Not shown publicly — used for verification only."
             />
-            <RecruiterTextField
-              label="CITY / STATE"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="e.g. Lagos, Nnewi"
-              required
-            />
+
             <RecruiterSelect
               label="COUNTRY"
               name="country"
@@ -140,6 +163,51 @@ const CoperateLocation = () => {
               placeholder="Select your country"
               required
             />
+
+            {isManualCity ? (
+              <RecruiterTextField
+                label="CITY / STATE"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="Enter your city / state"
+                required
+              />
+            ) : formData.country && stateOptions.length === 0 ? (
+              <div className="space-y-1">
+                <div onClick={() => setIsManualCity(true)} className="cursor-pointer">
+                  <RecruiterSelect
+                    label="CITY / STATE"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    options={[]}
+                    placeholder="Select your city / state"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  No cities/states found.{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsManualCity(true)}
+                    className="text-[#16730F] hover:underline font-semibold"
+                  >
+                    input your city/state
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <RecruiterSelect
+                label="CITY / STATE"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                options={stateOptions}
+                placeholder="Select your city / state"
+                required
+              />
+            )}
           </RecruiterFormShell>
         </div>
 

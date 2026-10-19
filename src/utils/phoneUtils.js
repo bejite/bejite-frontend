@@ -2,7 +2,7 @@ import {
   parsePhoneNumberFromString,
   isValidPhoneNumber,
   AsYouType,
-} from 'libphonenumber-js';
+} from 'libphonenumber-js/min';
 import { findCountryByName } from './countryStateData';
 
 export function countryNameToIso2(countryName) {

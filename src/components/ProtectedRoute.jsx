@@ -30,8 +30,18 @@ const ProtectedRoute = ({ children, requireVerified = false, requiredRole = null
   }
 
   // Check if specific role is required
-  if (requiredRole && user) {
-    if (user.role !== requiredRole) {
+  if (requiredRole) {
+    if (!user) {
+      toast.error('Please log in to access this page');
+      return <Navigate to="/" replace />;
+    }
+    const role = String(user.role || "").toLowerCase();
+    const required = String(requiredRole).toLowerCase();
+    const recruiterRoles = new Set(["recruiter", "employer"]);
+    const ok =
+      role === required ||
+      (required === "recruiter" && recruiterRoles.has(role));
+    if (!ok) {
       toast.error('You do not have permission to access this page');
       return <Navigate to="/resume" replace />;
     }

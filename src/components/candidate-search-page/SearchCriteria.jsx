@@ -1,6 +1,5 @@
-
-import React, { memo } from "react";
-import { FaCheck, FaSearch } from "react-icons/fa";
+import React, { memo, useState, useMemo } from "react";
+import { FaCheck, FaSearch, FaTimes, FaPlus } from "react-icons/fa";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 
 // Move components outside to prevent recreation on every render
@@ -50,11 +49,184 @@ const TextInput = memo(({ id, label, placeholder, value, onChange }) => (
         placeholder={placeholder}
       />
       {value && (
-        <FaCheck className="absolute  right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg" />
+        <FaCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg" />
       )}
     </div>
   </div>
 ));
+
+// Interactive Multi-Select Skills Input
+const SkillsMultiInput = memo(({ id = "skillInput", label = "SKILL", options = [], value = "", onChange }) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const selectedSkills = useMemo(() => {
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [value]);
+
+  const addSkill = (skill) => {
+    const trimmed = (skill || "").trim().replace(/^,+|,+$/g, "");
+    if (!trimmed) return;
+
+    // Check if skill already exists (case-insensitive)
+    const exists = selectedSkills.some(
+      (s) => s.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (!exists) {
+      const nextSkills = [...selectedSkills, trimmed];
+      onChange({ target: { name: id, value: nextSkills.join(", ") } });
+    }
+    setInputValue("");
+  };
+
+  const removeSkill = (skillToRemove) => {
+    const nextSkills = selectedSkills.filter(
+      (s) => s.toLowerCase() !== skillToRemove.toLowerCase()
+    );
+    onChange({ target: { name: id, value: nextSkills.join(", ") } });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addSkill(inputValue);
+    } else if (e.key === "Backspace" && !inputValue && selectedSkills.length > 0) {
+      removeSkill(selectedSkills[selectedSkills.length - 1]);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    if (val.includes(",")) {
+      const parts = val.split(",");
+      parts.forEach((p) => addSkill(p));
+    } else if (options.some((opt) => opt.toLowerCase() === val.trim().toLowerCase())) {
+      // If user selected or typed an exact option from datalist
+      addSkill(val);
+    } else {
+      setInputValue(val);
+    }
+  };
+
+  const handleBlur = () => {
+    if (inputValue.trim()) {
+      addSkill(inputValue);
+    }
+  };
+
+  // Filter out options that are already selected
+  const availableOptions = options.filter(
+    (opt) => !selectedSkills.some((s) => s.toLowerCase() === opt.toLowerCase())
+  );
+
+  return (
+    <div className="w-full p-3 sm:p-4 rounded-lg">
+      <div className="flex items-center justify-between mb-1">
+        <label htmlFor={id} className="text-[#16730F] text-sm sm:text-[12px] font-medium block">
+          {label}
+        </label>
+        {selectedSkills.length > 0 && (
+          <span className="text-xs text-[#16730F] font-semibold">
+            {selectedSkills.length} selected
+          </span>
+        )}
+      </div>
+
+      <div className="relative">
+        <input
+          list={`${id}List`}
+          id={id}
+          name={id}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className="w-full rounded-xl px-4 py-2 sm:py-3 pr-16 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#16730F] bg-white text-gray-800 text-sm sm:text-base"
+          placeholder={
+            selectedSkills.length > 0
+              ? "Add another skill and press Enter..."
+              : "Type a skill and press Enter or select..."
+          }
+        />
+        <button
+          type="button"
+          onClick={() => addSkill(inputValue)}
+          disabled={!inputValue.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#16730F] text-white text-xs font-semibold rounded-lg hover:bg-[#125a0c] disabled:opacity-30 transition-all cursor-pointer disabled:cursor-not-allowed"
+        >
+          Add
+        </button>
+
+        <datalist id={`${id}List`}>
+          {availableOptions.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      </div>
+
+      {/* Selected Skills Chips Container */}
+      {selectedSkills.length > 0 && (
+        <div className="mt-3 p-3 bg-gray-50/90 border border-gray-200 rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+              Selected Skills ({selectedSkills.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange({ target: { name: id, value: "" } })}
+              className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors cursor-pointer"
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {selectedSkills.map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-[#16730F] border border-[#16730F]/30 rounded-lg text-xs sm:text-sm font-semibold shadow-xs transition-all hover:bg-green-100/80"
+              >
+                <span>{skill}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeSkill(skill);
+                  }}
+                  className="p-0.5 rounded-full hover:bg-[#16730F]/20 text-gray-500 hover:text-[#16730F] transition-colors focus:outline-none cursor-pointer"
+                  title={`Remove ${skill}`}
+                >
+                  <FaTimes className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Suggestions quick add */}
+      {availableOptions.length > 0 && selectedSkills.length < 5 && (
+        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-gray-500 font-medium">Suggestions:</span>
+          {availableOptions.slice(0, 5).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => addSkill(opt)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-green-50 hover:text-[#16730F] hover:border-green-300 border border-gray-200 text-gray-600 rounded-md text-xs font-medium transition-all cursor-pointer"
+            >
+              <FaPlus className="h-2.5 w-2.5" />
+              <span>{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
 
 const GroupedInputs = ({ children }) => (
   <div className="flex flex-col sm:flex-row gap-4">
@@ -146,7 +318,14 @@ const SearchCriteria = ({ formData, setFormData, onSearch }) => {
           />
 
           <SearchInput id="educationInput" label="EDUCATION" options={["High School", "Secondary", "Associate Degree", "Bachelor's Degree", "Master's Degree", "PhD"]} placeholder="Enter or select" value={formData.educationInput} onChange={handleChange} />
-          <SearchInput id="skillInput" label="SKILL" options={["JavaScript", "React", "Node.js", "Python", "SQL", "Backend Development"]} placeholder="Enter or select" value={formData.skillInput} onChange={handleChange} />
+          
+          <SkillsMultiInput
+            id="skillInput"
+            label="SKILL"
+            options={["JavaScript", "React", "Node.js", "Python", "SQL", "Backend Development", "TypeScript", "UI/UX Design", "Figma", "AWS", "Product Management"]}
+            value={formData.skillInput}
+            onChange={handleChange}
+          />
 
           <GroupedInputs>
             <TextInput id="tribeInput" label="TRIBE" placeholder="Enter" value={formData.tribeInput} onChange={handleChange} />
@@ -163,12 +342,16 @@ const SearchCriteria = ({ formData, setFormData, onSearch }) => {
             <button
               onClick={onSearch}
               disabled={!hasAtLeastOneField}
-              className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 sm:py-3 rounded-2xl mx-auto font-medium transition-colors
+              className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 sm:py-3 rounded-2xl mx-auto font-medium transition-colors cursor-pointer
                 ${hasAtLeastOneField ? 'bg-[#16730F] text-white hover:bg-[#125a0c]' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
               `}
             >
               Search <FaSearch className="h-5 w-5" />
             </button>
+            <p className="text-center text-xs text-gray-500 mt-3 px-2 leading-relaxed">
+              Each search uses 1 ASE credit. Add skills, location, and other filters
+              to narrow results before searching.
+            </p>
           </div>
         </div>
       </div>

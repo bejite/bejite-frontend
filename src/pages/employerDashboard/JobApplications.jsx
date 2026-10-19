@@ -20,6 +20,8 @@ import {
   downloadJobApplicationResume,
 } from "../../services/employerApi";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
+import { formatDisplayText } from "../../utils/displayFormatUtils";
+import { RecruiterSelect } from "../../components/recruiter/recruiterOnboardingUi";
 
 const ApplicantAvatar = ({
   application,
@@ -207,21 +209,26 @@ const JobApplications = () => {
         Update Status
       </label>
       <div className="flex gap-2">
-        <select
-          value={statusDraft}
-          onChange={(e) => setStatusDraft(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#16730F]"
-        >
-          <option value="pending">Pending</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="shortlisted">Shortlisted</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <div className="flex-1 min-w-0">
+          <RecruiterSelect
+            name="statusDraft"
+            value={statusDraft}
+            onChange={(e) => setStatusDraft(e.target.value)}
+            options={[
+              { value: "pending", label: "Pending" },
+              { value: "reviewed", label: "Reviewed" },
+              { value: "shortlisted", label: "Shortlisted" },
+              { value: "hired", label: "Hired" },
+              { value: "rejected", label: "Rejected" },
+            ]}
+            placeholder="Select Status"
+          />
+        </div>
         <button
           type="button"
           onClick={handleStatusUpdate}
           disabled={updatingStatus || !hasStatusChange}
-          className={`px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-60 ${
+          className={`px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-60 shrink-0 ${
             hasStatusChange
               ? "bg-[#16730F] text-white hover:bg-[#145A0C]"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -255,7 +262,9 @@ const JobApplications = () => {
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <FaMapMarkerAlt className="flex-shrink-0" />
-            <span className="text-sm">{selectedApplication.location}</span>
+            <span className="text-sm">
+              {formatDisplayText(selectedApplication.location) || "—"}
+            </span>
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <FaBriefcase className="flex-shrink-0" />
@@ -376,7 +385,7 @@ const JobApplications = () => {
 
         {/* Main Content - Responsive Grid */}
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             {/* Applications List - Left Side */}
             <div className="w-full lg:w-2/3">
               {/* Filters */}
@@ -400,6 +409,7 @@ const JobApplications = () => {
                       "pending",
                       "reviewed",
                       "shortlisted",
+                      "hired",
                       "rejected",
                     ].map((status) => (
                       <button
@@ -475,7 +485,9 @@ const JobApplications = () => {
                               <span className="text-xs text-gray-500 flex items-center gap-1">
                                 <FaMapMarkerAlt className="text-[10px] flex-shrink-0" />
                                 <span className="truncate">
-                                  {app.location.split(",")[0]}
+                                  {formatDisplayText(
+                                    app.location?.split(",")[0],
+                                  ) || "—"}
                                 </span>
                               </span>
                               <span className="text-xs text-gray-500">
@@ -502,21 +514,23 @@ const JobApplications = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           <div
-                            className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${getMatchScoreColor(app.matchScore)}`}
+                            className={`inline-flex items-center justify-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap ${getMatchScoreColor(app.matchScore)}`}
                           >
                             {app.matchScore}%
                           </div>
                           <span
-                            className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs capitalize whitespace-nowrap ${
+                            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs capitalize whitespace-nowrap ${
                               app.status === "pending"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : app.status === "reviewed"
                                   ? "bg-blue-100 text-blue-700"
                                   : app.status === "shortlisted"
                                     ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
+                                    : app.status === "hired"
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : "bg-red-100 text-red-700"
                             }`}
                           >
                             {app.status}
@@ -531,8 +545,8 @@ const JobApplications = () => {
             </div>
 
             {/* Right Panel - Desktop only */}
-            <div className="hidden lg:block lg:w-1/3">
-              <div className="bg-white rounded-2xl border border-gray-200 sticky top-20">
+            <div className="hidden lg:block lg:w-1/3 lg:self-start lg:sticky lg:top-4 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto nfl-scroll">
+              <div className="bg-white rounded-2xl border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h2 className="text-xl font-bold text-gray-900">
                     Application Details

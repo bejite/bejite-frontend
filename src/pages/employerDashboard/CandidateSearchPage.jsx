@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { FaSlidersH, FaTimes, FaArrowLeft } from "react-icons/fa";
+import { FaSlidersH, FaTimes, FaArrowLeft, FaBriefcase } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import SearchCriteria from "../../components/candidate-search-page/SearchCriteria";
 import CandidateSearchResults from "../../components/candidate-search-page/CandidateSearchResults";
 import NewsFeedHeader from "../../components/NewsFeedHeader";
@@ -7,8 +8,29 @@ import UserProfilePanel from "../../components/candidate-search-page/UserProfile
 import JobSearchFormGreen from "../../components/candidate-search-page/JobSearchFormGreen";
 import UserMainProfileCard from "../../components/candidate-search-page/UserMainProfileCard";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import AseSearchCreditNotice from "../../components/candidate-search-page/AseSearchCreditNotice";
+
+const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+      : false,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleChange = (event) => setIsDesktop(event.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return isDesktop;
+}
 
 const CandidateSearchPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     jobInput: "",
     industryInput: "",
@@ -28,6 +50,7 @@ const CandidateSearchPage = () => {
   });
 
   const [showResults, setShowResults] = useState(false);
+  const [appliedSearchCriteria, setAppliedSearchCriteria] = useState(null);
   const [viewProfile, setViewProfile] = useState(false);
   const [showMainProfile, setShowMainProfile] = useState(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
@@ -35,8 +58,10 @@ const CandidateSearchPage = () => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const mainScrollRef = useRef(null);
   const resultsScrollRef = useRef(null);
+  const isDesktop = useIsDesktop();
 
   const hasAtLeastOneField = Object.values(formData).some((val) => val.trim() !== "");
+  const activeSearchCriteria = appliedSearchCriteria ?? formData;
 
   const scrollSearchViewToTop = useCallback(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -53,6 +78,7 @@ const CandidateSearchPage = () => {
   }, []);
 
   const handleSearch = () => {
+    setAppliedSearchCriteria({ ...formData });
     setShowResults(true);
     setViewProfile(false);
     setShowMainProfile(false);
@@ -61,6 +87,7 @@ const CandidateSearchPage = () => {
 
   const handleBackToSearchForm = () => {
     setShowResults(false);
+    setAppliedSearchCriteria(null);
     setViewProfile(false);
     setShowMainProfile(false);
     setRightPanelOpen(false);
@@ -96,21 +123,22 @@ const CandidateSearchPage = () => {
       if (showResults) {
         return (
           <>
-            <div className="lg:hidden">
+            {!isDesktop && showResults && !viewProfile && (
               <CandidateSearchResults
-                searchCriteria={formData}
+                searchCriteria={activeSearchCriteria}
+                enabled={Boolean(appliedSearchCriteria)}
                 onViewProfile={handleViewProfile}
                 compact
               />
-            </div>
-            <div className="hidden lg:block">
+            )}
+            {isDesktop && (
               <SearchCriteria
                 formData={formData}
                 setFormData={setFormData}
                 isFormComplete={hasAtLeastOneField}
                 onSearch={handleSearch}
               />
-            </div>
+            )}
           </>
         );
       }
@@ -145,6 +173,21 @@ const CandidateSearchPage = () => {
   return (
     <NewsFeedLayout scrollable={false} classes={false} showSidebars={false}>
       <div className="flex flex-col h-[calc(100vh-72px)] min-h-0 w-full max-w-[1440px] mx-auto bg-[#FFFFFF]">
+        {/* Top Header Bar */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-200">
+          <span className="text-sm font-bold text-[#1A3E32] hidden sm:inline">
+            Candidate Search
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate("/employer/recruitment-management")}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-full bg-[#16730F] hover:bg-[#125B0C] text-white shadow-xs transition-all duration-200 active:scale-95 cursor-pointer ml-auto"
+          >
+            <FaBriefcase className="w-3.5 h-3.5" />
+            Recruitment Management
+          </button>
+        </div>
+
         {showMobileToolbar && (
           <div className="lg:hidden shrink-0 flex flex-wrap items-center gap-2 px-3 py-2 bg-white border-b border-gray-200">
             {showResults && !viewProfile && (
@@ -204,24 +247,22 @@ const CandidateSearchPage = () => {
 
           <div className="h-full flex min-h-0">
             {/* Left sidebar — search results (desktop only) */}
-            <aside
-              className={`
-              ${showResults ? "hidden lg:flex" : "hidden"}
-              shrink-0 flex-col bg-[#F5F5F5] border-r border-gray-200
-              lg:w-[min(360px,28vw)] lg:max-w-[400px]
-              overflow-hidden
-            `}
-            >
-              <div
-                ref={resultsScrollRef}
-                className="flex-1 overflow-y-auto nfl-scroll scroll-smooth p-3 sm:p-4 min-h-0"
+            {showResults && isDesktop && (
+              <aside
+                className="hidden lg:flex shrink-0 flex-col bg-[#F5F5F5] border-r border-gray-200 lg:w-[min(360px,28vw)] lg:max-w-[400px] overflow-hidden"
               >
-                <CandidateSearchResults
-                  searchCriteria={formData}
-                  onViewProfile={handleViewProfile}
-                />
-              </div>
-            </aside>
+                <div
+                  ref={resultsScrollRef}
+                  className="flex-1 overflow-y-auto nfl-scroll scroll-smooth p-3 sm:p-4 min-h-0"
+                >
+                  <CandidateSearchResults
+                    searchCriteria={activeSearchCriteria}
+                    enabled={Boolean(appliedSearchCriteria)}
+                    onViewProfile={handleViewProfile}
+                  />
+                </div>
+              </aside>
+            )}
 
             {/* Main content */}
             <main
@@ -230,6 +271,7 @@ const CandidateSearchPage = () => {
                 showResults && !viewProfile ? "p-0 lg:p-3 lg:sm:p-4 lg:md:p-6" : "p-3 sm:p-4 md:p-6"
               }`}
             >
+              {!showResults && !viewProfile && <AseSearchCreditNotice />}
               {renderMainContent()}
             </main>
 

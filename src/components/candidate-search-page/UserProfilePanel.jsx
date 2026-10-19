@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { pickAuthorProfilePhoto } from "../../utils/profileImageUtils";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
@@ -18,11 +17,23 @@ import {
   resolveProfileSkillSource,
 } from "../../utils/profileSkills";
 import ProfileSkillsDisplay from "../ProfileSkillsDisplay";
+import ResponsibilitiesList from "../ResponsibilitiesList";
 import {
   buildContactInfoItems,
   getFormattedEducationFields,
 } from "../../utils/displayFormatUtils";
+import {
+  FaPhone,
+  FaMapMarkerAlt,
+  FaEnvelope,
+  FaLinkedin,
+  FaGithub,
+  FaGlobe,
+  FaExternalLinkAlt,
+} from "react-icons/fa";
 import { formatDisplayPersonName, formatDisplayRole } from "../../utils/personDisplayName";
+import DisplayNameWithBadge from "../DisplayNameWithBadge";
+import AvailabilityStatusDot from "./AvailabilityStatusDot";
 import {
   getFormattedCandidateProfileFields,
   getFormattedWorkHistoryFields,
@@ -345,7 +356,6 @@ const ProfileHeader = ({ candidate, onOpenPhotoViewer }) => {
   const initials = `${candidate.first_name?.[0] || ""}${
     candidate.last_name?.[0] || ""
   }`;
-  const isAvailable = candidate.availability === "Available";
   const bioRow = Array.isArray(candidate.user_bio)
     ? candidate.user_bio[0]
     : candidate.user_bio;
@@ -364,22 +374,23 @@ const ProfileHeader = ({ candidate, onOpenPhotoViewer }) => {
         <div className="h-32"></div>
       </div>
       <div className="relative left-8 sm:left-20 bottom-15 sm:bottom-16">
-        <div className="relative rounded-full w-[80px] sm:w-[100px] h-[80px] sm:h-[100px] bg-[#6B8E23] flex items-center justify-center border-4 border-white overflow-hidden">
-          {profileImage ? (
-            <img 
-              src={profileImage} 
-              alt={`${candidate.first_name} ${candidate.last_name}`}
-              className="w-full h-full object-cover cursor-zoom-in"
-              onClick={onOpenPhotoViewer}
-            />
-          ) : (
-            <span className="text-white text-3xl font-bold">{initials}</span>
-          )}
-          <span
-            className={`absolute w-4 h-4 rounded-full border-2 border-white bottom-0 right-0 z-99 ${
-              isAvailable ? "bg-[#6B8E23]" : "bg-[#828282]"
-            }`}
-          ></span>
+        <div className="relative w-[80px] sm:w-[100px] h-[80px] sm:h-[100px]">
+          <div className="rounded-full w-full h-full bg-[#6B8E23] flex items-center justify-center border-4 border-white overflow-hidden">
+            {profileImage ? (
+              <img 
+                src={profileImage} 
+                alt={`${candidate.first_name} ${candidate.last_name}`}
+                className="w-full h-full object-cover cursor-zoom-in"
+                onClick={onOpenPhotoViewer}
+              />
+            ) : (
+              <span className="text-white text-3xl font-bold">{initials}</span>
+            )}
+          </div>
+          <AvailabilityStatusDot
+            availability={candidate.availability}
+            className="bottom-0 right-0"
+          />
         </div>
       </div>
     </div>
@@ -387,22 +398,30 @@ const ProfileHeader = ({ candidate, onOpenPhotoViewer }) => {
 };
 
 const ProfileStats = ({ candidate, connectUserIdProp, onViewMainProfile }) => {
-  const navigate = useNavigate();
   const displayName = formatDisplayPersonName(candidate, "Candidate");
   const profile = getFormattedCandidateProfileFields(candidate);
   const connectUserId =
     resolveCandidateUserId(candidate) || connectUserIdProp || null;
-  const { sendRequest, connectLabel, connectDisabled, status } = useCandidateConnect(
+  const { sendRequest, acceptRequest, connectLabel, connectDisabled, status, sending } = useCandidateConnect(
     connectUserId,
     displayName,
   );
+  const isStatusLoading = Boolean(status.loading);
+  const showConnectSpinner = isStatusLoading || sending;
 
-  // Handle connect button click - navigate to Connections page if there's pending incoming request
-  const handleConnectClick = () => {
+  const handleConnectClick = async () => {
+    if (isStatusLoading || sending) return;
     if (status.pendingIncoming) {
-      navigate('/connection');
-    } else if (!status.isConnected && !status.pendingOutgoing && !status.loading) {
-      sendRequest();
+      await acceptRequest();
+      return;
+    }
+    if (status.isCorporate) {
+      // Follow / Following toggle (including unfollow)
+      await sendRequest();
+      return;
+    }
+    if (!status.isConnected && !status.pendingOutgoing && !status.loading) {
+      await sendRequest();
     }
   };
 
@@ -410,7 +429,7 @@ const ProfileStats = ({ candidate, connectUserIdProp, onViewMainProfile }) => {
   <div className="px-4 sm:px-8 mt-[-60px] sm:mt-[-40px]">
     <div className="flex gap-2 items-center">
       <p className="text-[#6B8E23] font-semibold text-[16px]">
-        {displayName}
+        <DisplayNameWithBadge user={candidate} fallback={displayName} badgeSize="xs" />
       </p>
       <p className="text-[#E09A36] font-semibold text-[10px]">
         • {formatDisplayRole("jobseeker")}
@@ -452,22 +471,46 @@ const ProfileStats = ({ candidate, connectUserIdProp, onViewMainProfile }) => {
 <ActionButtons
       onViewMainProfile={onViewMainProfile}
       connectLabel={connectLabel}
-      connectDisabled={connectDisabled}
+      connectDisabled={connectDisabled || isStatusLoading}
+      loading={showConnectSpinner}
+      isStatusLoading={isStatusLoading}
       handleConnectClick={handleConnectClick}
+      hideConnect={Boolean(status.viewerIsCorporate)}
+      settled={Boolean(
+        (status.isCorporate && status.isFollowing) ||
+          (!status.isCorporate &&
+            (status.isConnected || status.pendingOutgoing)),
+      )}
+      allowWhileSettled={Boolean(status.isCorporate && status.isFollowing)}
     />
   </div>
   );
 };
 
-const ActionButtons = ({ onViewMainProfile, connectLabel, connectDisabled, handleConnectClick }) => (
+const ActionButtons = ({
+  onViewMainProfile,
+  connectLabel,
+  connectDisabled,
+  loading = false,
+  isStatusLoading = false,
+  handleConnectClick,
+  hideConnect = false,
+  settled = false,
+  allowWhileSettled = false,
+}) => (
   <div className="flex flex-col sm:flex-row sm:justify-start items-center mt-6 gap-3 w-full">
+    {!hideConnect && (
     <Button
       icon="/assets/images/repeate-one.svg"
       text={connectLabel}
       onClick={handleConnectClick}
-      disabled={connectDisabled}
+      disabled={allowWhileSettled ? isStatusLoading : connectDisabled}
+      loading={loading}
+      isStatusLoading={isStatusLoading}
+      settled={settled}
     />
-    <Button icon="/assets/images/Send_Submit.svg" text="Reviews" />
+    )}
+    {/* <Button icon="/assets/images/Send_Submit.svg" text="Reviews" /> */}
     <button 
       className="text-[#6B8E23] text-[12px] hover:underline"
       onClick={onViewMainProfile}
@@ -477,19 +520,46 @@ const ActionButtons = ({ onViewMainProfile, connectLabel, connectDisabled, handl
   </div>
 );
 
-const Button = ({ icon, text, onClick, disabled = false }) => (
+const Button = ({
+  icon,
+  text,
+  onClick,
+  disabled = false,
+  loading = false,
+  isStatusLoading = false,
+  settled = false,
+}) => (
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className={`w-full sm:w-[180px] text-center text-[12px] text-[#FFFFFF] flex p-2 rounded-3xl gap-2 justify-center items-center transition-colors ${
-      disabled
-        ? "bg-[#828282] cursor-not-allowed opacity-80"
-        : "bg-[#556B1F] hover:bg-[#6B8E23]"
+    aria-busy={loading}
+    className={`w-full sm:w-[180px] text-center text-[12px] flex p-2 rounded-3xl gap-2 justify-center items-center transition-colors border-2 ${
+      isStatusLoading
+        ? "bg-[#556B1F]/80 text-white border-transparent cursor-wait"
+        : settled
+          ? "bg-white text-[#556B1F] border-[#556B1F] hover:bg-[#556B1F]/10"
+          : disabled
+            ? "bg-[#828282] text-white border-transparent cursor-not-allowed opacity-80"
+            : "bg-[#556B1F] text-white border-transparent hover:bg-[#6B8E23]"
     }`}
   >
-    <img className="w-4 h-4" src={icon} alt={text} />
-    {text}
+    {loading ? (
+      <>
+        <span
+          className={`inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-t-transparent ${
+            settled ? "border-[#556B1F]" : "border-white"
+          }`}
+          aria-hidden="true"
+        />
+        <span className="sr-only">Loading connection status</span>
+      </>
+    ) : (
+      <>
+        <img className="w-4 h-4" src={icon} alt="" />
+        {text}
+      </>
+    )}
   </button>
 );
 
@@ -572,9 +642,10 @@ const WorkHistoryItem = ({ work, legacy = false }) => {
             <p className="text-[13px]">{formatted.company}</p>
           )}
           {formatted.description && (
-            <p className="text-[11px] text-[#E0E0E0] mt-1 line-clamp-3">
-              {formatted.description}
-            </p>
+            <ResponsibilitiesList
+              text={formatted.description}
+              className="mt-1 space-y-1 list-disc list-outside pl-4 text-[11px] text-[#E0E0E0] break-words"
+            />
           )}
           {duration && (
             <span className="text-[#FFB54780] text-[11px]">{duration}</span>
@@ -627,12 +698,12 @@ const CertificationItem = ({ certification }) => (
 );
 
 const CONTACT_ICONS = {
-  Phone: "📱",
-  Address: "📍",
-  Email: "📧",
-  LinkedIn: "💼",
-  GitHub: "💻",
-  Portfolio: "🌐",
+  Phone: FaPhone,
+  Address: FaMapMarkerAlt,
+  Email: FaEnvelope,
+  LinkedIn: FaLinkedin,
+  GitHub: FaGithub,
+  Portfolio: FaGlobe,
 };
 
 const ContactInfoList = ({ candidate }) => {
@@ -642,37 +713,43 @@ const ContactInfoList = ({ candidate }) => {
   const contacts = buildContactInfoItems({ candidate, bio: bioRow });
 
   return (
-    <div className="px-4 sm:px-8 pb-6 text-[#FFFFFF] space-y-4">
-      {contacts.map((contact) => (
-        <div key={contact.type} className="flex gap-3 items-start min-w-0">
-          <div className="w-10 h-10 rounded-full bg-[#1A3E32] flex items-center justify-center shrink-0">
-            <span className="text-xl">{CONTACT_ICONS[contact.type] || "•"}</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            {contact.href ? (
-              <a
-                href={
-                  contact.value.startsWith("http")
-                    ? contact.value
-                    : `https://${contact.value}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[13px] font-semibold text-[#9AE6B0] hover:underline break-words block"
-              >
-                {contact.value}
-              </a>
-            ) : (
-              <p className="text-[13px] font-semibold break-words leading-relaxed">
-                {contact.value}
+    <div className="px-4 sm:px-8 pb-6 text-[#FFFFFF] space-y-3.5">
+      {contacts.map((contact) => {
+        const Icon = CONTACT_ICONS[contact.type] || FaGlobe;
+        const href = contact.href
+          ? contact.value.startsWith("http")
+            ? contact.value
+            : `https://${contact.value}`
+          : null;
+
+        return (
+          <div key={contact.type} className="flex gap-3 items-center min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
+              <Icon className="text-base text-[#9AE6B0]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold text-[#E0E0E0] uppercase tracking-wider">
+                {contact.type}
               </p>
-            )}
-            <p className="text-[11px] font-medium text-[#E0E0E0] mt-0.5">
-              {contact.type}
-            </p>
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] font-semibold text-[#9AE6B0] hover:text-white hover:underline truncate max-w-full inline-flex items-center gap-1.5 mt-0.5"
+                >
+                  <span className="truncate">{contact.value}</span>
+                  <FaExternalLinkAlt className="text-[10px] shrink-0 opacity-70" />
+                </a>
+              ) : (
+                <p className="text-[13px] font-semibold break-words leading-relaxed mt-0.5">
+                  {contact.value}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

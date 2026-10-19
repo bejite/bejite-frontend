@@ -25,7 +25,7 @@ const Resume = () => {
         <img
           src="/assets/images/logo.png"
           alt="logo"
-          className="h-10 sm:h-12 md:h-14"
+          className="h-10"
         />
       </div>
 
@@ -51,7 +51,7 @@ const Resume = () => {
         <div className="shrink-0 w-full flex justify-center pt-1 pb-2 sm:pb-4">
           <button
             type="button"
-            className="w-full max-w-[321px] h-11 sm:h-12 bg-[#16730F] rounded-[30px] text-white shadow-md text-sm sm:text-base font-medium transition-all hover:bg-[#1A3E32]"
+            className="w-full max-w-[321px] h-11 sm:h-12 bg-[#16730F] rounded-full text-white shadow-md text-sm sm:text-base font-medium transition-all hover:bg-[#145a0c]"
             onClick={() => navigate("/bio", { state: stateData })}
           >
             Get Started

@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { FaImage, FaVideo, FaPoll } from 'react-icons/fa';
-import { getFeed, createPost, updatePost, deletePost, likePost, unlikePost, savePost, unsavePost } from '../services/postsApi';
-import { recordPostShare } from '../utils/postShare';
+import { getFeed, createPost, updatePost, deletePost, likePost, unlikePost, savePost, unsavePost, voteOnPoll } from '../services/postsApi';
+import { recordPostShare, togglePostRepost } from '../utils/postShare';
 import { getUser } from '../utils/tokenManager';
 import { getUserProfileImage, getProfileImageUrl } from '../utils/profileImageUtils';
 import PostCreationModal from './PostCreationModal';
 import FeedLoadMoreButton from './FeedLoadMoreButton';
 import PostCard from './feed/PostCard';
 import { formatDisplayPersonName } from '../utils/personDisplayName';
+import { RecruiterSelect } from './recruiter/recruiterOnboardingUi';
 
 const FEED_PAGE_SIZE = 20;
 
 const mergeFeedPosts = (existing, incoming) => {
-  const seen = new Set(existing.map((p) => p.id));
+  const keyOf = (p) => p.feedItemKey || p.id;
+  const seen = new Set(existing.map(keyOf));
   const merged = [...existing];
   for (const post of incoming) {
-    if (!seen.has(post.id)) {
-      seen.add(post.id);
+    const key = keyOf(post);
+    if (!seen.has(key)) {
+      seen.add(key);
       merged.push(post);
     }
   }
@@ -32,6 +35,7 @@ const PostContainer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState('post');
   const user = getUser();
   const currentUserImage = getUserProfileImage();
 
@@ -75,22 +79,26 @@ const PostContainer = () => {
   };
 
   const handleLike = async (postId, isLiked) => {
+    const current = posts.find((p) => p.id === postId);
+    patchPost(postId, {
+      likedByMe: !isLiked,
+      likesCount: Math.max(
+        0,
+        (current?.likesCount || 0) + (isLiked ? -1 : 1),
+      ),
+    });
     try {
       if (isLiked) {
         await unlikePost(postId);
       } else {
         await likePost(postId);
       }
-      const current = posts.find((p) => p.id === postId);
-      patchPost(postId, {
-        likedByMe: !isLiked,
-        likesCount: Math.max(
-          0,
-          (current?.likesCount || 0) + (isLiked ? -1 : 1),
-        ),
-      });
     } catch (err) {
       console.error('Error toggling like:', err);
+      patchPost(postId, {
+        likedByMe: isLiked,
+        likesCount: current?.likesCount || 0,
+      });
     }
   };
 
@@ -111,12 +119,20 @@ const PostContainer = () => {
     try {
       await recordPostShare(postId);
       const current = posts.find((p) => p.id === postId);
-      patchPost(postId, {
-        sharesCount: (current?.sharesCount || 0) + 1,
-      });
+      if (!current?.sharedByMe) {
+        patchPost(postId, {
+          sharesCount: (current?.sharesCount || 0) + 1,
+          sharedByMe: true,
+        });
+      }
     } catch (err) {
       console.error('Error sharing post:', err);
     }
+  };
+
+  const handleRepost = async (postId, currentlyShared, quote = null, scheduledAt = null) => {
+    await togglePostRepost(postId, currentlyShared, quote, scheduledAt);
+    fetchFeed(true);
   };
 
   const handleUpdatePost = async (postId, postData) => {
@@ -127,6 +143,19 @@ const PostContainer = () => {
       console.error('Error updating post:', err);
       throw err;
     }
+  };
+
+  const handleVotePoll = async (postId, optionId) => {
+    const data = await voteOnPoll(postId, optionId);
+    if (data?.poll) {
+      patchPost(postId, { poll: data.poll });
+    }
+    return data;
+  };
+
+  const openCreateModal = (mode = 'post') => {
+    setModalMode(mode);
+    setShowModal(true);
   };
 
   const handleDeletePost = async (postId) => {
@@ -143,33 +172,33 @@ const PostContainer = () => {
     <div className="max-w-3xl m-auto px-4 py-6 bg-[#F5F5F5] mt-3">
       {/* Create Post Button */}
       <div className="max-w-3xl mx-auto rounded-2xl p-4 bg-[#ffffff]">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setShowModal(true)}>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => openCreateModal('post')}>
           <img
             src={currentUserImage}
             alt="profile"
-            className="rounded-full w-12 h-12"
+            className="rounded-full w-12 h-12 object-cover object-center"
           />
           <div className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-500 hover:bg-gray-200 transition-colors">
             Start a post
           </div>
         </div>
-        <div className="flex items-center justify-around mt-3 pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-around mt-3 pt-3 border-t border-[#A9A9A9]">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal('post')}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <FaImage className="text-[#16730F] text-lg" />
             <span className="text-sm">Image</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal('post')}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <FaVideo className="text-[#16730F] text-lg" />
             <span className="text-sm">Video</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal('poll')}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <FaPoll className="text-[#16730F] text-lg" />
@@ -189,14 +218,16 @@ const PostContainer = () => {
         <>
           {posts.map(post => (
             <PostCard 
-              key={post.id} 
+              key={post.feedItemKey || post.id} 
               post={post} 
               currentUserId={user?.id}
               onLike={handleLike}
               onSave={handleSave}
               onShare={handleShare}
+              onRepost={handleRepost}
               onUpdate={handleUpdatePost}
               onDelete={handleDeletePost}
+              onVotePoll={handleVotePoll}
             />
           ))}
           <FeedLoadMoreButton
@@ -208,10 +239,19 @@ const PostContainer = () => {
       )}
       <PostCreationModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          setModalMode('post');
+        }}
+        initialMode={modalMode}
         onPost={async (postData) => {
-          await createPost(postData);
-          fetchFeed();
+          const data = await createPost(postData);
+          const newPost = data?.post;
+          if (newPost?.status === 'published') {
+            setPosts((prev) =>
+              prev.some((p) => p.id === newPost.id) ? prev : [newPost, ...prev],
+            );
+          }
         }}
       />
     </div>
@@ -227,7 +267,7 @@ const CreatePostSection = ({ postBody, setPostBody, visibility, setVisibility, o
         <img
           src={userImage}
           alt="profile"
-          className="rounded-full w-[60px] h-[60px]"
+          className="rounded-full w-[60px] h-[60px] object-cover object-center"
         />
         <div className="flex-1">
           <p className="font-semibold text-[#16730F] text-sm mb-1">{displayName}</p>
@@ -250,9 +290,9 @@ const CreatePostSection = ({ postBody, setPostBody, visibility, setVisibility, o
           {mediaFiles.map((media, index) => (
             <div key={index} className="relative">
               {media.kind === 'image' ? (
-                <img src={media.url} alt={`Media ${index + 1}`} className="w-20 h-20 object-cover rounded-lg" />
+                <img src={media.url} alt={`Media ${index + 1}`} className="w-20 h-20 object-cover rounded-lg border-2 border-[#6B8E23]" />
               ) : (
-                <video src={media.url} className="w-20 h-20 object-cover rounded-lg" />
+                <video src={media.url} className="w-20 h-20 object-cover rounded-lg border-2 border-[#6B8E23]" />
               )}
               <button
                 type="button"
@@ -282,16 +322,20 @@ const PostOptions = ({ visibility, setVisibility, submitting, handleMediaSelect,
     <div className="flex flex-wrap justify-between items-center mt-5 gap-3 px-2">
       <MediaOptions handleMediaSelect={handleMediaSelect} uploadingMedia={uploadingMedia} />
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <img src="/assets/images/public-icon.svg" alt="Public" className="w-4 h-4" />
-          <select 
-            value={visibility} 
-            onChange={(e) => setVisibility(e.target.value)}
-            className="text-sm rounded-md border border-gray-300 px-2 py-1 text-[#1A3E32] text-[13px] bg-white"
-          >
-            <option value="public">Public</option>
-            <option value="connections">Connections Only</option>
-          </select>
+        <div className="flex items-center gap-2 min-w-[150px]">
+          <img src="/assets/images/public-icon.svg" alt="Public" className="w-4 h-4 shrink-0" />
+          <div className="flex-1">
+            <RecruiterSelect 
+              name="visibility"
+              value={visibility} 
+              onChange={(e) => setVisibility(e.target.value)}
+              options={[
+                { value: "public", label: "Public" },
+                { value: "connections", label: "Connections Only" },
+              ]}
+              placeholder="Visibility"
+            />
+          </div>
         </div>
         <button
           type="submit"

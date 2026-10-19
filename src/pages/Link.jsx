@@ -43,7 +43,7 @@ function Link() {
 
       <div className="max-w-full md:max-w-4xl mx-auto border-2 border-[#E0E0E0] p-4">
         <div className="bg-[#E0E0E0] w-full max-w-2xl mx-auto p-8 rounded-2xl">
-          <div className="bg-[#E63357] p-4 rounded-2xl">
+          <div className="bg-[#16730F] p-4 rounded-2xl">
             <div className="space-y-6">
               <div className="w-full">
                 <p className="text-[#D9D9D9] text-[15px] font-semibold mb-1">

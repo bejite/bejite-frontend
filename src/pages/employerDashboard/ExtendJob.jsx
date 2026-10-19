@@ -28,7 +28,7 @@ const formatPrice = (currency, pricing) => {
 const ExtendJob = () => {
   const { id: jobId } = useParams();
   const navigate = useNavigate();
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const selectedCurrency = "NGN";
   const [processing, setProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -287,6 +287,7 @@ const ExtendJob = () => {
                     Payment Method
                   </h3>
 
+                  {/* USD payments not activated yet — NGN only
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Select Currency
@@ -316,6 +317,7 @@ const ExtendJob = () => {
                       </button>
                     </div>
                   </div>
+                  */}
 
                   <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-3 mb-3">

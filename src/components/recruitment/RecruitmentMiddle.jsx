@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaImage,
   FaVideo,
   FaPoll,
-  FaComment,
-  FaShare,
-  FaBookmark,
-  FaHeart,
   FaEllipsisH,
+  FaSpinner,
 } from "react-icons/fa";
 import {
   getFeed,
@@ -20,17 +19,23 @@ import {
   unlikePost,
   savePost,
   unsavePost,
-  getComments,
   getSavedPosts,
   getPostLikes,
   getPostShares,
+  getComments,
+  voteOnPoll,
 } from "../../services/postsApi";
+import usePostImpression from "../../hooks/usePostImpression";
+import { getPostDetailPath } from "../../utils/postNavigation";
 import {
+  buildPostShareText,
   copyPostLink,
   getPostShareUrl,
   getSocialShareUrl,
+  isPublicShareablePost,
   openShareWindow,
   recordPostShare,
+  togglePostRepost,
 } from "../../utils/postShare";
 import {
   getUser,
@@ -38,28 +43,45 @@ import {
   pickProfilePhotoPath,
 } from "../../utils/tokenManager";
 import { profileAvatarSrc } from "../../utils/profilePhotoUrl";
-import { getAuthorProfileImageUrl } from "../../utils/profileImageUtils";
+import { getAuthorProfileImageUrl, getUserProfileImage } from "../../utils/profileImageUtils";
 import PostCreationModal from "../PostCreationModal";
-import ConfirmModal from "../ConfirmModal";
 import useSyncProfilePhoto from "../../hooks/useSyncProfilePhoto";
+import {
+  getPortaledMenuStyle,
+  usePortaledMenu,
+} from "../../hooks/usePortaledMenu";
 import SharePostModal from "../SharePostModal";
+import RepostModal from "../RepostModal";
 import UsersListModal from "../UsersListModal";
 import { formatDisplayPersonName } from "../../utils/personDisplayName";
+import DisplayNameWithBadge from "../DisplayNameWithBadge";
 import { getAuthorSubtitle } from "../../utils/authorDisplay";
 import PostMediaGallery from "../PostMediaGallery";
-import FeedLoadMoreButton from "../FeedLoadMoreButton";
+import PostPoll from "../feed/PostPoll";
+import PostActions from "../feed/PostActions";
+import PostDetailModal from "../feed/PostDetailModal";
+import { OriginalPostNest, RepostIntro } from "../feed/RepostChrome";
 import PostCommentsSection from "../PostCommentsSection";
+import FormattedPostBody from "../feed/FormattedPostBody";
+import { normalizeHashtag } from "../../utils/postBodyFormat";
 import AdCard from "../Ads/AdCard";
-import { getAdProFeedAds } from "../../services/adProApi";
+import PeopleYouMayKnowSlider, { PeopleSuggestionsProvider } from "../feed/PeopleYouMayKnowSlider";
+import { getAdProFeedAds, trackAdCampaignEvent, likeAdCampaign, unlikeAdCampaign, saveAdCampaign, unsaveAdCampaign } from "../../services/adProApi";
+import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
+import PitchReelsCarousel from "../pitch/PitchReelsCarousel";
+import PitchPreviewModal from "../pitch/PitchPreviewModal";
+import { getPitchFeed } from "../../services/pitchesApi";
 
 const FEED_PAGE_SIZE = 20;
 
-const mergeFeedPosts = (existing, incoming) => {
-  const seen = new Set(existing.map((p) => p.id));
+ const mergeFeedPosts = (existing, incoming) => {
+  const keyOf = (p) => p.feedItemKey || p.id;
+  const seen = new Set(existing.map(keyOf));
   const merged = [...existing];
   for (const post of incoming) {
-    if (!seen.has(post.id)) {
-      seen.add(post.id);
+    const key = keyOf(post);
+    if (!seen.has(key)) {
+      seen.add(key);
       merged.push(post);
     }
   }
@@ -93,19 +115,6 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString("en-US", options);
 };
 
-// Helper function to parse text with links
-const parseTextWithLinks = (text) => {
-  if (!text) return [];
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
-  return parts.map((part) => {
-    if (part.match(urlRegex)) {
-      return { type: "link", content: part };
-    }
-    return { type: "text", content: part };
-  });
-};
-
 export default function RecruitmentMiddle() {
   useSyncProfilePhoto();
 
@@ -128,8 +137,65 @@ export default function RecruitmentMiddle() {
     }
   };
 
-  const handleAdInteraction = (type, adId) => {
-    console.log(`Ad ${adId} ${type}`);
+  const handleAdInteraction = async (type, adId) => {
+    try {
+      await trackAdCampaignEvent(adId, type);
+    } catch (err) {
+      console.error(`Failed to track ad ${adId} ${type}:`, err);
+    }
+  };
+
+  const patchAd = (adId, patch) => {
+    setAds((prev) =>
+      prev.map((ad) => (String(ad.id) === String(adId) ? { ...ad, ...patch } : ad)),
+    );
+  };
+
+  const handleAdLike = async (adId, isLiked) => {
+    if (isLiked) {
+      await unlikeAdCampaign(adId);
+    } else {
+      await likeAdCampaign(adId);
+    }
+    const ad = ads.find((item) => String(item.id) === String(adId));
+    patchAd(adId, {
+      likedByMe: !isLiked,
+      likesCount: Math.max(0, (Number(ad?.likesCount) || 0) + (isLiked ? -1 : 1)),
+    });
+  };
+
+  const handleAdSave = async (adId, isSaved) => {
+    if (isSaved) {
+      await unsaveAdCampaign(adId);
+    } else {
+      await saveAdCampaign(adId);
+    }
+    const ad = ads.find((item) => String(item.id) === String(adId));
+    patchAd(adId, {
+      savedByMe: !isSaved,
+      savesCount: Math.max(0, (Number(ad?.savesCount) || 0) + (isSaved ? -1 : 1)),
+    });
+  };
+
+  const handleAdShareCount = (adId, sharesCount) => {
+    patchAd(adId, { sharesCount });
+  };
+
+  const handleVotePoll = async (postId, optionId) => {
+    const data = await voteOnPoll(postId, optionId);
+    if (data?.poll) {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, poll: data.poll } : post,
+        ),
+      );
+    }
+    return data;
+  };
+
+  const openCreateModal = (mode = "post") => {
+    setModalMode(mode);
+    setShowModal(true);
   };
 
   const handleDismissAd = (adId) => {
@@ -138,22 +204,73 @@ export default function RecruitmentMiddle() {
 
   const visibleAds = ads.filter((ad) => !dismissedAds.has(ad.id));
 
+  // Pitch Reels preview modal state
+  const [selectedPitchForPreview, setSelectedPitchForPreview] = useState(null);
+  const [isPitchPreviewOpen, setIsPitchPreviewOpen] = useState(false);
+  const [feedPitches, setFeedPitches] = useState([]);
+
+  const handleOpenPitchPreview = (pitch) => {
+    setSelectedPitchForPreview(pitch);
+    setIsPitchPreviewOpen(true);
+  };
+
   const [posts, setPosts] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState("post");
+  const loadMoreRef = useRef(null);
+  const loadingMoreRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const feedMode = searchParams.get("feed") === "saved" ? "saved" : "home";
+  const feedHashtag = normalizeHashtag(
+    searchParams.get("hashtag") || searchParams.get("tag") || "",
+  );
+  const sharedPostId =
+    searchParams.get("post") || searchParams.get("postId") || null;
   const reduxUser = useSelector((state) => state.auth?.user);
 
   const mergedUser = useMemo(() => {
     void location.pathname;
     return mergeAuthUsers(getUser() || {}, reduxUser);
   }, [reduxUser, location.pathname]);
+
+  const isCorporateViewer = useMemo(
+    () => isCorporateRecruiter(mergedUser),
+    [mergedUser],
+  );
+
+  /** Pitch reels in newsfeed: recruiters, employers, and jobseekers */
+  const canSeePitchCarousel = useMemo(() => {
+    const role = String(mergedUser?.role || "").toLowerCase();
+    return role === "recruiter" || role === "employer" || role === "jobseeker";
+  }, [mergedUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!canSeePitchCarousel || feedMode !== "home") {
+      setFeedPitches([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+    (async () => {
+      try {
+        const { pitches } = await getPitchFeed(12, { category: "For You" });
+        if (!cancelled) setFeedPitches(pitches);
+      } catch (error) {
+        console.warn("Failed to load pitch reels:", error?.message || error);
+        if (!cancelled) setFeedPitches([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canSeePitchCarousel, feedMode, mergedUser?.id]);
 
   const currentUserImage = useMemo(() => {
     void location.pathname;
@@ -173,12 +290,19 @@ export default function RecruitmentMiddle() {
     } else {
       fetchFeed();
     }
-  }, [feedMode]);
+  }, [feedMode, feedHashtag]);
+
+  useEffect(() => {
+    if (!sharedPostId) return;
+    navigate(getPostDetailPath(sharedPostId), { replace: true });
+  }, [sharedPostId, navigate]);
 
   const fetchSavedPosts = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const data = await getSavedPosts(FEED_PAGE_SIZE);
+      const data = await getSavedPosts(FEED_PAGE_SIZE, null, {
+        hashtag: feedHashtag || undefined,
+      });
       setPosts(data.posts || []);
       setNextCursor(data.nextCursor ?? null);
       if (!silent) setError(null);
@@ -200,7 +324,9 @@ export default function RecruitmentMiddle() {
   const fetchFeed = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const data = await getFeed(FEED_PAGE_SIZE);
+      const data = await getFeed(FEED_PAGE_SIZE, null, {
+        hashtag: feedHashtag || undefined,
+      });
       setPosts(data.posts || []);
       setNextCursor(data.nextCursor ?? null);
       if (!silent) setError(null);
@@ -212,22 +338,57 @@ export default function RecruitmentMiddle() {
     }
   };
 
-  const loadMorePosts = async () => {
-    if (!nextCursor || loadingMore) return;
+  const loadMorePosts = useCallback(async () => {
+    if (!nextCursor || loadingMore || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     try {
       setLoadingMore(true);
       const data =
         feedMode === "saved"
-          ? await getSavedPosts(FEED_PAGE_SIZE, nextCursor)
-          : await getFeed(FEED_PAGE_SIZE, nextCursor);
+          ? await getSavedPosts(FEED_PAGE_SIZE, nextCursor, {
+              hashtag: feedHashtag || undefined,
+            })
+          : await getFeed(FEED_PAGE_SIZE, nextCursor, {
+              hashtag: feedHashtag || undefined,
+            });
       setPosts((prev) => mergeFeedPosts(prev, data.posts || []));
       setNextCursor(data.nextCursor ?? null);
     } catch (err) {
       console.error("Error loading more posts:", err);
+      toast.error("Failed to load more posts. Try again.");
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  };
+  }, [nextCursor, loadingMore, feedMode, feedHashtag]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !nextCursor) return undefined;
+
+    let scrollRoot = node.parentElement;
+    while (scrollRoot) {
+      const { overflowY } = window.getComputedStyle(scrollRoot);
+      if (overflowY === "auto" || overflowY === "scroll") break;
+      scrollRoot = scrollRoot.parentElement;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMorePosts();
+        }
+      },
+      {
+        root: scrollRoot || null,
+        rootMargin: "240px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMorePosts, nextCursor, posts.length]);
 
   const patchPost = (postId, patch) => {
     setPosts((prev) =>
@@ -236,22 +397,26 @@ export default function RecruitmentMiddle() {
   };
 
   const handleLike = async (postId, isLiked) => {
+    const current = posts.find((p) => p.id === postId);
+    patchPost(postId, {
+      likedByMe: !isLiked,
+      likesCount: Math.max(
+        0,
+        (current?.likesCount || 0) + (isLiked ? -1 : 1),
+      ),
+    });
     try {
       if (isLiked) {
         await unlikePost(postId);
       } else {
         await likePost(postId);
       }
-      const current = posts.find((p) => p.id === postId);
-      patchPost(postId, {
-        likedByMe: !isLiked,
-        likesCount: Math.max(
-          0,
-          (current?.likesCount || 0) + (isLiked ? -1 : 1),
-        ),
-      });
     } catch (err) {
       console.error("Error toggling like:", err);
+      patchPost(postId, {
+        likedByMe: isLiked,
+        likesCount: current?.likesCount || 0,
+      });
     }
   };
 
@@ -259,12 +424,20 @@ export default function RecruitmentMiddle() {
     try {
       await recordPostShare(postId);
       const current = posts.find((p) => p.id === postId);
-      patchPost(postId, {
-        sharesCount: (current?.sharesCount || 0) + 1,
-      });
+      if (!current?.sharedByMe) {
+        patchPost(postId, {
+          sharesCount: (current?.sharesCount || 0) + 1,
+          sharedByMe: true,
+        });
+      }
     } catch (err) {
       console.error("Error sharing post:", err);
     }
+  };
+
+  const handleRepost = async (postId, currentlyShared, quote = null, scheduledAt = null) => {
+    await togglePostRepost(postId, currentlyShared, quote, scheduledAt);
+    refreshPosts();
   };
 
   const handleSave = async (postId, isSaved) => {
@@ -306,25 +479,26 @@ export default function RecruitmentMiddle() {
   };
 
   return (
-    <main className="w-full px-2 py-6 space-y-8 bg-[#F5F5F5]">
+    <main className="w-full px-2 py-6 space-y-8 bg-[#F5F5F5]" data-testid="news-feed">
       {/* Create Post Button */}
       <div className="max-w-3xl p-6 mx-auto bg-white shadow rounded-2xl">
         <div
           className="flex items-center gap-3 cursor-pointer"
-          onClick={() => setShowModal(true)}
+          data-testid="news-feed-start-post"
+          onClick={() => openCreateModal("post")}
         >
           <img
             src={currentUserImage}
             alt="profile"
-            className="rounded-full w-12 h-12"
+            className="rounded-full w-12 h-12 object-cover object-center"
           />
           <div className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-500 hover:bg-gray-200 transition-colors">
             Start a post
           </div>
         </div>
-        <div className="flex items-center justify-around mt-3 pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-around mt-3 pt-3 border-t border-[#A9A9A9]">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal("post")}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <img
@@ -335,7 +509,7 @@ export default function RecruitmentMiddle() {
             <span className="text-sm">Image</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal("post")}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <img
@@ -346,7 +520,7 @@ export default function RecruitmentMiddle() {
             <span className="text-sm">Video</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => openCreateModal("poll")}
             className="flex items-center gap-2 text-[#1A3E32] hover:bg-gray-100 px-4 py-2 rounded-lg"
           >
             <img
@@ -360,6 +534,24 @@ export default function RecruitmentMiddle() {
       </div>
 
       <hr className="border-t-2 border-[#16730F]" />
+
+      {feedHashtag && (
+        <div className="max-w-3xl mx-auto flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#1A3E32]">
+            {feedMode === "saved" ? "Saved posts tagged" : "Posts tagged"} #
+            {feedHashtag}
+          </h2>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(feedMode === "saved" ? "/news-feed?feed=saved" : "/news-feed")
+            }
+            className="text-sm text-[#16730F] hover:underline font-medium"
+          >
+            Clear tag
+          </button>
+        </div>
+      )}
 
       {feedMode === "saved" && (
         <div className="max-w-3xl mx-auto flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm">
@@ -382,56 +574,122 @@ export default function RecruitmentMiddle() {
       ) : error ? (
         <div className="text-center py-8 text-red-500">{error}</div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          {feedMode === "saved"
-            ? "No saved posts yet. Save posts from your feed to see them here."
-            : "No posts yet. Be the first to post!"}
+        <div className="flex flex-col gap-4">
+          {feedMode === "home" &&
+            canSeePitchCarousel &&
+            feedPitches.length > 0 && (
+              <PitchReelsCarousel
+                pitches={feedPitches}
+                onSelectPitch={handleOpenPitchPreview}
+              />
+            )}
+          <div className="text-center py-8 text-gray-500">
+            {feedMode === "saved"
+              ? "No saved posts yet. Save posts from your feed to see them here."
+              : "No posts yet. Be the first to post!"}
+          </div>
         </div>
       ) : (
-        <>
+        <PeopleSuggestionsProvider
+          currentUserId={mergedUser?.id}
+          currentUser={mergedUser}
+        >
           {posts.map((post, index) => (
-            <React.Fragment key={post.id}>
-              <RecruitmentPostCard
-                key={post.id}
-                post={post}
+            <React.Fragment key={post.feedItemKey || post.id}>
+              <div id={`post-${post.feedItemKey || post.id}`}>
+                <RecruitmentPostCard
+                  key={post.feedItemKey || post.id}
+                  post={post}
                 currentUserId={mergedUser?.id}
                 currentUserPhotoUrl={currentUserImage}
                 onLike={handleLike}
                 onSave={handleSave}
                 onShare={handleShare}
+                onRepost={handleRepost}
                 onUpdate={handleUpdatePost}
                 onDelete={handleDeletePost}
+                onVotePoll={handleVotePoll}
               />
+              </div>
+
+              {/* Pitch Reels — after 2nd post (or last if fewer) */}
+              {feedMode === "home" &&
+                canSeePitchCarousel &&
+                feedPitches.length > 0 &&
+                (index === 1 || (posts.length < 2 && index === posts.length - 1)) && (
+                  <PitchReelsCarousel
+                    pitches={feedPitches}
+                    onSelectPitch={handleOpenPitchPreview}
+                  />
+                )}
+
               {/* this is ads so is just dummy for now  */}
               {/* it will display after three posts u can use it */}
               {(index + 1) % 3 === 0 && visibleAds.length > 0 && (
                 <AdCard
                   ad={visibleAds[Math.floor(index / 3) % visibleAds.length]}
                   onInteraction={handleAdInteraction}
+                  onLike={handleAdLike}
+                  onSave={handleAdSave}
+                  onShare={handleAdShareCount}
                   onClose={handleDismissAd}
                 />
               )}
+
+              {/* People You May Know — not for corporate (follow-only accounts) */}
+              {feedMode === "home" &&
+                !isCorporateViewer &&
+                (((index + 1) % 4 === 0) ||
+                  (posts.length < 4 && index === posts.length - 1)) && (
+                  <PeopleYouMayKnowSlider
+                    key={`pymk-slider-${Math.floor(index / 4)}`}
+                    segmentIndex={Math.floor(index / 4)}
+                    currentUserId={mergedUser?.id}
+                    currentUser={mergedUser}
+                  />
+                )}
             </React.Fragment>
           ))}
-          <FeedLoadMoreButton
-            hasMore={Boolean(nextCursor)}
-            loading={loadingMore}
-            onLoadMore={loadMorePosts}
-            label={
-              feedMode === "saved"
-                ? "Load more saved posts"
-                : "Load older posts"
-            }
-          />
-        </>
+          {nextCursor && (
+            <div ref={loadMoreRef} className="h-10 w-full" aria-hidden />
+          )}
+          {loadingMore && (
+            <div className="flex justify-center items-center gap-2 py-6 text-[#16730F]">
+              <FaSpinner className="animate-spin" />
+              <span className="text-sm font-medium">Loading more posts...</span>
+            </div>
+          )}
+          {!nextCursor && posts.length > 0 && !loadingMore && (
+            <p className="text-center text-sm text-gray-500 py-6">
+              You’ve reached the end of the feed
+            </p>
+          )}
+        </PeopleSuggestionsProvider>
       )}
       <PostCreationModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onPost={async (postData) => {
-          await createPost(postData);
-          refreshPosts();
+        onClose={() => {
+          setShowModal(false);
+          setModalMode("post");
         }}
+        initialMode={modalMode}
+        onPost={async (postData) => {
+          const data = await createPost(postData);
+          const newPost = data?.post;
+          if (feedMode === "home" && newPost?.status === "published") {
+            setPosts((prev) =>
+              prev.some((p) => p.id === newPost.id) ? prev : [newPost, ...prev],
+            );
+          }
+        }}
+      />
+
+      {/* Pitch Preview Modal Popup */}
+      <PitchPreviewModal
+        isOpen={isPitchPreviewOpen}
+        onClose={() => setIsPitchPreviewOpen(false)}
+        initialPitch={selectedPitchForPreview}
+        allPitches={feedPitches}
       />
     </main>
   );
@@ -442,8 +700,10 @@ const RecruitmentPostCard = ({
   onLike,
   onSave,
   onShare,
+  onRepost,
   onUpdate,
   onDelete,
+  onVotePoll,
   currentUserId,
   currentUserPhotoUrl,
 }) => {
@@ -458,26 +718,50 @@ const RecruitmentPostCard = ({
     return raw ? profileAvatarSrc(raw) : currentUserPhotoUrl;
   }, [reduxUser, currentUserPhotoUrl]);
 
+  const navigate = useNavigate();
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  const openPostDetail = () => {
+    setShowDetailModal(true);
+  };
+
   const isOwner = String(post.authorId) === String(currentUserId);
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const isRepost = Boolean(post.repostedBy);
+  const impressionRef = usePostImpression({
+    postId: post.id,
+    authorId: post.authorId,
+    currentUserId,
+  });
   const [liked, setLiked] = useState(post.likedByMe === true);
   const [saved, setSaved] = useState(post.savedByMe === true);
-  const navigate = useNavigate();
+  const [sharedByMe, setSharedByMe] = useState(post.sharedByMe === true);
+  const [sharesCount, setSharesCount] = useState(post.sharesCount || 0);
+  const [reposting, setReposting] = useState(false);
 
   useEffect(() => {
     setLiked(post.likedByMe === true);
     setSaved(post.savedByMe === true);
-  }, [post.id, post.likedByMe, post.savedByMe]);
+    setSharedByMe(post.sharedByMe === true);
+    setSharesCount(post.sharesCount || 0);
+  }, [post.id, post.likedByMe, post.savedByMe, post.sharedByMe, post.sharesCount, post.feedItemKey]);
   const [showMenu, setShowMenu] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editBody, setEditBody] = useState(post.body || "");
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [linkModalOpen, setLinkModalOpen] = useState(false);
-  const [pendingLink, setPendingLink] = useState("");
+  const { triggerRef, menuRef, menuPos } = usePortaledMenu({
+    isOpen: showMenu,
+    onClose: () => setShowMenu(false),
+    minWidth: 128,
+    maxHeight: 120,
+  });
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showRepostModal, setShowRepostModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount || 0);
+
+  useEffect(() => {
+    setCommentsCount(post.commentsCount || 0);
+  }, [post.id, post.commentsCount]);
 
   // Users list modal state
   const [usersListModalOpen, setUsersListModalOpen] = useState(false);
@@ -485,17 +769,6 @@ const RecruitmentPostCard = ({
   const [usersListType, setUsersListType] = useState("likes");
   const [usersListUsers, setUsersListUsers] = useState([]);
   const [usersListLoading, setUsersListLoading] = useState(false);
-
-  const handleLinkClick = (e, url) => {
-    e.preventDefault();
-    setPendingLink(url);
-    setLinkModalOpen(true);
-  };
-
-  const handleConfirmLink = () => {
-    window.open(pendingLink, "_blank");
-    setLinkModalOpen(false);
-  };
 
   const fetchComments = async (force = false) => {
     if (!force && comments.length > 0) return;
@@ -517,6 +790,14 @@ const RecruitmentPostCard = ({
     setShowComments(!showComments);
   };
 
+  const handleCommentAction = () => {
+    if (isRepost) {
+      openPostDetail();
+      return;
+    }
+    toggleComments();
+  };
+
   const handleLikeClick = () => {
     setLiked(!liked);
     onLike(post.id, liked);
@@ -527,18 +808,97 @@ const RecruitmentPostCard = ({
     onSave(post.id, saved);
   };
 
+  const isMyScheduledRepost =
+    post.myRepostIsScheduled === true ||
+    (post.repostIsScheduled === true &&
+      String(post.repostedBy?.id) === String(currentUserId));
+
+  const handleRepostClick = async () => {
+    if (!onRepost || reposting) return;
+    if (sharedByMe && isMyScheduledRepost) {
+      setShowRepostModal(true);
+      return;
+    }
+    if (sharedByMe) {
+      const previousCount = sharesCount;
+      setSharedByMe(false);
+      setSharesCount(Math.max(0, previousCount - 1));
+      setReposting(true);
+      try {
+        await onRepost(post.id, true);
+      } catch {
+        setSharedByMe(true);
+        setSharesCount(previousCount);
+      } finally {
+        setReposting(false);
+      }
+      return;
+    }
+    setShowRepostModal(true);
+  };
+
+  const handleRepostConfirm = async (quote, scheduledAt = null) => {
+    if (!onRepost || reposting) return;
+    const alreadyShared = sharedByMe;
+    const wasScheduled = isMyScheduledRepost;
+    const willBeScheduled = Boolean(scheduledAt);
+    const previousCount = sharesCount;
+    const wasLive = alreadyShared && !wasScheduled;
+    const willBeLive = !willBeScheduled;
+
+    setSharedByMe(true);
+    if (!wasLive && willBeLive) setSharesCount(previousCount + 1);
+    if (wasLive && !willBeLive) setSharesCount(Math.max(0, previousCount - 1));
+    setReposting(true);
+    try {
+      await onRepost(post.id, false, quote, scheduledAt);
+      setShowRepostModal(false);
+    } catch {
+      setSharedByMe(alreadyShared);
+      setSharesCount(previousCount);
+    } finally {
+      setReposting(false);
+    }
+  };
+
+  const handleRepostRemove = async () => {
+    if (!onRepost || reposting) return;
+    const previousCount = sharesCount;
+    const wasLive = sharedByMe && !isMyScheduledRepost;
+    setSharedByMe(false);
+    if (wasLive) setSharesCount(Math.max(0, previousCount - 1));
+    setReposting(true);
+    try {
+      await onRepost(post.id, true);
+      setShowRepostModal(false);
+    } catch {
+      setSharedByMe(true);
+      setSharesCount(previousCount);
+    } finally {
+      setReposting(false);
+    }
+  };
+
   const handleShareClick = () => {
     setShowShareModal(true);
   };
 
   const handleShareOption = async (platform) => {
     try {
+      if (!isPublicShareablePost(post)) {
+        toast.info(
+          "Only public posts show a rich preview on social media. Connections-only posts can still be shared as a link.",
+        );
+      }
+
       await onShare(post.id);
       const postUrl = getPostShareUrl(post.id);
+      const shareText = buildPostShareText(post);
+
       if (platform === "copy") {
         await copyPostLink(post.id);
       } else {
-        openShareWindow(getSocialShareUrl(platform, postUrl));
+        openShareWindow(getSocialShareUrl(platform, postUrl, { text: shareText }));
       }
     } finally {
       setShowShareModal(false);
@@ -546,21 +906,7 @@ const RecruitmentPostCard = ({
   };
 
   const handleEditClick = () => {
-    setEditBody(post.body || "");
-    setIsEditing(true);
-  };
-
-  const handleEditSave = async () => {
-    if (!editBody.trim()) return;
-    try {
-      setSavingEdit(true);
-      await onUpdate(post.id, { body: editBody });
-      setIsEditing(false);
-    } catch (err) {
-      console.error("Error updating post:", err);
-    } finally {
-      setSavingEdit(false);
-    }
+    setShowEditModal(true);
   };
 
   const handleDeleteClick = async () => {
@@ -571,11 +917,6 @@ const RecruitmentPostCard = ({
         console.error("Error deleting post:", err);
       }
     }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditBody(post.body || "");
   };
 
   // Function to show users who liked
@@ -662,10 +1003,21 @@ const RecruitmentPostCard = ({
     : getAuthorProfileImageUrl(post.author);
 
   return (
-    <div className="max-w-3xl p-4 sm:p-6 mx-auto space-y-4 sm:space-y-6 bg-white shadow rounded-2xl">
+    <div
+      ref={impressionRef}
+      className="max-w-3xl p-4 sm:p-6 mx-auto space-y-4 sm:space-y-6 bg-white shadow rounded-2xl"
+    >
+      <RepostIntro
+        repostedBy={post.repostedBy}
+        quote={post.repostQuote}
+        repostedAt={post.repostScheduledAt || post.repostedAt}
+        repostIsScheduled={post.repostIsScheduled}
+        currentUserId={currentUserId}
+      />
+      <OriginalPostNest active={Boolean(post.repostedBy)}>
       {/* Post Header */}
-      <div className="flex flex-col items-start justify-between gap-3 sm:gap-4 sm:flex-row">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-row items-start justify-between gap-3 w-full">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             type="button"
             onClick={goToAuthorProfile}
@@ -676,17 +1028,22 @@ const RecruitmentPostCard = ({
             <img
               src={authorImage}
               alt="profile"
-              className="rounded-full w-10 h-10 sm:w-12 sm:h-12 cursor-pointer hover:opacity-90"
+              className="rounded-full w-10 h-10 sm:w-12 sm:h-12 object-cover object-center cursor-pointer hover:opacity-90"
             />
           </button>
-          <div>
+          <div className="min-w-0 flex-1">
             <button
               type="button"
               onClick={goToAuthorProfile}
               disabled={!post.authorId}
-              className="font-semibold text-base sm:text-lg text-[#16730F] hover:underline text-left disabled:cursor-default disabled:no-underline"
+              className="font-semibold text-base sm:text-lg text-[#16730F] hover:underline text-left disabled:cursor-default disabled:no-underline max-w-full min-w-0"
             >
-              {authorName}
+              <DisplayNameWithBadge
+                user={post.author}
+                fallback={authorName}
+                badgeSize="xs"
+                responsiveBadge
+              />
             </button>
             <p className="text-[#1A3E32] text-xs sm:text-sm">
               {authorJobTitle}
@@ -697,113 +1054,85 @@ const RecruitmentPostCard = ({
           </div>
         </div>
         {isOwner && (
-          <div className="relative">
-            <FaEllipsisH
-              className="text-gray-500 cursor-pointer"
+          <div className="relative shrink-0 self-start">
+            <button
+              ref={triggerRef}
+              type="button"
               onClick={() => setShowMenu(!showMenu)}
-            />
-            {showMenu && (
-              <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg py-2 w-32 border z-10">
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    handleEditClick();
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              className="p-2 -mr-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label="Post options"
+              aria-expanded={showMenu}
+            >
+              <FaEllipsisH className="text-base" />
+            </button>
+            {showMenu &&
+              menuPos &&
+              typeof document !== "undefined" &&
+              createPortal(
+                <div
+                  ref={menuRef}
+                  className="bg-white shadow-lg rounded-lg py-2 border border-[#D3D3D3]"
+                  style={getPortaledMenuStyle(menuPos)}
                 >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    handleDeleteClick();
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleEditClick();
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleDeleteClick();
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                </div>,
+                document.body,
+              )}
           </div>
         )}
       </div>
 
       {/* Post Content */}
-      {isEditing ? (
-        <div className="space-y-3">
-          <textarea
-            value={editBody}
-            onChange={(e) => setEditBody(e.target.value)}
-            className="w-full p-3 border-2 border-[#16730F] rounded-xl focus:outline-none"
-            rows={4}
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleEditSave}
-              disabled={savingEdit}
-              className="bg-[#16730F] text-white px-4 py-2 rounded-full text-sm hover:bg-[#145a0c] disabled:opacity-50"
-            >
-              {savingEdit ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={handleCancelEdit}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-full text-sm hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <p className="text-black text-sm sm:text-base whitespace-pre-wrap break-words">
-            {(() => {
-              const body = post.body || "";
-              const shouldTruncate = body.length > 200;
-              const displayText =
-                shouldTruncate && !isExpanded
-                  ? body.substring(0, 200) + "..."
-                  : body;
-              const textParts = parseTextWithLinks(displayText);
-              return textParts.map((part, index) =>
-                part.type === "link" ? (
-                  <a
-                    key={index}
-                    href={part.content}
-                    onClick={(e) => handleLinkClick(e, part.content)}
-                    className="text-[#16730F] hover:underline cursor-pointer"
-                  >
-                    {part.content}
-                  </a>
-                ) : (
-                  <span key={index}>{part.content}</span>
-                ),
-              );
-            })()}
-          </p>
-          {post.body && post.body.length > 200 && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-[#16730F] font-medium text-sm mt-1 hover:underline"
-            >
-              {isExpanded ? "See less" : "See more"}
-            </button>
-          )}
-        </div>
-      )}
-
-      <ConfirmModal
-        isOpen={linkModalOpen}
-        title="Leaving Bejite"
-        message="You're about to leave Bejite. Are you sure you want to continue?"
-        onConfirm={handleConfirmLink}
-        onCancel={() => setLinkModalOpen(false)}
-      />
+      <div className="rounded-lg">
+        <FormattedPostBody body={post.body} truncateAt={200} />
+      </div>
 
       {post.media && post.media.length > 0 && (
-        <PostMediaGallery media={post.media} />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={openPostDetail}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openPostDetail();
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <PostMediaGallery media={post.media} />
+        </div>
       )}
 
-      {/* Post Stats — numbers with labels on desktop/tablet only */}
+      {post.poll && (
+        <PostPoll
+          poll={post.poll}
+          onVote={async (optionId) => {
+            if (!onVotePoll) return;
+            await onVotePoll(post.id, optionId);
+          }}
+        />
+      )}
+      </OriginalPostNest>
+
+      {!isRepost && (
       <div className="hidden sm:flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-500">
         {post.likesCount > 0 && (
           <button
@@ -813,12 +1142,13 @@ const RecruitmentPostCard = ({
             {post.likesCount} like{post.likesCount > 1 ? "s" : ""}
           </button>
         )}
-        {post.commentsCount > 0 && (
+        {commentsCount > 0 && (
           <button
-            onClick={toggleComments}
+            type="button"
+            onClick={handleCommentAction}
             className="hover:underline font-medium"
           >
-            {post.commentsCount} comment{post.commentsCount > 1 ? "s" : ""}
+            {commentsCount} comment{commentsCount > 1 ? "s" : ""}
           </button>
         )}
         {post.sharesCount > 0 && (
@@ -826,78 +1156,76 @@ const RecruitmentPostCard = ({
             onClick={handleShowSharers}
             className="hover:underline font-medium"
           >
-            {post.sharesCount} share{post.sharesCount > 1 ? "s" : ""}
+            {sharesCount} repost{sharesCount > 1 ? "s" : ""}
           </button>
         )}
       </div>
+      )}
 
-      {/* Post Actions — mobile: icon + count; desktop: icon + label */}
-      <div className="flex flex-row justify-start items-center gap-4 sm:gap-6 border-t pt-4">
-        <button
-          onClick={handleLikeClick}
-          className={`flex items-center justify-center gap-1.5 p-0 ${liked ? "text-red-500" : "text-gray-600 hover:text-red-500"}`}
-          aria-label={liked ? "Unlike" : "Like"}
-        >
-          <FaHeart className={liked ? "fill-current text-red-500" : ""} />
-          <span className="text-xs tabular-nums sm:hidden">
-            {post.likesCount || 0}
-          </span>
-          <span className="hidden sm:inline text-xs sm:text-sm">
-            {liked ? "Liked" : "Like"}
-          </span>
-        </button>
-        <button
-          onClick={toggleComments}
-          className="flex items-center justify-center gap-1.5 p-0 text-gray-600 hover:text-[#16730F]"
-          aria-label="Comment"
-        >
-          <FaComment />
-          <span className="text-xs tabular-nums sm:hidden">
-            {post.commentsCount || 0}
-          </span>
-          <span className="hidden sm:inline text-xs sm:text-sm">Comment</span>
-        </button>
-        <button
-          type="button"
-          onClick={handleShareClick}
-          className="flex items-center justify-center gap-1.5 p-0 text-gray-600 hover:text-[#16730F]"
-          aria-label="Share"
-        >
-          <FaShare />
-          <span className="text-xs tabular-nums sm:hidden">
-            {post.sharesCount || 0}
-          </span>
-          <span className="hidden sm:inline text-xs sm:text-sm">Share</span>
-        </button>
-        <button
-          onClick={handleSaveClick}
-          className={`flex items-center justify-center gap-2 p-0 ${saved ? "text-[#16730F]" : "text-gray-600 hover:text-[#16730F]"}`}
-          aria-label={saved ? "Unsave post" : "Save post"}
-        >
-          <FaBookmark className={saved ? "fill-current" : ""} />
-          <span className="hidden sm:inline text-xs sm:text-sm">
-            {saved ? "Saved" : "Save"}
-          </span>
-        </button>
-      </div>
-
-      {/* Comments Section */}
-      <SharePostModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        onShare={handleShareOption}
+      <PostActions
+        liked={liked}
+        saved={saved}
+        sharedByMe={sharedByMe}
+        repostScheduled={isMyScheduledRepost}
+        likesCount={post.likesCount || 0}
+        commentsCount={commentsCount}
+        sharesCount={sharesCount}
+        hideCounts={isRepost}
+        onLike={handleLikeClick}
+        onShowLikers={handleShowLikers}
+        onComment={handleCommentAction}
+        onRepost={handleRepostClick}
+        onShare={handleShareClick}
+        onSave={handleSaveClick}
       />
 
-      {/* Comments Section */}
-      {showComments && (
+      {showComments && !isRepost && (
         <PostCommentsSection
           postId={post.id}
           comments={comments}
           setComments={setComments}
           loading={loadingComments}
           onReload={() => fetchComments(true)}
-          currentUserPhotoUrl={syncedCurrentUserPhoto}
+          onCommentCountChange={(delta) =>
+            setCommentsCount((count) => Math.max(0, count + delta))
+          }
+          currentUserPhotoUrl={getUserProfileImage()}
           currentUserId={currentUserId}
+        />
+      )}
+
+      <SharePostModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={handleShareOption}
+      />
+      <RepostModal
+        isOpen={showRepostModal}
+        onClose={() => setShowRepostModal(false)}
+        post={post}
+        onConfirm={handleRepostConfirm}
+        onRemove={handleRepostRemove}
+        submitting={reposting}
+        isEditing={sharedByMe && isMyScheduledRepost}
+        initialQuote={
+          post.myRepostQuote ||
+          (isMyScheduledRepost ? post.repostQuote : "") ||
+          ""
+        }
+        initialScheduledAt={
+          post.myRepostScheduledAt ||
+          (isMyScheduledRepost ? post.repostScheduledAt : null)
+        }
+      />
+
+      {showEditModal && (
+        <PostCreationModal
+          isOpen
+          editingPost={post}
+          onClose={() => setShowEditModal(false)}
+          onPost={async (payload) => {
+            await onUpdate(post.id, payload);
+          }}
         />
       )}
 
@@ -909,6 +1237,17 @@ const RecruitmentPostCard = ({
         users={usersListUsers}
         loading={usersListLoading}
         type={usersListType}
+      />
+
+      <PostDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        post={post}
+        onLike={onLike}
+        onSave={onSave}
+        onShare={onShare}
+        onRepost={onRepost}
+        currentUserId={currentUserId}
       />
     </div>
   );

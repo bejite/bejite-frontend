@@ -56,14 +56,14 @@ const ProfileSkillsDisplay = ({
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2.5">
       {items.map((skill) => (
         <li
           key={skill.id}
-          className="rounded-xl border border-gray-100 bg-[#F9FAF8] px-4 py-3"
+          className="rounded-2xl border border-slate-200/80 bg-slate-50/70 hover:bg-white hover:border-emerald-300 p-3 sm:p-3.5 transition-all duration-200 shadow-2xs hover:shadow-xs group"
         >
-          <div className="flex flex-wrap items-center gap-2 gap-y-1">
-            <span className="font-semibold text-[#1A3E32] text-sm sm:text-base">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-bold text-slate-800 text-xs sm:text-sm group-hover:text-[#16730F] transition-colors">
               {skill.name}
             </span>
             {skill.category && (
@@ -73,8 +73,9 @@ const ProfileSkillsDisplay = ({
             )}
           </div>
           {skill.experienceLabel && (
-            <p className="text-sm text-[#16730F] mt-1">
-              {skill.experienceLabel} of experience
+            <p className="text-xs font-semibold text-[#16730F] mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16730F] shrink-0"></span>
+              <span>{skill.experienceLabel} of experience</span>
             </p>
           )}
         </li>

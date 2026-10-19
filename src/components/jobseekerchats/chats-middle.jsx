@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaArrowLeft, FaPhone, FaVideo, FaBars } from 'react-icons/fa';
+import { FaArrowLeft, /* FaPhone, FaVideo, */ FaBars } from 'react-icons/fa';
 import image from '../../assets/Ellipse.png'; 
 
 function ChatsMiddle({ onShowChatList, onShowChatInfo }) {
@@ -32,12 +32,12 @@ function ChatsMiddle({ onShowChatList, onShowChatInfo }) {
         </div>
 
         <div className='flex items-center gap-2'>
-          <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition">
+          {/* <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition">
             <FaPhone className="text-sm" />
           </button>
           <button className="bg-[#16730F] text-white p-2 rounded-full hover:bg-[#1a5c13] transition">
             <FaVideo className="text-sm" />
-          </button>
+          </button> */}
           <button 
             onClick={onShowChatInfo}
             className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors ml-2"

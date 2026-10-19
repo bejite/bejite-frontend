@@ -215,7 +215,7 @@ export default function EmployeeSentInvite() {
               <div className="bg-[#16730F] h-screen w-65 p-8 rounded-t-3xl flex flex-col items-center text-white">
                 <img src={activeChat.avatar}
                   alt={activeChat.name}
-                  className="rounded-full w-17 h-17" />
+                  className="rounded-full w-17 h-17 object-cover object-center" />
                 <p className="font-medium text-[16px] mt-6">{activeChat.name}</p>
                 <p className="font-normal text-[11px]">Employer</p>
                 <button className="w-[100px] p-3 rounded-3xl font-bold text-[10px] bg-[#6B8E23] hover:bg-[#6a8e23c0] mt-6 mb-10 cursor-pointer">View Profile</button>

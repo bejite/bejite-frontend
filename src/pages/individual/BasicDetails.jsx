@@ -1,16 +1,28 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 import NavigationButtons from "../../components/NavigationButtons";
 import ProgressBar from "../../components/ProgressBar";
 import StepTabs from "../../components/StepTabs";
 import Header from "../../components/Header";
+import DobCalendarPicker from "../../components/forms/DobCalendarPicker";
 import useAuth from "../../hooks/useAuth";
+import useRecruiterProfile from "../../services/recruiterProfile";
+import { updateUser } from "../../features/auth/authSlice";
+import {
+  formatRecruiterFullName,
+  splitRecruiterFullName,
+} from "../../utils/recruiterDisplayName";
 
 const BasicDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentStep } = useOutletContext();
+  const dispatch = useDispatch();
+  const { currentStep, isEditMode, recruiterData, getPath } =
+    useOutletContext();
   const { user } = useAuth();
+  const { updateBasicDetails } = useRecruiterProfile();
 
   const steps = ["Basic Details", "Profile Setup", "Location"];
 
@@ -18,104 +30,188 @@ const BasicDetails = () => {
     full_name: "",
     email: "",
     phone_number: "",
+    date_of_birth: "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    console.log("[IndividualBasicDetails] Page mounted");
-    console.log("[IndividualBasicDetails] Raw location.state on mount:", location.state);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount log only
+    if (!isEditMode || !recruiterData) return;
+
+    setFormData({
+      full_name: formatRecruiterFullName(
+        recruiterData.firstName,
+        recruiterData.lastName,
+      ),
+      email: recruiterData.email || "",
+      phone_number: recruiterData.phone_number || "",
+      date_of_birth:
+        recruiterData.date_of_birth ||
+        recruiterData.dob ||
+        "",
+    });
+  }, [isEditMode, recruiterData]);
 
   useEffect(() => {
+    if (isEditMode) return;
     let storedUser = {};
     try {
       storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-    } catch (error) {
-      console.warn("[IndividualBasicDetails] Failed to parse localStorage user:", error);
+    } catch {
       storedUser = {};
     }
 
     const stateUser = location.state || {};
     const resolvedEmail =
-      stateUser?.email ||
-      user?.email ||
-      storedUser?.email ||
-      "";
-    const resolvedName =
-      `${stateUser?.firstName || user?.firstName || storedUser?.firstName || ""} ${stateUser?.lastName || user?.lastName || storedUser?.lastName || ""}`.trim();
+      stateUser?.email || user?.email || storedUser?.email || "";
+    const resolvedName = formatRecruiterFullName(
+      stateUser?.firstName || user?.firstName || storedUser?.firstName,
+      stateUser?.lastName || user?.lastName || storedUser?.lastName,
+    );
     const resolvedPhone =
       user?.phone_number ||
       user?.phone ||
       storedUser?.phone_number ||
       storedUser?.phone ||
       "";
-
-    console.log("[IndividualBasicDetails] Prefill source route state:", stateUser);
-    console.log("[IndividualBasicDetails] Prefill source auth user:", user);
-    console.log("[IndividualBasicDetails] Prefill source localStorage user:", storedUser);
-    console.log("[IndividualBasicDetails] Prefill resolved:", {
-      resolvedEmail,
-      resolvedName,
-      resolvedPhone,
-    });
+    const resolvedDob =
+      user?.date_of_birth ||
+      user?.dob ||
+      storedUser?.date_of_birth ||
+      storedUser?.dob ||
+      "";
 
     setFormData((prev) => {
       const next = {
         full_name: prev.full_name || resolvedName,
         email: prev.email || resolvedEmail,
         phone_number: prev.phone_number || resolvedPhone,
+        date_of_birth: prev.date_of_birth || resolvedDob,
       };
 
-      // Avoid rerender loop/log spam when values are unchanged.
       if (
         prev.full_name === next.full_name &&
         prev.email === next.email &&
-        prev.phone_number === next.phone_number
+        prev.phone_number === next.phone_number &&
+        prev.date_of_birth === next.date_of_birth
       ) {
         return prev;
       }
 
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- primitive deps only; full location.state/user ref churn causes loops
   }, [
-    location.state?.email,
-    location.state?.firstName,
-    location.state?.lastName,
+    isEditMode,
+    location.state,
     user?.email,
     user?.firstName,
     user?.lastName,
     user?.phone_number,
     user?.phone,
+    user?.date_of_birth,
+    user?.dob,
   ]);
-
-  useEffect(() => {
-    console.log("[IndividualBasicDetails] formData updated:", formData);
-  }, [formData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const isFormComplete = Object.values(formData).every((v) => v.trim() !== "");
+  const isFormComplete = ["full_name", "email", "phone_number"].every(
+    (key) => String(formData[key] || "").trim() !== "",
+  );
+
+  const handleNextStep = async () => {
+    if (!isFormComplete || submitting) {
+      if (!isFormComplete) toast.error("Please complete all fields.");
+      return;
+    }
+
+    const submitData = async () => {
+      const dob = formData.date_of_birth?.trim() || null;
+      await updateBasicDetails({
+        full_name: formData.full_name.trim(),
+        phone_number: formData.phone_number,
+        date_of_birth: dob,
+        dob,
+      });
+
+      const { firstName, lastName } = splitRecruiterFullName(
+        formData.full_name,
+      );
+      const phone_number = formData.phone_number;
+
+      dispatch(
+        updateUser({
+          firstName,
+          lastName,
+          phone_number,
+          phone: phone_number,
+          date_of_birth: dob,
+          dob,
+        }),
+      );
+
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...stored,
+            firstName,
+            lastName,
+            phone_number,
+            phone: phone_number,
+            date_of_birth: dob,
+            dob,
+          }),
+        );
+      } catch {
+        /* optional */
+      }
+
+      return "Basic details saved successfully!";
+    };
+
+    setSubmitting(true);
+    try {
+      await toast.promise(submitData(), {
+        pending: "Saving basic details...",
+        success: "Basic details saved successfully!",
+        error: {
+          render({ data }) {
+            return `Save failed: ${data}`;
+          },
+        },
+      });
+      navigate(getPath(2));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen">
       <Header />
 
-      <StepTabs steps={steps} currentStep={currentStep} />
+      <StepTabs
+        steps={steps}
+        currentStep={currentStep}
+        getPath={getPath}
+        isEditMode={isEditMode}
+      />
       <ProgressBar currentStep={currentStep} totalSteps={steps.length} />
 
-      <section className="max-w-3xl mx-auto px-4 mt-4 text-[#1A3E32] text-2xl font-semibold">
+      <section className="max-w-3xl mx-auto px-4 mt-4 text-[#16730F] text-2xl font-semibold">
         Basic Details
       </section>
       <p className="max-w-3xl mx-auto px-4 text-[#333] text-[15px]">
-        Let’s get to know you
+        Let's get to know you
       </p>
 
-      <div className="max-w-4xl mx-auto mt-6 border-2 border-[#E0E0E0] flex flex-col lg:flex-row gap-8 p-4">
-        <div className="bg-[#F5F5F5] w-[90%] mx-auto rounded-2xl p-5">
-          {/* FULL NAME */}
-          <div className="p-5 bg-[#82828280] rounded-3xl mb-4">
+      <div className="max-w-4xl mx-auto mt-8 bg-white md:border border-gray-200 rounded-2xl md:shadow-sm p-4 md:p-8">
+        <div className="w-full space-y-5">
+          <div>
             <label className="font-semibold text-[12px] mb-2 block">
               FULL NAME
             </label>
@@ -125,12 +221,11 @@ const BasicDetails = () => {
               placeholder="Enter your full name"
               value={formData.full_name}
               onChange={handleChange}
-              className="border w-full p-4 border-[#F5F5F5] rounded-[10px] outline-none"
+              className="w-full h-11 bg-white border border-gray-300 rounded-xl px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#16730F] focus:border-transparent transition-all shadow-sm placeholder-gray-400"
             />
           </div>
 
-          {/* EMAIL */}
-          <div className="p-5 bg-[#82828280] rounded-3xl mb-4">
+          <div>
             <label className="font-semibold text-[12px] mb-2 block">
               EMAIL
             </label>
@@ -140,12 +235,11 @@ const BasicDetails = () => {
               placeholder="Enter your email"
               value={formData.email}
               disabled
-              className="border w-full p-4 border-[#F5F5F5] rounded-[10px] outline-none"
+              className="w-full h-11 bg-gray-50 border border-gray-300 rounded-xl px-3 text-gray-500 text-sm shadow-sm"
             />
           </div>
 
-          {/* PHONE NUMBER */}
-          <div className="p-5 bg-[#82828280] rounded-3xl mb-2">
+          <div>
             <label className="font-semibold text-[12px] mb-2 block">
               PHONE NUMBER
             </label>
@@ -155,16 +249,34 @@ const BasicDetails = () => {
               placeholder="e.g +234706004000"
               value={formData.phone_number}
               onChange={handleChange}
-              className="border w-full p-4 border-[#F5F5F5] rounded-[10px] outline-none"
+              className="w-full h-11 bg-white border border-gray-300 rounded-xl px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#16730F] focus:border-transparent transition-all shadow-sm placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="font-semibold text-[12px] mb-2 block">
+              DATE OF BIRTH
+            </label>
+            <DobCalendarPicker
+              name="date_of_birth"
+              value={formData.date_of_birth || ""}
+              onChange={handleChange}
+              placeholder="Select date of birth"
             />
           </div>
         </div>
       </div>
 
       <NavigationButtons
-        isFormComplete={isFormComplete}
-        onBack={() => navigate(-1)}
-        onNext={() => isFormComplete && navigate("/individual/profile-setup")}
+        isFormComplete={isFormComplete && !submitting}
+        onBack={() => {
+          if (isEditMode) {
+            navigate("/news-feed");
+            return;
+          }
+          navigate(-1);
+        }}
+        onNext={handleNextStep}
       />
     </div>
   );

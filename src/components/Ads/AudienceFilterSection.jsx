@@ -3,8 +3,13 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import GeographicTargetingSection from "./GeographicTargetingSection";
 import ProfessionalTargetingSection from "./ProfessionalTargetingSection";
+import { RecruiterSelect } from "../recruiter/recruiterOnboardingUi";
 
 const filterOptions = {
+  targetRoles: [
+    { value: "jobseeker", label: "Jobseekers" },
+    { value: "recruiter", label: "Recruiters & employers" },
+  ],
   // Demographic
   gender: [
     { value: "any", label: "Any" },
@@ -30,13 +35,6 @@ const filterOptions = {
     { value: "3-5", label: "3-5 years" },
     { value: "6-10", label: "6-10 years" },
     { value: "10+", label: "10+ years" },
-  ],
-  companySize: [
-    { value: "1-10", label: "1-10 employees" },
-    { value: "11-50", label: "11-50 employees" },
-    { value: "51-200", label: "51-200 employees" },
-    { value: "201-500", label: "201-500 employees" },
-    { value: "500+", label: "500+ employees" },
   ],
   // Educational
   qualifications: [
@@ -106,20 +104,13 @@ export default function AudienceFilterSection({
 
     return (
       <div key={filterKey} className="mb-5">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {label}
-        </label>
-        <select
+        <RecruiterSelect
+          label={label}
+          name={filterKey}
           value={value}
           onChange={(e) => onUpdate(filterKey, e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A3E32] focus:border-transparent text-sm"
-        >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={options}
+        />
       </div>
     );
   };
@@ -128,7 +119,10 @@ export default function AudienceFilterSection({
     switch (title) {
       case "Geographic Targeting":
         return (
-          <GeographicTargetingSection audience={audience} onUpdate={onUpdate} />
+          <>
+            {renderFilter("targetRoles", "Show ads to", true)}
+            <GeographicTargetingSection audience={audience} onUpdate={onUpdate} />
+          </>
         );
       case "Demographic Targeting":
         return (
@@ -146,7 +140,6 @@ export default function AudienceFilterSection({
               onUpdate={onUpdate}
             />
             {renderFilter("yearsExperience", "Years of Experience", true)}
-            {renderFilter("companySize", "Company Size", true)}
           </>
         );
       case "Educational Targeting":
@@ -164,24 +157,28 @@ export default function AudienceFilterSection({
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl bg-white overflow-visible">
+    <div className="border border-gray-200 rounded-xl bg-white overflow-visible min-w-0">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between gap-3 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left min-w-0"
       >
-        <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-[#1A3E32]" />
-          <span className="font-semibold text-gray-900">{title}</span>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Icon className="w-5 h-5 text-[#1A3E32] shrink-0" />
+          <span className="font-semibold text-gray-900 text-sm sm:text-base break-words">
+            {title}
+          </span>
         </div>
         {expanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-500" />
+          <ChevronUp className="w-5 h-5 text-gray-500 shrink-0" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-gray-500" />
+          <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
         )}
       </button>
 
       {expanded && (
-        <div className="p-4 space-y-4 overflow-visible">{renderContent()}</div>
+        <div className="p-3 sm:p-4 space-y-4 overflow-visible min-w-0">
+          {renderContent()}
+        </div>
       )}
     </div>
   );

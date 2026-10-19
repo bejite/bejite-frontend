@@ -1,7 +1,6 @@
 import { API_URL } from '../config';
 import React, { useState, useEffect } from 'react';
-import { FaGoogle, FaLinkedin } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import { toast } from 'react-toastify';
 import Loader from '../components/ui/Loader';
@@ -108,25 +107,23 @@ function SignUp() {
     <div className="flex flex-col min-h-screen bg-white">
       <Loader show={submitting} />
 
-      <div className="w-full lg:w-[70%] px-4 py-6 mx-auto flex flex-col sm:flex-row justify-between items-center">
+      {/* Header — same layout as SignIn */}
+      <div className="w-full lg:w-[70%] px-4 py-6 mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 lg:absolute lg:right-4 lg:left-4 lg:top-1/12 lg:transform lg:-translate-y-1/2 lg:z-10">
         <img src="/assets/images/logo.png" alt="Logo" className="h-10" />
-
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
-          <h1 className="text-[#828282] text-base sm:text-xl font-medium text-center sm:text-left">
+          <h1 className="text-[#828282] text-base sm:text-base font-medium text-center sm:text-left">
             Already have an account?
           </h1>
-          <button
-            type="button"
-            className="bg-[#16730F] py-2 px-5 sm:py-3 sm:px-7 rounded-2xl shadow text-white"
-            onClick={() => navigate('/')}
+          <Link
+            className="text-[#16730F] text-base sm:text-base font-medium text-center sm:text-left hover:underline"
+            to="/"
           >
             Sign in
-          </button>
+          </Link>
         </div>
       </div>
 
-      <div className="relative flex flex-col justify-between flex-1 lg:flex-row">
-        <div className="w-full lg:w-[60%] relative hidden lg:block">
+      <div className="relative flex flex-col justify-between flex-1 lg:flex-row">        <div className="w-full lg:w-[60%] relative hidden lg:block">
           <img
             src="/assets/images/Illustra.svg"
             alt="Auth"
@@ -141,14 +138,13 @@ function SignUp() {
 
         <div className="w-full lg:w-[40%] flex items-center justify-center lg:justify-start px-6 py-10">
           <form
-            className="w-full max-w-md space-y-2"
+            className="w-full max-w-md space-y-2 mt-9"
             onSubmit={handleContinue}
             noValidate
           >
-            <h2 className="text-3xl pt-4 font-norican font-semibold text-[#16730F] text-center">
-              Sign Up
+            <h2 className="text-3xl font-norican font-semibold text-[#16730F] text-center">              Sign Up
             </h2>
-            <p className="text-center text-[#1A3E32] text-md">
+            <p className="text-center text-[#16730F] text-md">
               Create your account in a few steps
             </p>
 
@@ -207,32 +203,31 @@ function SignUp() {
               Continue
             </button>
 
-            <p className="text-[#1A3E32] text-center text-xl">...or signup with</p>
+            <p className="text-[#16730F] text-center text-xl">...or signup with</p>
             <div className="flex justify-center gap-6 mt-1">
-              <FaLinkedin className="text-3xl text-blue-600 cursor-pointer" />
+              {/* <FaLinkedin className="text-3xl text-blue-600 cursor-pointer" /> */}
 
               <button
                 type="button"
                 onClick={() => {
                   window.location.href = `${API_URL}/auth/google`;
                 }}
-                className="flex items-center justify-center w-8 h-8"
+                className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-gray-300 hover:border-gray-400 cursor-pointer hover:shadow-md transition-colors"
                 aria-label="Sign up with Google"
               >
                 <img
                   src="/assets/images/google.png"
                   alt="Google logo"
-                  className="w-8 h-8"
+                  className="w-5 h-5"
                 />
               </button>
-
-              <img
+              {/* <img
                 src="/assets/images/x.svg"
                 alt="Twitter"
                 className="w-8 h-8 cursor-pointer"
-              />
+              /> */}
             </div>
-            <Hyperlinks />
+           {/* <Hyperlinks /> */}
           </form>
         </div>
       </div>

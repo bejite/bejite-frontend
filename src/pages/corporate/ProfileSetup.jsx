@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { updateUser } from "../../features/auth/authSlice";
@@ -14,11 +14,18 @@ import OnboardingLayout from "../../components/layout/onboardingLayout";
 import RecruiterFieldGroup from "../../components/recruiter/RecruiterFieldGroup";
 import { navigateBack } from "../../utils/navigateBack";
 import { RECRUITER_ONBOARDING_STEPS } from "../../components/recruiter/recruiterOnboardingSteps";
+import {
+  PROFILE_PHOTO_MAX_BYTES,
+  getUploadSizeError,
+} from "../../utils/uploadLimits";
 
 const CoperateProfileSetup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentStep, isEditMode, recruiterData, getPath } = useOutletContext();
+  const { currentStep, isEditMode, recruiterData, getPath } =
+    useOutletContext();
+  const location = useLocation();
+  const isIndividual = location.pathname.includes("individual");
   const { user: authUser } = useAuth();
 
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -72,7 +79,8 @@ const CoperateProfileSetup = () => {
       }
       try {
         const fromApi = await fetchCurrentUserProfilePhoto();
-        if (!cancelled && fromApi) setImagePreview(profilePhotoUrl(fromApi) ?? null);
+        if (!cancelled && fromApi)
+          setImagePreview(profilePhotoUrl(fromApi) ?? null);
       } catch {
         /* optional */
       }
@@ -126,6 +134,12 @@ const CoperateProfileSetup = () => {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const sizeError = getUploadSizeError(file, PROFILE_PHOTO_MAX_BYTES);
+      if (sizeError) {
+        toast.error(sizeError);
+        e.target.value = "";
+        return;
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -186,7 +200,11 @@ const CoperateProfileSetup = () => {
       if (isEditMode) {
         navigate(getPath(currentStep + 1));
       } else {
-        navigate("/corporate/company-details");
+        navigate(
+          isIndividual
+            ? "/individual/company-details"
+            : "/corporate/company-details",
+        );
       }
     } catch (error) {
       console.error(error);
@@ -197,7 +215,11 @@ const CoperateProfileSetup = () => {
     if (isEditMode) {
       navigate(getPath(currentStep + 1));
     } else {
-      navigate("/corporate/company-details");
+      navigate(
+        isIndividual
+          ? "/individual/company-details"
+          : "/corporate/company-details",
+      );
     }
   };
 
@@ -209,7 +231,7 @@ const CoperateProfileSetup = () => {
       getPath={getPath}
       isEditMode={isEditMode}
     >
-      <section className="max-w-3xl font-nunito-semi text-center md:text-start mx-auto px-4 mt-4 text-[#1A3E32] text-2xl font-semibold">
+      <section className="max-w-3xl font-nunito-semi text-center md:text-start mx-auto px-4 mt-4 text-[#16730F] text-2xl font-semibold">
         Profile Setup
       </section>
       <p className="max-w-3xl mx-auto px-4 text-center md:text-start text-[#333] text-[15px]">
@@ -237,7 +259,12 @@ const CoperateProfileSetup = () => {
           if (isEditMode) {
             navigate(getPath(currentStep - 1));
           } else {
-            navigateBack(navigate, "/corporate/basic-details");
+            navigateBack(
+              navigate,
+              isIndividual
+                ? "/individual/basic-details"
+                : "/corporate/basic-details",
+            );
           }
         }}
         onNext={handleNextStep}

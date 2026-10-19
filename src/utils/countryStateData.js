@@ -1,8 +1,20 @@
-import { Country, State, City } from "country-state-city";
+import Country from "country-state-city/lib/country.js";
 
 let cachedCountryNames = null;
+let stateApiPromise = null;
 
 const DELIMITER = "|";
+
+export const NIGERIA_COUNTRY_NAME = "Nigeria";
+
+async function getStateApi() {
+  if (!stateApiPromise) {
+    stateApiPromise = import("country-state-city/lib/state.js").then(
+      (module) => module.default,
+    );
+  }
+  return stateApiPromise;
+}
 
 /** All country display names, sorted alphabetically. */
 export function getAllCountryNames() {
@@ -24,10 +36,11 @@ export function findCountryByName(countryName) {
   );
 }
 
-export function findStateByName(countryName, stateName) {
+export async function findStateByName(countryName, stateName) {
   const country = findCountryByName(countryName);
   if (!country || !stateName?.trim()) return null;
 
+  const State = await getStateApi();
   const normalized = stateName.trim().toLowerCase();
   return (
     State.getStatesOfCountry(country.isoCode).find(
@@ -37,10 +50,12 @@ export function findStateByName(countryName, stateName) {
 }
 
 /** State/province names for a country (by country display name). */
-export function getStateNamesByCountryName(countryName) {
+export async function getStateNamesByCountryName(countryName) {
   const country = findCountryByName(countryName);
   if (!country) return [];
+
   try {
+    const State = await getStateApi();
     const states = State.getStatesOfCountry(country.isoCode);
     if (!states?.length) return [];
     return states.map((s) => s.name).sort((a, b) => a.localeCompare(b));
@@ -49,54 +64,18 @@ export function getStateNamesByCountryName(countryName) {
   }
 }
 
-/** City names for a country + state (by display names). */
-export function getCityNamesByCountryAndState(countryName, stateName) {
-  const country = findCountryByName(countryName);
-  const state = findStateByName(countryName, stateName);
-  if (!country || !state) return [];
-
-  try {
-    const cities = City.getCitiesOfState(country.isoCode, state.isoCode);
-    if (!cities?.length) return [];
-    return cities.map((city) => city.name).sort((a, b) => a.localeCompare(b));
-  } catch {
-    return [];
-  }
-}
-
 /** States for multiple selected countries. */
-export function getStateOptionsForCountries(countryNames = []) {
+export async function getStateOptionsForCountries(countryNames = []) {
   const options = [];
 
   for (const countryName of countryNames) {
-    for (const stateName of getStateNamesByCountryName(countryName)) {
+    const stateNames = await getStateNamesByCountryName(countryName);
+    for (const stateName of stateNames) {
       options.push({
         country: countryName,
         state: stateName,
         key: buildStateKey(countryName, stateName),
         label: `${stateName} (${countryName})`,
-      });
-    }
-  }
-
-  return options.sort((a, b) => a.label.localeCompare(b.label));
-}
-
-/** Cities for multiple selected states (state keys: country|state). */
-export function getCityOptionsForStates(stateKeys = []) {
-  const options = [];
-
-  for (const stateKey of stateKeys) {
-    const { country, state } = parseStateKey(stateKey);
-    if (!country || !state) continue;
-
-    for (const cityName of getCityNamesByCountryAndState(country, state)) {
-      options.push({
-        country,
-        state,
-        city: cityName,
-        key: buildCityKey(country, state, cityName),
-        label: `${cityName} (${state}, ${country})`,
       });
     }
   }
@@ -134,4 +113,54 @@ export function cityKeyBelongsToState(cityKey, stateKey) {
   const city = parseCityKey(cityKey);
   const state = parseStateKey(stateKey);
   return city.country === state.country && city.state === state.state;
+}
+
+export function buildLgaKey(countryName, stateName, lgaName) {
+  return `${countryName}${DELIMITER}${stateName}${DELIMITER}${lgaName}`;
+}
+
+export function parseLgaKey(lgaKey = "") {
+  const parts = String(lgaKey).split(DELIMITER);
+  return {
+    country: parts[0] || "",
+    state: parts[1] || "",
+    lga: parts.slice(2).join(DELIMITER) || "",
+  };
+}
+
+export function lgaKeyBelongsToState(lgaKey, stateKey) {
+  const lga = parseLgaKey(lgaKey);
+  const state = parseStateKey(stateKey);
+  return lga.country === state.country && lga.state === state.state;
+}
+
+export function hasNigeriaSelected(countryNames = []) {
+  return countryNames.some(
+    (country) => country.trim().toLowerCase() === "nigeria",
+  );
+}
+
+/** LGAs for selected Nigerian states (state keys: country|state). */
+export function getLgaOptionsForStates(stateKeys = [], getLgas) {
+  if (typeof getLgas !== "function") return [];
+
+  const options = [];
+
+  for (const stateKey of stateKeys) {
+    const { country, state } = parseStateKey(stateKey);
+    if (country !== NIGERIA_COUNTRY_NAME || !state) continue;
+
+    const lgas = getLgas(state) || [];
+    for (const lgaName of lgas) {
+      options.push({
+        country,
+        state,
+        lga: lgaName,
+        key: buildLgaKey(country, state, lgaName),
+        label: `${lgaName} (${state})`,
+      });
+    }
+  }
+
+  return options.sort((a, b) => a.label.localeCompare(b.label));
 }

@@ -11,7 +11,7 @@ const Resume = () => {
         <img
           src="/assets/images/logo.png"
           alt="logo"
-          className="h-12 sm:h-16"
+          className="h-10"
         />
       </div>
 
@@ -32,7 +32,7 @@ const Resume = () => {
         </div>
 
         <div className="mt-4 w-full flex justify-center">
-          <button className="w-full max-w-[321px] h-12 bg-[#E63357] border border-[#E63357] rounded-[30px] text-white shadow-md text-base font-medium transition-all hover:bg-[#d42d4d]"
+          <button className="w-full max-w-[321px] h-12 bg-[#16730F] border border-[#16730F] rounded-full text-white shadow-md text-base font-medium transition-all hover:bg-[#145a0c]"
            onClick={()=>navigate("/bio")}>
             
             Get Started

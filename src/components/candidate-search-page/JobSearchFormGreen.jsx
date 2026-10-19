@@ -1,5 +1,5 @@
-import React from "react";
-import { FaCheck } from "react-icons/fa";
+import React, { useState, useMemo } from "react";
+import { FaCheck, FaTimes, FaPlus } from "react-icons/fa";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 
 const JobSearchFormGreen = ({ formData, setFormData, onSearch }) => {
@@ -175,13 +175,12 @@ const JobSearchFormGreen = ({ formData, setFormData, onSearch }) => {
         />
         <Divider small />
 
-        <SearchInput
+        <SkillsMultiInputDark
           id="skillInput"
           label="SKILL"
           value={formData.skillInput}
           onChange={handleChange}
-          placeholder="Enter or select"
-          options={["JavaScript", "React", "Node.js", "Python", "SQL"]}
+          options={["JavaScript", "React", "Node.js", "Python", "SQL", "Backend Development", "TypeScript", "UI/UX Design", "Figma", "AWS", "Product Management"]}
         />
         <Divider small />
 
@@ -305,6 +304,152 @@ const SearchInput = ({
   );
 };
 
+const SkillsMultiInputDark = ({ id = "skillInput", label = "SKILL", options = [], value = "", onChange }) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const selectedSkills = useMemo(() => {
+    if (!value) return [];
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }, [value]);
+
+  const addSkill = (skill) => {
+    const trimmed = (skill || "").trim().replace(/^,+|,+$/g, "");
+    if (!trimmed) return;
+    const exists = selectedSkills.some((s) => s.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      const nextSkills = [...selectedSkills, trimmed];
+      onChange({ target: { name: id, value: nextSkills.join(", ") } });
+    }
+    setInputValue("");
+  };
+
+  const removeSkill = (skillToRemove) => {
+    const nextSkills = selectedSkills.filter((s) => s.toLowerCase() !== skillToRemove.toLowerCase());
+    onChange({ target: { name: id, value: nextSkills.join(", ") } });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addSkill(inputValue);
+    } else if (e.key === "Backspace" && !inputValue && selectedSkills.length > 0) {
+      removeSkill(selectedSkills[selectedSkills.length - 1]);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    if (val.includes(",")) {
+      val.split(",").forEach((p) => addSkill(p));
+    } else if (options.some((opt) => opt.toLowerCase() === val.trim().toLowerCase())) {
+      addSkill(val);
+    } else {
+      setInputValue(val);
+    }
+  };
+
+  const handleBlur = () => {
+    if (inputValue.trim()) addSkill(inputValue);
+  };
+
+  const availableOptions = options.filter(
+    (opt) => !selectedSkills.some((s) => s.toLowerCase() === opt.toLowerCase())
+  );
+
+  return (
+    <div className="w-full p-3 sm:p-4 rounded-lg">
+      <div className="flex items-center justify-between mb-1">
+        <label htmlFor={id} className="text-[#ffffff] text-sm sm:text-[12px] font-medium block">
+          {label}
+        </label>
+        {selectedSkills.length > 0 && (
+          <span className="text-xs text-green-300 font-semibold">
+            {selectedSkills.length} selected
+          </span>
+        )}
+      </div>
+      <div className="relative">
+        <input
+          list={`${id}List`}
+          id={id}
+          name={id}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className="w-full rounded-xl px-4 py-2 sm:py-3 pr-16 border border-[#556B1F] focus:outline-none focus:ring-2 focus:ring-[#16730F] text-[#ffffff] text-sm sm:text-base"
+          placeholder={selectedSkills.length > 0 ? "Add another skill..." : "Type a skill and press Enter..."}
+        />
+        <button
+          type="button"
+          onClick={() => addSkill(inputValue)}
+          disabled={!inputValue.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#16730F] text-white text-xs font-semibold rounded-lg hover:bg-[#125a0c] disabled:opacity-30 transition-all cursor-pointer disabled:cursor-not-allowed"
+        >
+          Add
+        </button>
+        <datalist id={`${id}List`}>
+          {availableOptions.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      </div>
+
+      {selectedSkills.length > 0 && (
+        <div className="mt-3 p-3 bg-white/10 border border-white/20 rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">
+              Selected Skills ({selectedSkills.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange({ target: { name: id, value: "" } })}
+              className="text-xs text-red-300 hover:text-red-400 font-medium transition-colors cursor-pointer"
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {selectedSkills.map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 text-green-200 border border-green-500/30 rounded-lg text-xs sm:text-sm font-semibold shadow-xs transition-all hover:bg-green-800/50"
+              >
+                <span>{skill}</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeSkill(skill); }}
+                  className="p-0.5 rounded-full hover:bg-white/20 text-white/60 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                  title={`Remove ${skill}`}
+                >
+                  <FaTimes className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {availableOptions.length > 0 && selectedSkills.length < 5 && (
+        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-white/50 font-medium">Suggestions:</span>
+          {availableOptions.slice(0, 5).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => addSkill(opt)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-green-900/40 hover:text-green-200 hover:border-green-500/30 border border-white/20 text-white/70 rounded-md text-xs font-medium transition-all cursor-pointer"
+            >
+              <FaPlus className="h-2.5 w-2.5" />
+              <span>{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SearchButton = ({ onSearch, disabled }) => {
   return (
     <div className="mt-6 sm:mt-10">
@@ -328,6 +473,9 @@ const SearchButton = ({ onSearch, disabled }) => {
           />
         </svg>
       </button>
+      <p className="text-center text-xs text-white/70 mt-3 px-2 leading-relaxed">
+        Each search uses 1 ASE credit. Narrow your filters to get better matches.
+      </p>
     </div>
   );
 };

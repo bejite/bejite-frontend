@@ -11,7 +11,6 @@ import {
   Smartphone,
   ChevronRight,
   Shield,
-  Mail,
   AlertTriangle,
   Check,
   X,
@@ -37,6 +36,7 @@ import {
   PROFILE_PHOTO_PLACEHOLDER,
 } from "../utils/profilePhotoUrl";
 import { formatDisplayPersonName } from "../utils/personDisplayName";
+import DisplayNameWithBadge from "../components/DisplayNameWithBadge";
 import useSyncProfilePhoto from "../hooks/useSyncProfilePhoto";
 import useAuth from "../hooks/useAuth";
 import {
@@ -46,6 +46,8 @@ import {
   unsubscribeFromPushNotifications,
   updateNotificationPreferences,
 } from "../services/pushNotificationService";
+import { getTwoFactorStatus } from "../services/twoFactorApi";
+import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
 
 export default function AccountSettings() {
   useSyncProfilePhoto();
@@ -78,6 +80,7 @@ export default function AccountSettings() {
   const [profileVisibility, setProfileVisibility] = useState("Public");
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +103,21 @@ export default function AccountSettings() {
     };
 
     loadPrefs();
+    getProfileVisibilitySetting()
+      .then((data) => {
+        if (!cancelled && data?.label) setProfileVisibility(data.label);
+      })
+      .catch((error) => {
+        console.warn(
+          "Failed to load profile visibility:",
+          error?.response?.data?.error || error?.message,
+        );
+      });
+    getTwoFactorStatus()
+      .then((data) => {
+        if (!cancelled) setTwoFactorEnabled(Boolean(data.enabled));
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -195,8 +213,10 @@ export default function AccountSettings() {
         {
           icon: Smartphone,
           iconBg: "bg-purple-50",
-          label: "Two-Factor Authentication",
-          sublabel: "Add an extra layer of security",
+          label: "2FA Authentication",
+          sublabel: twoFactorEnabled
+            ? "Enabled — extra login protection is on"
+            : "Add an extra layer of security to your account",
           onClick: () => setModal("2fa"),
         },
       ],
@@ -208,7 +228,7 @@ export default function AccountSettings() {
           icon: Bell,
           iconBg: "bg-amber-50",
           label: "Email Notifications",
-          sublabel: "Receive updates via email",
+          sublabel: "All Bejite emails on or off",
           action: (
             <button
               onClick={(e) => {
@@ -246,26 +266,26 @@ export default function AccountSettings() {
             </button>
           ),
         },
-        {
-          icon: Smartphone,
-          iconBg: "bg-amber-50",
-          label: "SMS Notifications",
-          sublabel: "Get alerts on your phone",
-          action: (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleChannelToggle("sms");
-              }}
-              disabled={prefsLoading || channelLoading === "sms"}
-              className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${notifications.sms ? "bg-[#1A3E32]" : "bg-gray-200"}`}
-            >
-              <span
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${notifications.sms ? "left-6" : "left-1"}`}
-              />
-            </button>
-          ),
-        },
+        // {
+        //   icon: Smartphone,
+        //   iconBg: "bg-amber-50",
+        //   label: "SMS Notifications",
+        //   sublabel: "Get alerts on your phone",
+        //   action: (
+        //     <button
+        //       onClick={(e) => {
+        //         e.stopPropagation();
+        //         handleChannelToggle("sms");
+        //       }}
+        //       disabled={prefsLoading || channelLoading === "sms"}
+        //       className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${notifications.sms ? "bg-[#1A3E32]" : "bg-gray-200"}`}
+        //     >
+        //       <span
+        //         className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${notifications.sms ? "left-6" : "left-1"}`}
+        //       />
+        //     </button>
+        //   ),
+        // },
       ],
     },
     {
@@ -312,7 +332,7 @@ export default function AccountSettings() {
 
   return (
     <NewsFeedLayout classes={false} showSidebars={false}>
-      <div className="h-full w-full max-w-screen-xl mx-auto flex flex-col">
+      <div className="h-full min-h-0 w-full max-w-screen-xl mx-auto flex flex-col">
         {/* Header */}
         <div className="bg-[#1A3E32] px-6 py-4 flex-shrink-0">
           <h1 className="text-white font-bold text-xl">Account Settings</h1>
@@ -321,7 +341,7 @@ export default function AccountSettings() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto nfl-scroll scroll-smooth">
           <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
             {/* Profile preview */}
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4">
@@ -341,7 +361,9 @@ export default function AccountSettings() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 text-base">{displayName}</p>
+                <p className="font-bold text-gray-900 text-base">
+                  <DisplayNameWithBadge user={user} fallback={displayName} badgeSize="xs" />
+                </p>
                 <p className="text-sm text-gray-400 truncate">
                   {email || "No email on file"}
                 </p>
@@ -387,7 +409,11 @@ export default function AccountSettings() {
       {/* Modals */}
       <AnimatePresence>
         {modal === "password" && (
-          <ChangePasswordModal key="pw" onClose={() => setModal(null)} />
+          <ChangePasswordModal
+            key="pw"
+            onClose={() => setModal(null)}
+            onUpdated={() => showToast("Password updated")}
+          />
         )}
         {modal === "email" && (
           <ChangeEmailModal
@@ -401,9 +427,14 @@ export default function AccountSettings() {
         {modal === "2fa" && (
           <TwoFactorModal
             key="2fa"
-            onClose={() => {
-              setModal(null);
-              showToast("2FA setup completed");
+            onClose={() => setModal(null)}
+            onEnabled={() => {
+              setTwoFactorEnabled(true);
+              showToast("Two-factor authentication enabled");
+            }}
+            onDisabled={() => {
+              setTwoFactorEnabled(false);
+              showToast("Two-factor authentication disabled");
             }}
           />
         )}

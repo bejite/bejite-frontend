@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { updateUser } from "../../features/auth/authSlice";
@@ -65,8 +65,10 @@ const SOCIAL_FIELDS = [
 const CompanyDetails = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentStep, isEditMode, recruiterData, getPath } = useOutletContext();
-
+  const { currentStep, isEditMode, recruiterData, getPath } =
+    useOutletContext();
+  const location = useLocation();
+  const isIndividual = location.pathname.includes("individual");
   const [dataLoaded, setDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -183,21 +185,36 @@ const CompanyDetails = () => {
         },
       });
 
+      // if (isEditMode) {
+      //   navigate(getPath(currentStep + 1));
+      // } else {
+      //   navigate("/corporate/location");
+      // }
+
+      const isIndividual = location.pathname.includes("individual");
       if (isEditMode) {
         navigate(getPath(currentStep + 1));
       } else {
-        navigate("/corporate/location");
+        navigate(isIndividual ? "/individual/location" : "/corporate/location");
       }
     } catch (error) {
       console.error(error);
     }
   };
 
+  // const handleSkip = () => {
+  //   if (isEditMode) {
+  //     navigate(getPath(currentStep + 1));
+  //   } else {
+  //     navigate("/corporate/location");
+  //   }
+  // };
+
   const handleSkip = () => {
     if (isEditMode) {
       navigate(getPath(currentStep + 1));
     } else {
-      navigate("/corporate/location");
+      navigate(isIndividual ? "/individual/location" : "/corporate/location");
     }
   };
 
@@ -245,32 +262,32 @@ const CompanyDetails = () => {
           </RecruiterFormShell>
 
           <div className="mt-6">
-          <RecruiterFormShell
-            icon={FaShareAlt}
-            sectionTitle="Social media handles"
-            sectionHint="Optional — help candidates find and trust your brand online."
-          >
-            {SOCIAL_FIELDS.map((field) => (
-              <div key={field.name}>
-                <RecruiterTextField
-                  label={field.label}
-                  name={field.name}
-                  type="url"
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  onBlur={() => handleSocialBlur(field.name)}
-                  placeholder={field.placeholder}
-                  optional
-                  hint={field.hint}
-                />
-                {socialErrors[field.name] && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {socialErrors[field.name]}
-                  </p>
-                )}
-              </div>
-            ))}
-          </RecruiterFormShell>
+            <RecruiterFormShell
+              icon={FaShareAlt}
+              sectionTitle="Social media handles"
+              sectionHint="Optional — help candidates find and trust your brand online."
+            >
+              {SOCIAL_FIELDS.map((field) => (
+                <div key={field.name}>
+                  <RecruiterTextField
+                    label={field.label}
+                    name={field.name}
+                    type="url"
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    onBlur={() => handleSocialBlur(field.name)}
+                    placeholder={field.placeholder}
+                    optional
+                    hint={field.hint}
+                  />
+                  {socialErrors[field.name] && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {socialErrors[field.name]}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </RecruiterFormShell>
           </div>
         </div>
 

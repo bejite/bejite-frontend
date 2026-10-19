@@ -1,6 +1,12 @@
 // MediaUploader.js - Responsive
 import { useState } from "react";
 import { Upload, X, Image, Video, AlertCircle } from "lucide-react";
+import {
+  IMAGE_MAX_BYTES,
+  VIDEO_MAX_BYTES,
+  formatBytesAsMb,
+  getUploadSizeError,
+} from "../../utils/uploadLimits";
 
 export default function MediaUploader({ value, onUpload, onRemove, error }) {
   const [dragOver, setDragOver] = useState(false);
@@ -8,8 +14,16 @@ export default function MediaUploader({ value, onUpload, onRemove, error }) {
   const handleFileChange = (file) => {
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      onUpload(null, "File size must be less than 10MB", null);
+    const sizeError = getUploadSizeError(file);
+    if (sizeError) {
+      const isVideo = file.type.startsWith("video/");
+      onUpload(
+        null,
+        isVideo
+          ? `Video size must be less than ${formatBytesAsMb(VIDEO_MAX_BYTES)}`
+          : `Image size must be less than ${formatBytesAsMb(IMAGE_MAX_BYTES)}`,
+        null,
+      );
       return;
     }
 
@@ -90,7 +104,8 @@ export default function MediaUploader({ value, onUpload, onRemove, error }) {
             {dragOver ? "Drop your file here" : "Click or drag to upload"}
           </p>
           <p className="text-xs text-gray-400 mt-1 text-center">
-            JPG, PNG, WEBP, MP4 · Max 10MB
+            JPG, PNG, WEBP, MP4 · Images {formatBytesAsMb(IMAGE_MAX_BYTES)}, videos{" "}
+            {formatBytesAsMb(VIDEO_MAX_BYTES)}
           </p>
           <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">

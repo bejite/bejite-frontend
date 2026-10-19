@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Country } from 'country-state-city';
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { createPortal } from 'react-dom';
+import Country from 'country-state-city/lib/country.js';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 import { countryNameToIso2, formatPhoneAsYouType } from '../../utils/phoneUtils';
+import {
+  getPortaledMenuStyle,
+  usePortaledMenu,
+} from '../../hooks/usePortaledMenu';
 
 const countryOptions = Country.getAllCountries()
   .filter((c) => c.phonecode)
@@ -25,6 +30,13 @@ export default function PhoneInput({
   const [countryIso, setCountryIso] = useState(defaultIso);
   const [national, setNational] = useState('');
   const [codeOpen, setCodeOpen] = useState(false);
+  const { triggerRef, menuRef, menuPos } = usePortaledMenu({
+    isOpen: codeOpen,
+    onClose: () => setCodeOpen(false),
+    minWidth: compact ? 256 : 320,
+    maxHeight: 208,
+    extraContainRefs: [rootRef],
+  });
 
   const selectedCountry = useMemo(
     () => countryOptions.find((c) => c.isoCode === countryIso) ?? countryOptions.find((c) => c.isoCode === 'NG'),
@@ -49,24 +61,6 @@ export default function PhoneInput({
     }
     setNational(String(value).replace(/\D/g, ''));
   }, [value, defaultIso]);
-
-  useEffect(() => {
-    if (!codeOpen) return undefined;
-    const onPointerDown = (event) => {
-      if (rootRef.current && !rootRef.current.contains(event.target)) {
-        setCodeOpen(false);
-      }
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setCodeOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [codeOpen]);
 
   const emitE164 = (iso, nationalDigits) => {
     const digits = String(nationalDigits).replace(/\D/g, '');
@@ -94,12 +88,12 @@ export default function PhoneInput({
 
   const codeWidth = compact ? 'w-[5.25rem]' : 'sm:w-[11rem] w-full';
   const codeText = compact ? 'text-xs font-semibold' : 'text-sm';
-  const listWidth = compact ? 'w-[min(16rem,calc(100vw-2rem))]' : 'w-[min(20rem,calc(100vw-2rem))]';
 
   return (
     <div ref={rootRef} className={`flex items-center gap-2 w-full min-w-0 ${className}`.trim()}>
       <div className={`relative shrink-0 ${codeWidth}`}>
         <button
+          ref={triggerRef}
           type="button"
           disabled={disabled}
           aria-label="Country calling code"
@@ -125,31 +119,40 @@ export default function PhoneInput({
           </svg>
         </div>
 
-        {codeOpen && (
-          <ul
-            role="listbox"
-            aria-label="Country calling codes"
-            className={`absolute left-0 top-[calc(100%+4px)] z-50 ${listWidth} max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg`}
-          >
-            {countryOptions.map((c) => {
-              const selected = c.isoCode === countryIso;
-              return (
-                <li key={c.isoCode} role="option" aria-selected={selected}>
-                  <button
-                    type="button"
-                    onClick={() => selectCountry(c.isoCode)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-[#F5F5F5] ${
-                      selected ? 'bg-[#1A3E32]/10 font-medium text-[#1A3E32]' : 'text-gray-700'
-                    }`}
-                  >
-                    <span className="font-semibold tabular-nums">+{c.phonecode}</span>
-                    <span className="ml-2 text-gray-600">{c.name}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {codeOpen &&
+          menuPos &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <ul
+              ref={menuRef}
+              role="listbox"
+              aria-label="Country calling codes"
+              className="overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+              style={{
+                ...getPortaledMenuStyle(menuPos),
+                maxHeight: menuPos.maxHeight,
+              }}
+            >
+              {countryOptions.map((c) => {
+                const selected = c.isoCode === countryIso;
+                return (
+                  <li key={c.isoCode} role="option" aria-selected={selected}>
+                    <button
+                      type="button"
+                      onClick={() => selectCountry(c.isoCode)}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-[#F5F5F5] ${
+                        selected ? 'bg-[#1A3E32]/10 font-medium text-[#1A3E32]' : 'text-gray-700'
+                      }`}
+                    >
+                      <span className="font-semibold tabular-nums">+{c.phonecode}</span>
+                      <span className="ml-2 text-gray-600">{c.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>,
+            document.body,
+          )}
       </div>
       <input
         type="tel"

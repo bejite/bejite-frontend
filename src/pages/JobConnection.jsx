@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import usersData from "../data/usersData";
+import { getAccessToken } from "../utils/tokenManager";
 
 const JobConnection = () => {
   const [addedUsers, setAddedUsers] = useState([]);
@@ -33,10 +34,18 @@ const JobConnection = () => {
     console.log("Submitting followings to API:", addedUsers);
 
     try {
+      const token = getAccessToken();
+      if (!token) {
+        toast.error("Session expired. Please verify your email again.");
+        return;
+      }
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/complete-signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role, mode, followings: addedUsers }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role, mode, followings: addedUsers }),
       });
 
       const data = await res.json();
@@ -57,7 +66,7 @@ const JobConnection = () => {
   return (
     <div className="bg-white min-h-screen relative">
       <div className="w-full px-4 py-6 flex justify-start items-center max-w-screen-xl mx-auto">
-        <img src="/assets/images/logo.png" alt="logo" className="h-12 sm:h-16" />
+        <img src="/assets/images/logo.png" alt="logo" className="h-10" />
       </div>
 
       <div className="flex flex-col items-center justify-start px-4 mx-auto w-full max-w-4xl pb-12">
@@ -75,7 +84,7 @@ const JobConnection = () => {
             <div
               key={user.id}
               className={`p-4 rounded-lg border cursor-pointer ${
-                addedUsers.includes(user.id) ? "bg-green-200" : "bg-white"
+                addedUsers.includes(user.id) ? "bg-[#16730F]/20" : "bg-white"
               }`}
               onClick={() => handleAdd(user.id)}
             >
@@ -87,7 +96,7 @@ const JobConnection = () => {
         <button
           onClick={handleContinue}
           className={`px-6 py-3 rounded-lg text-white font-semibold ${
-            addedUsers.length >= 10 ? "bg-green-600" : "bg-gray-400 cursor-not-allowed"
+            addedUsers.length >= 10 ? "bg-[#16730F] hover:bg-[#145a0c]" : "bg-[#16730F40] cursor-not-allowed"
           }`}
           disabled={addedUsers.length < 10}
         >

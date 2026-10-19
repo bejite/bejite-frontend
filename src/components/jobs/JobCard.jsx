@@ -8,25 +8,43 @@ import {
   FaClock,
   FaMoneyBillWave,
   FaGraduationCap,
+  FaUser,
 } from "react-icons/fa";
-import {
-  MdVerified,
-  MdWorkOutline,
-  MdAccessTime,
-  MdAttachMoney,
-} from "react-icons/md";
+import { MdWorkOutline, MdAccessTime } from "react-icons/md";
 import { formatSalary, formatTimeRemaining } from "../../utils/checksFormat";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
+import { getJobCardExcerpt } from "../../utils/jobDescription";
+import VerifiedBadge from "../VerifiedBadge";
+import { userHasVerifiedBadge, userShowsUnverifiedRecruiterPill } from "../../utils/verifiedBadge";
+import useJobImpression from "../../hooks/useJobImpression";
 
-export const JobCard = ({ job, isSaved, onSave, onUnsave, onClick }) => {
+export const JobCard = ({
+  job,
+  isSaved,
+  onSave,
+  onUnsave,
+  onClick,
+  currentUserId = null,
+}) => {
   const timeRemaining = formatTimeRemaining(job.expiresAt);
   const salary = formatSalary(job);
   const companyLogoSrc = profilePhotoUrl(
     job.recruiterProfilePhoto || job.companyLogo,
   );
+  const excerpt = getJobCardExcerpt(job);
+  const isIndividualPoster =
+    String(job.posterMode || "").toLowerCase() === "individual";
+  const PosterIcon = isIndividualPoster ? FaUser : FaBuilding;
+  const impressionRef = useJobImpression({
+    jobId: job.id,
+    postedBy: job.postedBy,
+    currentUserId,
+    enabled: Boolean(currentUserId),
+  });
 
   return (
     <div
+      ref={impressionRef}
       onClick={onClick}
       className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:border-[#16730F]/30 hover:-translate-y-1"
     >
@@ -87,17 +105,20 @@ export const JobCard = ({ job, isSaved, onSave, onUnsave, onClick }) => {
             {/* Company & Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="flex items-center gap-1 text-sm text-gray-700 font-medium">
-                <FaBuilding className="text-[#16730F] text-xs" />
+                <PosterIcon className="text-[#16730F] text-xs" />
                 <span className="truncate max-w-[150px] sm:max-w-none">
                   {job.company}
                 </span>
               </span>
 
-              {job.isVerified && (
-                <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">
-                  <MdVerified size={12} /> Verified
-                </span>
-              )}
+              {userHasVerifiedBadge(job) ? (
+                <VerifiedBadge size="xs" role="recruiter" />
+              ) : userShowsUnverifiedRecruiterPill(
+                  { ...job, role: job.posterRole || job.role },
+                  { forceRecruiter: job.posterRole !== "jobseeker" },
+                ) ? (
+                <VerifiedBadge size="xs" role="recruiter" unverified />
+              ) : null}
 
               {timeRemaining.isUrgent && (
                 <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full animate-pulse">
@@ -129,27 +150,31 @@ export const JobCard = ({ job, isSaved, onSave, onUnsave, onClick }) => {
               </span>
             </div>
 
-            {/* Description - Hidden on very small, visible on sm */}
-            <p className="hidden sm:block text-gray-500 text-sm line-clamp-2 mb-3">
-              {job.description}
-            </p>
+            {excerpt && (
+              <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 overflow-hidden mb-3">
+                {excerpt}
+              </p>
+            )}
 
             {/* Skills Tags */}
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
-              {job.requirements.slice(0, 3).map((req, idx) => (
-                <span
-                  key={idx}
-                  className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full border border-gray-200"
-                >
-                  {req.skill} • {req.experience}y
-                </span>
-              ))}
-              {job.requirements.length > 3 && (
-                <span className="text-gray-500 text-xs px-2 py-1 bg-gray-50 rounded-full">
-                  +{job.requirements.length - 3} more
-                </span>
-              )}
-            </div>
+            {job.skillRequirements?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+                {job.skillRequirements.slice(0, 3).map((req, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full border border-gray-200"
+                  >
+                    {req.skill}
+                    {req.experience > 0 && ` • ${req.experience}y`}
+                  </span>
+                ))}
+                {job.skillRequirements.length > 3 && (
+                  <span className="text-gray-500 text-xs px-2 py-1 bg-gray-50 rounded-full">
+                    +{job.skillRequirements.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Footer Stats */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">

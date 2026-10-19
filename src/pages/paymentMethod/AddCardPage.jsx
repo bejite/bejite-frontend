@@ -112,8 +112,10 @@ export default function AddCard() {
           </p>
           <p className="font-semibold text-[10px] mt-4">Amount to be Debited: <span className="font-bold text-[10px] text-[#16730F]">₦15,213.10</span> (Basic Plan - Recruit up to 20 people)
           </p>
+          {/* USD not activated yet
           <p className="italic font-semibold text-[6px]"> $10.00 USD  ≈ ₦15,213.10
             (1 USD = ₦1,521.31 current rate)</p>
+          */}
           <ul className="font-semibold text-[8px] list-disc list-inside mt-6">
             <li>Your card details are securely processed using encrypted payment technology</li>
             <li>No hidden charges. This is a one-time debit for the plan you've selected</li>

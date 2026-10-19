@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { profileAvatarSrc } from "../../utils/profilePhotoUrl";
 import { FaMoneyBillWave } from "react-icons/fa";
+import { formatDisplayText } from "../../utils/displayFormatUtils";
+import { formatSalaryExpectation } from "../../utils/formatSalary";
 
 const DetailRow = ({ label, value }) => {
   if (value === null || value === undefined || value === "") return null;
@@ -90,9 +92,9 @@ const ActivityJobDetailsModal = ({
     ? "bg-amber-50 text-amber-700 border-amber-100"
     : "bg-green-50 text-[#16730F] border-green-100";
 
-  const location = [job.preferred_state, job.preferred_country]
-    .filter(Boolean)
-    .join(", ");
+  const location = formatDisplayText(
+    [job.preferred_state, job.preferred_country].filter(Boolean).join(", "),
+  );
 
   const skills = parseSkills(job.skills);
   const descriptionLines = isJobSeekerRole
@@ -100,7 +102,7 @@ const ActivityJobDetailsModal = ({
     : parseDescriptionLines(job.description);
   const salary =
     job.expected_salary && job.expected_salary !== "Any"
-      ? [job.currency, job.expected_salary].filter(Boolean).join(" ")
+      ? formatSalaryExpectation(job.expected_salary, job.currency)
       : null;
 
   const poster = job.poster;
@@ -193,7 +195,7 @@ const ActivityJobDetailsModal = ({
                           {poster.location && (
                             <span className="inline-flex items-center gap-1">
                               <MapPin className="w-3 h-3 shrink-0" />
-                              {poster.location}
+                              {formatDisplayText(poster.location)}
                             </span>
                           )}
                           {poster.experienceYears > 0 && (
@@ -270,8 +272,14 @@ const ActivityJobDetailsModal = ({
               <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
                 <h3 className="font-semibold text-gray-900 mb-3">Details</h3>
                 <DetailRow label="Industry" value={job.industry_sector} />
-                <DetailRow label="Country" value={job.preferred_country} />
-                <DetailRow label="State / City" value={job.preferred_state} />
+                <DetailRow
+                  label="Country"
+                  value={formatDisplayText(job.preferred_country)}
+                />
+                <DetailRow
+                  label="State / City"
+                  value={formatDisplayText(job.preferred_state)}
+                />
                 <DetailRow label="Work type" value={job.work_type} />
                 <DetailRow label="Work mode" value={job.remote_preference} />
                 <DetailRow
@@ -302,6 +310,15 @@ const ActivityJobDetailsModal = ({
                   value={formatPostedDate(job.updated_at)}
                 />
               </div>
+
+              {!isJobSeekerRole && job.about?.trim() && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3">About</h3>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+                    {job.about}
+                  </p>
+                </div>
+              )}
 
               {descriptionLines.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">

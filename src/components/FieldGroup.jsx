@@ -1,6 +1,8 @@
 import React, { useMemo } from "react";
 import FormLabel from "./forms/FormLabel";
 import PhoneInput from "./forms/PhoneInput";
+import DobCalendarPicker from "./forms/DobCalendarPicker";
+import { RecruiterSelect } from "./recruiter/recruiterOnboardingUi";
 
 const FieldGroup = ({ formData, handleChange, countries }) => {
   const bioAges = useMemo(() => {
@@ -18,6 +20,7 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         label: "NICKNAME",
         optional: false,
         placeholder: "e.g code healer",
+        tooltip: "What you want people to know you as (e.g. professional handle or preferred name)",
         width: "w-full sm:w-[calc(50%-0.5rem)]",
       },
       {
@@ -25,6 +28,7 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         label: "PHONE NUMBER",
         optional: false,
         type: "phone",
+        tooltip: "Your active contact number with country code for recruiter outreach",
         width: "w-full sm:w-[calc(50%-0.5rem)]",
       },
     ],
@@ -35,7 +39,8 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         optional: false,
         type: "select",
         options: ["Male", "Female"],
-        width: "w-full sm:w-[calc(33.33%-0.67rem)]",
+        tooltip: "Your gender for demographic and identity records",
+        width: "w-full sm:w-[calc(50%-0.5rem)]",
       },
       {
         name: "maritalStatus",
@@ -43,15 +48,27 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         optional: false,
         type: "select",
         options: ["Single", "Married", "Divorced", "Widowed"],
-        width: "w-full sm:w-[calc(33.33%-0.67rem)]",
+        tooltip: "Your marital status for personal records",
+        width: "w-full sm:w-[calc(50%-0.5rem)]",
+      },
+    ],
+    [
+      {
+        name: "dob",
+        label: "DATE OF BIRTH",
+        optional: true,
+        type: "dob",
+        tooltip: "Your date of birth to calculate age and verify eligibility",
+        width: "w-full sm:w-[calc(65%-0.5rem)]",
       },
       {
         name: "age",
-        label: "AGE (optional)",
+        label: "AGE",
         optional: true,
         type: "select",
         options: bioAges,
-        width: "w-full sm:w-[calc(33.33%-0.67rem)]",
+        tooltip: "Your age in years",
+        width: "w-full sm:w-[calc(35%-0.5rem)]",
       },
     ],
     [
@@ -61,12 +78,14 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         optional: false,
         type: "select",
         options: countries,
+        tooltip: "Your country of origin or residence for job location matching",
         width: "w-full sm:w-[calc(40%-0.5rem)]",
       },
       {
         name: "street",
         label: "STREET ADDRESS",
         placeholder: "e.g 11, Bawo Street.",
+        tooltip: "Your street or residential address",
         width: "w-full sm:w-[calc(60%-0.5rem)]",
         optional: false,
       },
@@ -77,22 +96,25 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
         label: "CITY/TOWN",
         optional: false,
         placeholder: "e.g Calabar",
+        tooltip: "Your current city or town of residence",
         width: "w-full sm:w-[calc(33.33%-0.67rem)]",
       },
       {
         name: "tribe",
-        label: "TRIBE (optional)",
+        label: "TRIBE",
         type: "datalist",
         options: ["Yoruba", "Hausa", "Igbo", "Ibibio"],
         placeholder: "Enter or select your tribe",
+        tooltip: "Your ethnic group or tribe (optional)",
         width: "w-full sm:w-[calc(33.33%-0.67rem)]",
         optional: true,
       },
       {
         name: "zip",
         label: "ZIP CODE",
-        optional: false,
+        optional: true,
         placeholder: "e.g 60094",
+        tooltip: "Your postal or zip code (optional)",
         width: "w-full sm:w-[calc(33.33%-0.67rem)]",
       },
     ],
@@ -108,39 +130,25 @@ const FieldGroup = ({ formData, handleChange, countries }) => {
                 label={f.label}
                 optional={f.optional}
                 required={!f.optional}
+                tooltip={f.tooltip}
               />
-              {/* <label className="block mb-1.5 text-[11px] font-bold text-gray-600 tracking-wide">{f.label}</label> */}
               {f.type === "select" ? (
-                <div className="relative">
-                  <select
-                    name={f.name}
-                    value={formData[f.name]}
-                    onChange={handleChange}
-                    className="w-full h-11 bg-white border border-gray-300 rounded-xl px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32] focus:border-transparent transition-all shadow-sm appearance-none"
-                  >
-                    <option value="">{f.placeholder || "Select"}</option>
-                    {(f.options || []).map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
+                <RecruiterSelect
+                  name={f.name}
+                  value={formData[f.name]}
+                  onChange={handleChange}
+                  options={f.options || []}
+                  placeholder={f.placeholder || "Select"}
+                />
+              ) : f.type === "dob" ? (
+                <DobCalendarPicker
+                  name={f.name}
+                  value={formData[f.name] || ""}
+                  onChange={handleChange}
+                  onAgeChange={(calculatedAge) => {
+                    handleChange({ target: { name: "age", value: calculatedAge } });
+                  }}
+                />
               ) : f.type === "datalist" ? (
                 <div className="relative">
                   <input

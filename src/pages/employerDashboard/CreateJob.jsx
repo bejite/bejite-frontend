@@ -1,79 +1,133 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
-import { createEmployerJob } from "../../services/employerApi";
+import {
+  createEmployerJob,
+  getEmployerDashboard,
+} from "../../services/employerApi";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
-import { findCountryByName } from "../../utils/countryStateData";
 import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
-import { INDUSTRY_OPTIONS } from "../../data/jobTypeData";
+import {
+  CURRENCY_OPTIONS,
+  INDUSTRY_OPTIONS,
+  currencyCodeFromLabel,
+} from "../../data/jobTypeData";
+import { formatSalaryExpectation } from "../../utils/formatSalary";
+import {
+  JOB_ABOUT_MAX_LENGTH,
+  getJobAboutValidationError,
+} from "../../utils/jobAbout";
 import {
   FaBriefcase,
   FaBuilding,
-  FaTools,
   FaClock,
   FaGlobe,
   FaCheckCircle,
   FaRobot,
-  FaPlus,
-  FaTrash,
   FaArrowLeft,
   FaEye,
+  FaExternalLinkAlt,
 } from "react-icons/fa";
 
 const INDUSTRY_SUGGESTIONS = INDUSTRY_OPTIONS.filter(
   (option) => option && option !== "Not Available",
 );
 
+const formatSalaryPreview = (salary, currencyLabel) => {
+  if (!salary) return null;
+  const code = currencyCodeFromLabel(currencyLabel) || "NGN";
+  return formatSalaryExpectation(Number(salary), code);
+};
+
+const normalizeApplicationUrl = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(raw)
+    ? raw
+    : `https://${raw}`;
+  try {
+    const parsed = new URL(candidate);
+    return ["http:", "https:"].includes(parsed.protocol)
+      ? parsed.toString()
+      : "";
+  } catch {
+    return "";
+  }
+};
+
 const CreateJob = () => {
   const navigate = useNavigate();
-  const [skills, setSkills] = useState([{ skill: "", experience: "" }]);
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
-    roles: "",
+    about: "",
+    qualifications: "",
     responsibilities: "",
+    requirements: "",
     workMode: "Remote",
     country: "",
     state: "",
+    salary: "",
+    currency: "",
+    applicationMethod: "bejite",
+    applicationUrl: "",
+    recruitmentJobId: "",
   });
   const { countries, states } = useCountryStateOptions(formData.country);
   const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [recruitmentExercises, setRecruitmentExercises] = useState([]);
+  const [recruitmentsLoading, setRecruitmentsLoading] = useState(false);
 
-  const addSkill = () => {
-    setSkills([...skills, { skill: "", experience: "" }]);
-  };
-
-  const removeSkill = (index) => {
-    const updated = [...skills];
-    updated.splice(index, 1);
-    setSkills(updated);
-  };
-
-  const updateSkill = (index, field, value) => {
-    const updated = [...skills];
-    updated[index][field] = value;
-    setSkills(updated);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadRecruitments = async () => {
+      setRecruitmentsLoading(true);
+      try {
+        const response = await getEmployerDashboard({
+          status: "all",
+          listing_kind: "recruitment",
+        });
+        const list = response?.data?.jobs || [];
+        if (!cancelled) setRecruitmentExercises(list);
+      } catch {
+        if (!cancelled) setRecruitmentExercises([]);
+      } finally {
+        if (!cancelled) setRecruitmentsLoading(false);
+      }
+    };
+    loadRecruitments();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const validateForm = () => {
     if (!formData.title.trim()) return "Job title is required";
     if (!formData.industry) return "Industry is required";
     if (!formData.country.trim()) return "Country is required";
-    if (!findCountryByName(formData.country)) {
-      return "Please select a valid country from the list";
-    }
-    if (states.length > 0 && !formData.state.trim()) {
-      return "State is required for the selected country";
-    }
-    if (!formData.roles.trim()) return "Roles are required";
+    if (!formData.qualifications.trim()) return "Qualifications are required";
     if (!formData.responsibilities.trim()) {
       return "Responsibilities are required";
     }
-    const hasSkill = skills.some((item) => item.skill.trim());
-    if (!hasSkill) return "At least one required skill is needed";
+    const aboutError = getJobAboutValidationError(formData.about);
+    if (aboutError) return aboutError;
+    if (formData.salary && Number(formData.salary) < 0) {
+      return "Salary must be zero or greater";
+    }
+    if (formData.salary && !formData.currency.trim()) {
+      return "Currency is required when specifying a salary";
+    }
+    if (formData.applicationMethod === "external") {
+      if (!formData.applicationUrl.trim()) {
+        return "External application link is required";
+      }
+      if (!normalizeApplicationUrl(formData.applicationUrl)) {
+        return "Enter a valid application website link";
+      }
+    }
     return null;
   };
 
@@ -108,20 +162,28 @@ const CreateJob = () => {
     setError(null);
 
     try {
+      const salaryValue = formData.salary ? Number(formData.salary) : undefined;
       const response = await createEmployerJob({
         title: formData.title.trim(),
         industry: formData.industry,
-        roles: formData.roles.trim(),
+        about: formData.about.trim() || undefined,
+        qualifications: formData.qualifications.trim(),
         responsibilities: formData.responsibilities.trim(),
+        requirements: formData.requirements.trim() || undefined,
         workMode: formData.workMode,
         country: formData.country.trim(),
         state: formData.state.trim() || undefined,
-        skills: skills
-          .filter((item) => item.skill.trim())
-          .map((item) => ({
-            skill: item.skill.trim(),
-            experience: item.experience || 0,
-          })),
+        salary: salaryValue,
+        currency: formData.currency.trim()
+          ? currencyCodeFromLabel(formData.currency.trim())
+          : undefined,
+        applicationUrl:
+          formData.applicationMethod === "external"
+            ? normalizeApplicationUrl(formData.applicationUrl)
+            : undefined,
+        recruitment_job_id: formData.recruitmentJobId
+          ? Number(formData.recruitmentJobId)
+          : null,
       });
 
       if (!response?.success) {
@@ -170,6 +232,11 @@ const CreateJob = () => {
     );
   }
 
+  const salaryPreview = formatSalaryPreview(
+    formData.salary,
+    formData.currency,
+  );
+
   if (showPreview) {
     return (
       <NewsFeedLayout showSidebars={false}>
@@ -197,34 +264,26 @@ const CreateJob = () => {
                     .filter(Boolean)
                     .join(", ") || "Location not specified"}
                 </span>
+                {salaryPreview && (
+                  <>
+                    <span>•</span>
+                    <span>{salaryPreview}</span>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  Required Skills
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills
-                    .filter((s) => s.skill)
-                    .map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-gray-100 rounded-full text-sm"
-                      >
-                        {skill.skill} ({skill.experience} yrs)
-                      </span>
-                    ))}
+              {formData.about.trim() && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    About
+                  </h3>
+                  <p className="text-gray-600 whitespace-pre-wrap">
+                    {formData.about}
+                  </p>
                 </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Roles</h3>
-                <p className="text-gray-600 whitespace-pre-wrap">
-                  {formData.roles || "No roles provided"}
-                </p>
-              </div>
+              )}
 
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-3">
@@ -233,6 +292,47 @@ const CreateJob = () => {
                 <p className="text-gray-600 whitespace-pre-wrap">
                   {formData.responsibilities || "No responsibilities provided"}
                 </p>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  Qualifications
+                </h3>
+                <p className="text-gray-600 whitespace-pre-wrap">
+                  {formData.qualifications || "No qualifications provided"}
+                </p>
+              </div>
+
+              {formData.requirements.trim() && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Requirements
+                  </h3>
+                  <p className="text-gray-600 whitespace-pre-wrap">
+                    {formData.requirements}
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
+                  Application destination
+                </h3>
+                {formData.applicationMethod === "external" ? (
+                  <a
+                    href={normalizeApplicationUrl(formData.applicationUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-[#16730F] hover:underline break-all"
+                  >
+                    Apply on external website
+                    <FaExternalLinkAlt className="shrink-0" />
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Candidates will apply directly through Bejite.
+                  </p>
+                )}
               </div>
 
               <div className="bg-yellow-50 rounded-xl p-4 mb-6">
@@ -372,69 +472,23 @@ const CreateJob = () => {
                 />
               </div>
 
-              {/* Skills */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className="font-semibold text-[#1A3E32]">
-                    Required Skills <span className="text-red-500">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addSkill}
-                    className="flex items-center gap-2 bg-[#16730F] text-white px-4 py-2 rounded-lg hover:bg-[#145A0C] transition-colors"
-                  >
-                    <FaPlus size={12} />
-                    Add Skill
-                  </button>
-                </div>
-
-                {skills.map((item, index) => (
-                  <div key={index} className="grid md:grid-cols-2 gap-3 mb-3">
-                    <input
-                      type="text"
-                      placeholder="Skill (e.g., React)"
-                      className="border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#16730F] outline-none"
-                      value={item.skill}
-                      onChange={(e) =>
-                        updateSkill(index, "skill", e.target.value)
-                      }
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="Years of Experience"
-                        className="border rounded-xl px-4 py-3 flex-1 focus:ring-2 focus:ring-[#16730F] outline-none"
-                        value={item.experience}
-                        onChange={(e) =>
-                          updateSkill(index, "experience", e.target.value)
-                        }
-                      />
-                      {skills.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeSkill(index)}
-                          className="px-4 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                        >
-                          <FaTrash />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Roles */}
+              {/* About */}
               <div>
                 <label className="block mb-2 font-semibold text-[#1A3E32]">
-                  Roles <span className="text-red-500">*</span>
+                  About{" "}
+                  <span className="font-normal text-gray-500">(optional)</span>
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Describe the role, purpose of the position, and key expectations..."
+                  maxLength={JOB_ABOUT_MAX_LENGTH}
+                  placeholder="Introduce the company or this role. This appears on the job listing."
                   className="w-full border rounded-xl px-4 py-3 resize-none focus:ring-2 focus:ring-[#16730F] outline-none"
-                  value={formData.roles}
+                  value={formData.about}
                   onChange={(e) =>
-                    setFormData({ ...formData, roles: e.target.value })
+                    setFormData({
+                      ...formData,
+                      about: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -458,10 +512,245 @@ const CreateJob = () => {
                 />
               </div>
 
+              {/* Qualifications */}
+              <div>
+                <label className="block mb-2 font-semibold text-[#1A3E32]">
+                  Qualifications <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Describe the qualifications and experience needed for this position..."
+                  className="w-full border rounded-xl px-4 py-3 resize-none focus:ring-2 focus:ring-[#16730F] outline-none"
+                  value={formData.qualifications}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      qualifications: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Requirements (optional) */}
+              <div>
+                <label className="block mb-2 font-semibold text-[#1A3E32]">
+                  Requirements{" "}
+                  <span className="font-normal text-gray-500">(optional)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Any additional requirements (one per line)..."
+                  className="w-full border rounded-xl px-4 py-3 resize-none focus:ring-2 focus:ring-[#16730F] outline-none"
+                  value={formData.requirements}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      requirements: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Application Destination */}
+              <fieldset>
+                <legend className="block mb-2 font-semibold text-[#1A3E32]">
+                  Where should candidates apply?
+                </legend>
+                <p className="text-sm text-gray-500 mb-3">
+                  Use Bejite&apos;s application form or send candidates to the
+                  original job website.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <label
+                    className={`cursor-pointer rounded-xl border-2 p-4 transition-colors ${
+                      formData.applicationMethod === "bejite"
+                        ? "border-[#16730F] bg-green-50"
+                        : "border-gray-200 hover:border-[#16730F]/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="applicationMethod"
+                      value="bejite"
+                      checked={formData.applicationMethod === "bejite"}
+                      onChange={() =>
+                        setFormData({
+                          ...formData,
+                          applicationMethod: "bejite",
+                        })
+                      }
+                      className="mr-2 accent-[#16730F]"
+                    />
+                    <span className="font-semibold text-gray-900">
+                      Apply on Bejite
+                    </span>
+                    <span className="block text-xs text-gray-500 mt-1 ml-5">
+                      Receive and manage applications in your dashboard.
+                    </span>
+                  </label>
+                  <label
+                    className={`cursor-pointer rounded-xl border-2 p-4 transition-colors ${
+                      formData.applicationMethod === "external"
+                        ? "border-[#16730F] bg-green-50"
+                        : "border-gray-200 hover:border-[#16730F]/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="applicationMethod"
+                      value="external"
+                      checked={formData.applicationMethod === "external"}
+                      onChange={() =>
+                        setFormData({
+                          ...formData,
+                          applicationMethod: "external",
+                        })
+                      }
+                      className="mr-2 accent-[#16730F]"
+                    />
+                    <span className="font-semibold text-gray-900">
+                      Apply on external website
+                    </span>
+                    <span className="block text-xs text-gray-500 mt-1 ml-5">
+                      Redirect candidates to another company or job website.
+                    </span>
+                  </label>
+                </div>
+
+                {formData.applicationMethod === "external" && (
+                  <div className="mt-4">
+                    <label
+                      htmlFor="job-application-url"
+                      className="block mb-2 text-sm font-medium text-gray-700"
+                    >
+                      External application link{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaExternalLinkAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        id="job-application-url"
+                        type="url"
+                        inputMode="url"
+                        placeholder="https://company.com/jobs/apply"
+                        className="w-full border rounded-xl pl-11 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F]"
+                        value={formData.applicationUrl}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            applicationUrl: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      The Apply button will open this link in a new tab.
+                    </p>
+                  </div>
+                )}
+              </fieldset>
+
+              {/* Link to recruitment exercise */}
+              <div>
+                <label
+                  htmlFor="job-recruitment-exercise"
+                  className="block mb-2 font-semibold text-[#1A3E32]"
+                >
+                  Recruitment exercise{" "}
+                  <span className="font-normal text-gray-500">(optional)</span>
+                </label>
+                <p className="text-sm text-gray-500 mb-3">
+                  Applicants to this job post will also appear in the selected
+                  recruitment pipeline.
+                </p>
+                <select
+                  id="job-recruitment-exercise"
+                  value={formData.recruitmentJobId}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      recruitmentJobId: e.target.value,
+                    })
+                  }
+                  disabled={recruitmentsLoading}
+                  className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F] bg-white"
+                >
+                  <option value="">
+                    {recruitmentsLoading
+                      ? "Loading recruitments…"
+                      : "Select a recruitment exercise (optional)"}
+                  </option>
+                  {recruitmentExercises.map((job) => {
+                    const closed =
+                      job.status !== "active" ||
+                      String(job.dbStatus || "").toLowerCase() === "closed";
+                    return (
+                      <option key={job.id} value={job.id}>
+                        {job.title}
+                        {closed ? " (Closed)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                {recruitmentExercises.length === 0 && !recruitmentsLoading && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    No recruitment exercises yet. Create one in Recruitment
+                    Management if you want applicants tracked there.
+                  </p>
+                )}
+              </div>
+
+              {/* Salary */}
+              <div>
+                <label className="block mb-2 font-semibold text-[#1A3E32]">
+                  Salary
+                </label>
+                <p className="text-sm text-gray-500 mb-3">
+                  Optional. Helps candidates understand the compensation for this
+                  role.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="job-salary"
+                      className="block mb-2 text-sm font-medium text-gray-600"
+                    >
+                      Amount
+                    </label>
+                    <input
+                      id="job-salary"
+                      type="number"
+                      min="0"
+                      placeholder="e.g., 500000"
+                      className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F]"
+                      value={formData.salary}
+                      onChange={(e) =>
+                        setFormData({ ...formData, salary: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-600">
+                      Currency
+                    </label>
+                    <AutocompleteInput
+                      value={formData.currency}
+                      onChange={(e) =>
+                        setFormData({ ...formData, currency: e.target.value })
+                      }
+                      placeholder="Select currency"
+                      formName="employer-job"
+                      fieldName="currency"
+                      staticOptions={CURRENCY_OPTIONS}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Work Mode */}
               <div>
                 <label className="block mb-2 font-semibold text-[#1A3E32]">
-                  Work Mode <span className="text-red-500">*</span>
+                  Work Mode
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {["Remote", "Onsite", "Hybrid"].map((mode) => (
@@ -514,9 +803,6 @@ const CreateJob = () => {
                     className="block mb-2 font-semibold text-[#1A3E32]"
                   >
                     State / Province
-                    {states.length > 0 && (
-                      <span className="text-red-500"> *</span>
-                    )}
                   </label>
                   {formData.country && states.length > 0 ? (
                     <>
@@ -595,7 +881,7 @@ const CreateJob = () => {
                   No image or video uploads allowed.
                 </li>
                 <li className="flex gap-3">
-                  <FaTools className="text-[#16730F] mt-1" />
+                  <FaBriefcase className="text-[#16730F] mt-1" />
                   Extensions cost $10 / NGN10,000.
                 </li>
               </ul>

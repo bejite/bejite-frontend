@@ -23,6 +23,10 @@ import {
   formatPhoneForStorage,
   isPhoneValid,
 } from "../../../utils/displayFormatUtils";
+import {
+  PROFILE_PHOTO_MAX_BYTES,
+  getUploadSizeError,
+} from "../../../utils/uploadLimits";
 
 const Bio = () => {
   const navigate = useNavigate();
@@ -43,6 +47,7 @@ const Bio = () => {
     gender: "",
     maritalStatus: "",
     age: "",
+    dob: "",
     country: "",
     street: "",
     city: "",
@@ -96,6 +101,7 @@ const Bio = () => {
           gender: toString(bio.gender),
           maritalStatus: toString(bio.marital_status),
           age: toString(bio.age),
+          dob: toString(bio.dob || bio.date_of_birth).slice(0, 10),
           country: toString(bio.country),
           street: toString(bio.street),
           city: toString(bio.city),
@@ -128,11 +134,17 @@ const Bio = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     // Ensure all form values are strings
-    setFormData({ ...formData, [name]: String(value) });
+    setFormData((prev) => ({ ...prev, [name]: String(value) }));
   };
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const sizeError = getUploadSizeError(file, PROFILE_PHOTO_MAX_BYTES);
+      if (sizeError) {
+        toast.error(sizeError);
+        e.target.value = "";
+        return;
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     } else {
@@ -149,7 +161,6 @@ const Bio = () => {
     "country",
     "street",
     "city",
-    "zip",
     "bio",
   ];
   const isFormComplete =
@@ -190,11 +201,12 @@ const Bio = () => {
       gender: normalizeText(formData.gender),
       maritalStatus: normalizeText(formData.maritalStatus),
       age: formData.age ? Number(formData.age) : null,
+      dob: formData.dob || null,
       country: normalizeText(formData.country),
       street: normalizeText(formData.street),
       city: normalizeText(formData.city),
       tribe: formData.tribe ? normalizeText(formData.tribe) : null,
-      zip: normalizeText(formData.zip),
+      zip: formData.zip ? normalizeText(formData.zip) : null,
       bio: formData.bio,
     };
 
@@ -255,14 +267,14 @@ const Bio = () => {
       getPath={getPath}
       isEditMode={isEditMode}
     >
-      <section className="max-w-3xl font-nunito-semi text-center md:text-start mx-auto px-4 mt-4 text-[#1A3E32] text-2xl font-semibold">
+      <section className="max-w-3xl font-nunito-semi text-center md:text-start mx-auto px-4 text-[#16730F] text-2xl font-semibold">
         Bio/Personal Information
       </section>
-      <p className=" max-w-3xl mx-auto px-4 text-center md:text-start text-[#333] text-[15px]">
+      <p className="max-w-3xl mx-auto px-4 text-center md:text-start text-[#333] text-[15px]">
         Tell us who you are. This is the first impression employers get.
       </p>
 
-      <div className="max-w-4xl mx-auto mt-8 bg-white md:border border-gray-200 rounded-2xl md:shadow-sm flex flex-col lg:flex-row gap-10 p-2 md:p-8">
+      <div className="max-w-4xl mx-auto bg-white md:border border-gray-200 rounded-2xl md:shadow-sm flex flex-col lg:flex-row gap-10 p-2 md:p-8">
         <ImageUpload
           imagePreview={imagePreview}
           handleImageChange={handleImageChange}
