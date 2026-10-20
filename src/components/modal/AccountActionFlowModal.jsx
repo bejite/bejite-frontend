@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { GOOGLE_CLIENT_ID } from "../../config.mjs";
 import {
   AlertTriangle,
   UserX,
@@ -15,6 +17,9 @@ import {
   AlertCircle,
   Headphones,
   CheckCircle2,
+  Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 /**
@@ -150,13 +155,20 @@ export default function AccountActionFlowModal({
   isOpen,
   mode = "delete", // "deactivate" | "delete"
   onClose,
-  onConfirm,
+  onConfirm, // async ({ reasonId, details, password, googleToken }) => void; throws on failure
   onRedirectContact,
+  passwordRequired, // false for Google sign-in accounts; undefined when unknown
 }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: Reason Selection, 2: Final Confirmation
   const [selectedReasonId, setSelectedReasonId] = useState("");
   const [otherText, setOtherText] = useState("");
+  const [usesGoogle, setUsesGoogle] = useState(passwordRequired === false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [googleToken, setGoogleToken] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const isDelete = mode === "delete";
   const reasons = isDelete ? DELETE_REASONS : DEACTIVATE_REASONS;
@@ -168,8 +180,17 @@ export default function AccountActionFlowModal({
       setStep(1);
       setSelectedReasonId("");
       setOtherText("");
+      setPassword("");
+      setShowPassword(false);
+      setGoogleToken("");
+      setSubmitting(false);
+      setSubmitError("");
     }
   }, [isOpen, mode]);
+
+  useEffect(() => {
+    setUsesGoogle(passwordRequired === false);
+  }, [passwordRequired]);
 
   if (!isOpen) return null;
 
@@ -197,20 +218,43 @@ export default function AccountActionFlowModal({
     setStep(2);
   };
 
-  // Handle final confirmation in Step 2
-  const handleFinalConfirm = () => {
-    const finalReason =
-      selectedReasonId === "other_solid" && otherText.trim()
-        ? `Other: ${otherText.trim()}`
-        : selectedReason?.label || "User confirmed";
+  const confirmBlocked =
+    submitting || (isDelete && (usesGoogle ? !googleToken : !password));
 
-    onConfirm(finalReason);
+  // Handle final confirmation in Step 2
+  const handleFinalConfirm = async () => {
+    if (confirmBlocked) return;
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      await onConfirm({
+        reasonId: selectedReasonId,
+        details: selectedReasonId === "other_solid" ? otherText.trim() : "",
+        ...(isDelete && !usesGoogle ? { password } : {}),
+        ...(isDelete && usesGoogle ? { googleToken } : {}),
+      });
+    } catch (error) {
+      if (error?.code === "REAUTH_REQUIRED" && /google/i.test(error.message || "")) {
+        setUsesGoogle(true);
+        setSubmitError("This account uses Google sign-in. Confirm with Google to continue.");
+      } else if (error?.code === "REAUTH_FAILED" && usesGoogle) {
+        setGoogleToken("");
+        setSubmitError("That Google account doesn't match this Bejite account.");
+      } else {
+        setSubmitError(error?.message || "Something went wrong. Please try again.");
+      }
+      setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!submitting) onClose();
   };
 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -225,8 +269,9 @@ export default function AccountActionFlowModal({
         {/* Close Button */}
         <button
           type="button"
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          onClick={handleClose}
+          disabled={submitting}
+          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -322,6 +367,7 @@ export default function AccountActionFlowModal({
                   value={otherText}
                   onChange={(e) => setOtherText(e.target.value)}
                   placeholder="Share any additional feedback..."
+                  maxLength={1000}
                   rows={2}
                   className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 resize-none"
                 />
@@ -418,9 +464,9 @@ export default function AccountActionFlowModal({
               <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                 ✓
               </div>
-              <div className="text-xs">
+              <div className="text-xs min-w-0 flex-1">
                 <span className="text-gray-400 font-medium">Your reason for leaving:</span>
-                <p className="font-bold text-gray-900 mt-0.5">
+                <p className="font-bold text-gray-900 mt-0.5 [overflow-wrap:anywhere] max-h-28 overflow-y-auto nfl-scroll">
                   {selectedReasonId === "other_solid" && otherText.trim()
                     ? otherText.trim()
                     : selectedReason?.label}
@@ -428,12 +474,94 @@ export default function AccountActionFlowModal({
               </div>
             </div>
 
+            {/* Confirm it's you (delete only) */}
+            {isDelete && !usesGoogle && (
+              <div>
+                <label
+                  htmlFor="delete-account-password"
+                  className="block text-xs font-semibold text-gray-700 mb-1.5"
+                >
+                  Enter your password to confirm
+                </label>
+                <div className="relative">
+                  <input
+                    id="delete-account-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (submitError) setSubmitError("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleFinalConfirm();
+                    }}
+                    disabled={submitting}
+                    placeholder="Current password"
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 disabled:bg-gray-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isDelete && usesGoogle && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-700">
+                  Confirm it's you by signing in with Google
+                </p>
+                {googleToken ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Google account confirmed</span>
+                  </div>
+                ) : GOOGLE_CLIENT_ID ? (
+                  <div className="flex justify-center">
+                    <GoogleLogin
+                      onSuccess={(response) => {
+                        setGoogleToken(response?.credential || "");
+                        setSubmitError("");
+                      }}
+                      onError={() =>
+                        setSubmitError("Google sign-in was cancelled or failed. Please try again.")
+                      }
+                      text="continue_with"
+                      shape="pill"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Google confirmation isn't available right now. Please contact support to
+                    delete your account.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {submitError && (
+              <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
             {/* Final Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(1)}
-                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                onClick={() => {
+                  setSubmitError("");
+                  setStep(1);
+                }}
+                disabled={submitting}
+                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Change Reason</span>
@@ -442,16 +570,18 @@ export default function AccountActionFlowModal({
               <button
                 type="button"
                 onClick={handleFinalConfirm}
-                className={`flex-1 py-3 px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                disabled={confirmBlocked}
+                className={`flex-1 py-3 px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDelete
                     ? "bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/30"
                     : "bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/30"
                 }`}
               >
+                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isDelete ? (
-                  <span>Delete Account Forever</span>
+                  <span>{submitting ? "Deleting..." : "Delete Account Forever"}</span>
                 ) : (
-                  <span>Deactivate Account</span>
+                  <span>{submitting ? "Deactivating..." : "Deactivate Account"}</span>
                 )}
               </button>
             </div>
