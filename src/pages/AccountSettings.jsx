@@ -49,6 +49,7 @@ import {
   updateNotificationPreferences,
 } from "../services/pushNotificationService";
 import { getTwoFactorStatus } from "../services/twoFactorApi";
+import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
 
 export default function AccountSettings() {
@@ -84,6 +85,7 @@ export default function AccountSettings() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [passwordRequired, setPasswordRequired] = useState(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,7 +120,11 @@ export default function AccountSettings() {
       });
     getTwoFactorStatus()
       .then((data) => {
-        if (!cancelled) setTwoFactorEnabled(Boolean(data.enabled));
+        if (cancelled) return;
+        setTwoFactorEnabled(Boolean(data.enabled));
+        if (typeof data.passwordRequired === "boolean") {
+          setPasswordRequired(data.passwordRequired);
+        }
       })
       .catch(() => {});
     return () => {
@@ -185,15 +191,18 @@ export default function AccountSettings() {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  const handleAccountDeactivate = (_reason) => {
+  // The server revokes every session on success, so the user is signed out locally right after.
+  const handleAccountDeactivate = async ({ reasonId, details }) => {
+    await deactivateAccount({ reasonId, details });
     setModal(null);
-    showToast("Account deactivated successfully");
+    showToast("Account deactivated. Log in any time to reactivate it.");
     setTimeout(() => {
       logout();
     }, 1200);
   };
 
-  const handleAccountDelete = (_reason) => {
+  const handleAccountDelete = async ({ reasonId, details, password, googleToken }) => {
+    await deleteAccount({ reasonId, details, password, googleToken });
     setModal(null);
     showToast("Account permanently deleted");
     setTimeout(() => {
@@ -502,6 +511,7 @@ export default function AccountSettings() {
             key="delete-flow"
             isOpen={true}
             mode="delete"
+            passwordRequired={passwordRequired}
             onClose={() => setModal(null)}
             onConfirm={handleAccountDelete}
             onRedirectContact={(reason) => handleRedirectContact(reason, "delete")}

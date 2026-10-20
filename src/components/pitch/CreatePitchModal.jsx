@@ -78,6 +78,7 @@ export default function CreatePitchModal({
 
   // Step 5: CTA
   const [ctaType, setCtaType] = useState("");
+  const [ctaDescription, setCtaDescription] = useState("");
 
   // Modal dialog states
   const [isPublishing, setIsPublishing] = useState(false);
@@ -123,6 +124,7 @@ export default function CreatePitchModal({
           Array.isArray(draftToEdit.targetRoles) ? draftToEdit.targetRoles : []
         );
         setCtaType(draftToEdit.cta || "");
+        setCtaDescription(draftToEdit.ctaDescription || "");
         setStep(draftToEdit.wizardStep || draftToEdit.step || 1);
         setVideoFile(null);
         if (draftToEdit.videoUrl) {
@@ -164,6 +166,7 @@ export default function CreatePitchModal({
       setSelectedIndustries([]);
       setSelectedRoles([]);
       setCtaType("");
+      setCtaDescription("");
       setVideoDurationText("");
       setIsPlayingPreview(false);
       setShowLiveSuccess(false);
@@ -383,6 +386,7 @@ export default function CreatePitchModal({
     industries: selectedIndustries,
     targetRoles: selectedRoles,
     cta: ctaType,
+    ctaDescription,
     videoUrl: media?.url || null,
     videoThumbnailUrl: media?.thumbnailUrl || null,
     durationSeconds: resolveDurationSeconds(
@@ -638,7 +642,11 @@ export default function CreatePitchModal({
               {step === 5 && (
                 <Step5Cta
                   ctaType={ctaType}
-                  onSelectCta={setCtaType}
+                  ctaDescription={ctaDescription}
+                  onSelectCta={(id, desc = "") => {
+                    setCtaType(id);
+                    setCtaDescription(desc);
+                  }}
                 />
               )}
 
