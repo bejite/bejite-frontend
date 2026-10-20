@@ -52,7 +52,7 @@ const EmailSent = () => {
       </h1>
       {fromLogin ? (
         <p className="text-gray-600 mb-4 max-w-md">
-          Your account is not verified yet. Check your inbox for the verification
+          Your account is not verified yet. Check your inbox or spam for the verification
           link we sent when you signed up, or resend it below.
         </p>
       ) : (

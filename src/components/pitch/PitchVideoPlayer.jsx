@@ -17,24 +17,39 @@ export default function PitchVideoPlayer({
   onPrev,
   onNext,
   mobileSize = "balanced",
+  autoPlay = false,
 }) {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const userMutedRef = useRef(false);
 
   useEffect(() => {
     setIsPlaying(false);
     setCurrentTime(0);
+    userMutedRef.current = false;
+    setIsMuted(false);
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.currentTime = 0;
+    }
   }, [pitch?.id]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    video.muted = isMuted;
+
     const onTimeUpdate = () => setCurrentTime(video.currentTime);
-    const onLoadedMetadata = () => setDuration(video.duration || 30);
+    const onLoadedMetadata = () => {
+      setDuration(video.duration || 30);
+      if (videoRef.current) {
+        videoRef.current.muted = isMuted;
+      }
+    };
     const onEnded = () => setIsPlaying(false);
 
     video.addEventListener("timeupdate", onTimeUpdate);
@@ -46,13 +61,34 @@ export default function PitchVideoPlayer({
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
       video.removeEventListener("ended", onEnded);
     };
-  }, [pitch?.id]);
+  }, [pitch?.id, isMuted]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      if (!userMutedRef.current) {
+        video.muted = false;
+        setIsMuted(false);
+      }
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.warn("Unmuted playback restricted, falling back to muted:", err);
+          video.muted = true;
+          setIsMuted(true);
+          video
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch(() => setIsPlaying(false));
+        });
     } else {
       video.pause();
       setIsPlaying(false);
@@ -62,8 +98,10 @@ export default function PitchVideoPlayer({
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
+    const nextMuted = !video.muted;
+    video.muted = nextMuted;
+    setIsMuted(nextMuted);
+    userMutedRef.current = nextMuted;
   };
 
   if (!pitch) return null;

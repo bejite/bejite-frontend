@@ -32,7 +32,7 @@ const DEACTIVATE_REASONS = [
     id: "break",
     label: "I'm taking a temporary break from job hunting",
     description: "Temporarily hides your profile while preserving all your saved data and applications.",
-    isSolid: true,
+    isSolid: false,
   },
   {
     id: "found_job",
@@ -44,7 +44,7 @@ const DEACTIVATE_REASONS = [
     id: "pause_presence",
     label: "I want to temporarily pause my visibility and presence",
     description: "Your profile won't appear in candidate search or recommendations.",
-    isSolid: true,
+    isSolid: false,
   },
   {
     id: "technical_issues",
@@ -97,7 +97,7 @@ const DELETE_REASONS = [
     id: "privacy_erasure",
     label: "I have privacy concerns and want my data permanently erased",
     description: "We will permanently delete your personal information and profile history.",
-    isSolid: true,
+    isSolid: false,
   },
   {
     id: "duplicate_account",
