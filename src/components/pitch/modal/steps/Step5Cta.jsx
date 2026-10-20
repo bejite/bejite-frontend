@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Check, Plus, X, Trash2 } from "lucide-react";
+import { Check, X, Trash2, Plus } from "lucide-react";
 import { CTA_OPTIONS } from "../pitchModalConstants";
 import Button from "../../../ui/Button";
 
 // Keep custom CTAs in memory so navigating back/forth between modal steps preserves them
 let savedCustomCtas = [];
 
-export default function Step5Cta({ ctaType, onSelectCta }) {
+export default function Step5Cta({ ctaType, ctaDescription, onSelectCta }) {
   const [customOptions, setCustomOptions] = useState(() => savedCustomCtas);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
@@ -22,7 +22,8 @@ export default function Step5Cta({ ctaType, onSelectCta }) {
   ) {
     allCustomOptions.push({
       id: ctaType,
-      desc: "Custom call to action",
+      desc: ctaDescription || "Custom call to action",
+      ctaDescription: ctaDescription || "",
       isCustom: true,
     });
   }
@@ -62,9 +63,11 @@ export default function Step5Cta({ ctaType, onSelectCta }) {
       return;
     }
 
+    const trimmedDesc = customDesc.trim();
     const newOption = {
       id: trimmedTitle,
-      desc: customDesc.trim() || "Custom call to action",
+      desc: trimmedDesc || "Custom call to action",
+      ctaDescription: trimmedDesc,
       isCustom: true,
     };
 
@@ -79,7 +82,7 @@ export default function Step5Cta({ ctaType, onSelectCta }) {
     setCustomOptions(updated);
 
     // Pre-select the new custom CTA
-    onSelectCta(trimmedTitle);
+    onSelectCta(trimmedTitle, trimmedDesc);
 
     handleCloseModal();
   };
@@ -110,7 +113,7 @@ export default function Step5Cta({ ctaType, onSelectCta }) {
           return (
             <div
               key={item.id}
-              onClick={() => onSelectCta(item.id)}
+              onClick={() => onSelectCta(item.id, item.ctaDescription || "")}
               className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                 isSelected
                   ? "border-[#16730F] bg-green-50/30 shadow-sm ring-1 ring-[#16730F]"

@@ -12,8 +12,10 @@ import JobseekerHiringProcessReminder from "./components/JobseekerHiringProcessR
 import FeatureTour from "./components/FeatureTour.jsx";
 import PageLoader from "./components/PageLoader.jsx";
 import AppRoutes from "./app/routes/AppRoutes.jsx";
+import { GOOGLE_CLIENT_ID as CONFIGURED_GOOGLE_CLIENT_ID } from "./config.mjs";
 
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID =
+  CONFIGURED_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
 function App() {
   return (

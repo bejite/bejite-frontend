@@ -26,7 +26,6 @@ import {
   apiErrorMessage,
 } from "../../services/pitchesApi";
 import { VIDEO_MAX_BYTES, formatBytesAsMb } from "../../utils/uploadLimits";
-import { getPitchShareUrl } from "../../utils/pitchShare";
 
 function resolveDurationSeconds(videoEl, durationText, fallbackSeconds) {
   const fromEl = videoEl?.duration;
@@ -79,6 +78,7 @@ export default function CreatePitchModal({
 
   // Step 5: CTA
   const [ctaType, setCtaType] = useState("");
+  const [ctaDescription, setCtaDescription] = useState("");
 
   // Modal dialog states
   const [isPublishing, setIsPublishing] = useState(false);
@@ -95,6 +95,7 @@ export default function CreatePitchModal({
   const recordTimerRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const stopCameraRef = useRef(() => {});
 
   // Initialize or restore draft
   useEffect(() => {
@@ -123,6 +124,7 @@ export default function CreatePitchModal({
           Array.isArray(draftToEdit.targetRoles) ? draftToEdit.targetRoles : []
         );
         setCtaType(draftToEdit.cta || "");
+        setCtaDescription(draftToEdit.ctaDescription || "");
         setStep(draftToEdit.wizardStep || draftToEdit.step || 1);
         setVideoFile(null);
         if (draftToEdit.videoUrl) {
@@ -164,19 +166,20 @@ export default function CreatePitchModal({
       setSelectedIndustries([]);
       setSelectedRoles([]);
       setCtaType("");
+      setCtaDescription("");
       setVideoDurationText("");
       setIsPlayingPreview(false);
       setShowLiveSuccess(false);
       setPublishedPitchData(null);
     } else {
-      stopCamera();
+      stopCameraRef.current();
     }
   }, [isOpen, draftToEdit]);
 
   // Camera cleanup on step change
   useEffect(() => {
     if (step !== 2 || mediaMode !== "record") {
-      stopCamera();
+      stopCameraRef.current();
     }
   }, [step, mediaMode]);
 
@@ -216,6 +219,7 @@ export default function CreatePitchModal({
       stopRecording();
     }
   };
+  stopCameraRef.current = stopCamera;
 
   const startRecording = () => {
     if (!streamRef.current) {
@@ -382,6 +386,7 @@ export default function CreatePitchModal({
     industries: selectedIndustries,
     targetRoles: selectedRoles,
     cta: ctaType,
+    ctaDescription,
     videoUrl: media?.url || null,
     videoThumbnailUrl: media?.thumbnailUrl || null,
     durationSeconds: resolveDurationSeconds(
@@ -637,7 +642,11 @@ export default function CreatePitchModal({
               {step === 5 && (
                 <Step5Cta
                   ctaType={ctaType}
-                  onSelectCta={setCtaType}
+                  ctaDescription={ctaDescription}
+                  onSelectCta={(id, desc = "") => {
+                    setCtaType(id);
+                    setCtaDescription(desc);
+                  }}
                 />
               )}
 

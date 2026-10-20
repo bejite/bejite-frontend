@@ -51,13 +51,13 @@ export function AutocompleteInput({
   }, [formName, fieldName, value]);
 
   const filteredOptions = useMemo(() => {
-    const merged = [
-      ...new Set(
-        [...staticOptions, ...suggestions].filter(
-          (opt) => opt && opt !== "Not Available",
-        ),
-      ),
-    ];
+    const byLowercase = new Map();
+    [...staticOptions, ...suggestions].forEach((opt) => {
+      if (!opt || opt === "Not Available") return;
+      const key = opt.toLowerCase();
+      if (!byLowercase.has(key)) byLowercase.set(key, opt);
+    });
+    const merged = [...byLowercase.values()];
     const query = value.trim().toLowerCase();
     if (!query) return merged.slice(0, 15);
     return merged

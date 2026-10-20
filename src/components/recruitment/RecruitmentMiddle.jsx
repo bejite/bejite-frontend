@@ -301,19 +301,11 @@ export default function RecruitmentMiddle() {
   }, [reduxUser, location.pathname]);
 
   useEffect(() => {
-    if (feedMode === "saved") {
-      fetchSavedPosts();
-    } else {
-      fetchFeed();
-    }
-  }, [feedMode, feedHashtag]);
-
-  useEffect(() => {
     if (!sharedPostId) return;
     navigate(getPostDetailPath(sharedPostId), { replace: true });
   }, [sharedPostId, navigate]);
 
-  const fetchSavedPosts = async (silent = false) => {
+  const fetchSavedPosts = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const data = await getSavedPosts(FEED_PAGE_SIZE, null, {
@@ -328,16 +320,9 @@ export default function RecruitmentMiddle() {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [feedHashtag]);
 
-  const refreshPosts = (silent = false) => {
-    if (feedMode === "saved") {
-      return fetchSavedPosts(silent);
-    }
-    return fetchFeed(silent);
-  };
-
-  const fetchFeed = async (silent = false) => {
+  const fetchFeed = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const data = await getFeed(FEED_PAGE_SIZE, null, {
@@ -353,7 +338,22 @@ export default function RecruitmentMiddle() {
     } finally {
       if (!silent) setLoading(false);
     }
+  }, [feedHashtag]);
+
+  const refreshPosts = (silent = false) => {
+    if (feedMode === "saved") {
+      return fetchSavedPosts(silent);
+    }
+    return fetchFeed(silent);
   };
+
+  useEffect(() => {
+    if (feedMode === "saved") {
+      fetchSavedPosts();
+    } else {
+      fetchFeed();
+    }
+  }, [feedMode, fetchSavedPosts, fetchFeed]);
 
   const loadMorePosts = useCallback(async () => {
     if (!nextCursor || loadingMore || loadingMoreRef.current) return;

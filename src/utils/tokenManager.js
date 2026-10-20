@@ -8,6 +8,10 @@ import { API_URL } from '../config';
 import { profilePhotoUrl } from './profilePhotoUrl';
 
 let refreshInFlight = null;
+// Handoff codes are single-use server-side; StrictMode and multiple callers must share one request.
+const oauthExchanges = new Map();
+// Matches the server's handoff TTL — the code is dead after this, so no caller can still need it.
+const OAUTH_EXCHANGE_CACHE_MS = 120_000;
 
 // Store tokens after login/signup
 export const storeTokens = (accessToken, refreshToken) => {
@@ -90,7 +94,20 @@ export function isOAuthCallbackPath(pathname, search = '') {
  * Exchange one-time OAuth handoff code for tokens (POST).
  * @param {string} code
  */
-export async function exchangeOAuthCode(code) {
+export function exchangeOAuthCode(code) {
+  if (!oauthExchanges.has(code)) {
+    const request = requestOAuthExchange(code);
+    oauthExchanges.set(code, request);
+    request
+      .catch(() => {})
+      .finally(() => {
+        setTimeout(() => oauthExchanges.delete(code), OAUTH_EXCHANGE_CACHE_MS);
+      });
+  }
+  return oauthExchanges.get(code);
+}
+
+async function requestOAuthExchange(code) {
   const { data } = await axios.post(
     `${API_URL}/auth/oauth/exchange`,
     { code },

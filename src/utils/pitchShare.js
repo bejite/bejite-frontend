@@ -1,9 +1,5 @@
 import { toast } from "react-toastify";
-import {
-  getSocialShareUrl,
-  openExternalShare,
-  openShareWindow,
-} from "./postShare";
+import { getSocialShareUrl } from "./postShare";
 import { sharePitch } from "../services/pitchesApi";
 
 export function getPitchShareUrl(pitchId) {

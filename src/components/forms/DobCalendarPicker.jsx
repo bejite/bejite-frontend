@@ -33,7 +33,7 @@ const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 /**
  * Calculates exact age in years from YYYY-MM-DD
  */
-export const calculateAge = (dateString) => {
+const calculateAge = (dateString) => {
   if (!dateString) return null;
   const parts = dateString.split("-");
   if (parts.length !== 3) return null;
@@ -55,7 +55,7 @@ export const calculateAge = (dateString) => {
 /**
  * Formats YYYY-MM-DD to "15 Oct 1998"
  */
-export const formatDateDisplay = (dateString) => {
+const formatDateDisplay = (dateString) => {
   if (!dateString) return "";
   const parts = dateString.split("-");
   if (parts.length !== 3) return dateString;
