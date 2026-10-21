@@ -17,7 +17,6 @@ export default function PitchVideoPlayer({
   onPrev,
   onNext,
   mobileSize = "balanced",
-  autoPlay = false,
 }) {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
