@@ -197,7 +197,7 @@ export default function Step5Cta({ ctaType, ctaDescription, onSelectCta }) {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-[#1A3E32]">
-                  Choosing What to Write
+                Create a Call to Action 
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Write your custom call to action title and description.
