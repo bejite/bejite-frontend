@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import AdCampaignReviewCard from "../../components/admin/AdCampaignReviewCard";
 import { Search, Megaphone } from "lucide-react";
 import { useAdminInbox } from "../../context/useAdminInbox";
@@ -182,9 +183,7 @@ export default function AdminAdPro() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]" />
-          </div>
+          <Loader fullscreen={false} description="Loading campaigns for review..." />
         ) : campaigns.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-500">
             No campaigns found for this filter.

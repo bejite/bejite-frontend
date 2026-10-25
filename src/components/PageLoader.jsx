@@ -1,11 +1,20 @@
-export default function PageLoader() {
+import React from "react";
+import Loader from "./ui/Loader";
+
+export default function PageLoader({
+  description,
+  minHeight = "min-h-[50vh]",
+  fullscreen = false,
+}) {
+  if (fullscreen) {
+    return <Loader fullscreen={true} description={description} />;
+  }
+
   return (
-    <div className="min-h-[40vh] flex items-center justify-center">
-      <div
-        className="animate-spin rounded-full h-10 w-10 border-2 border-[#1A3E32]/20 border-t-[#16730F]"
-        role="status"
-        aria-label="Loading page"
-      />
+    <div
+      className={`w-full ${minHeight} flex items-center justify-center p-4`}
+    >
+      <Loader fullscreen={false} description={description} />
     </div>
   );
 }

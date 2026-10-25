@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, CreditCard, UserRound } from "lucide-react";
+import Loader from "../ui/Loader";
 import axiosInstance from "../../utils/axiosInstance";
 
 const formatDateTime = (value) => {
@@ -151,15 +152,7 @@ const AdminTransactionDetailModal = ({ transaction, onClose }) => {
 
         <div className="px-6 py-5 overflow-y-auto">
           {loading ? (
-            <div
-              className="h-52 flex flex-col items-center justify-center gap-3"
-              role="status"
-              aria-live="polite"
-              aria-label="Loading transaction details"
-            >
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-[#16730F]" />
-              <p className="text-sm text-gray-500">Loading details…</p>
-            </div>
+            <Loader fullscreen={false} size="sm" description="Loading transaction details..." />
           ) : (
             <>
           <div className="flex items-start justify-between gap-3 mb-5">

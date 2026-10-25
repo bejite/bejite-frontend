@@ -261,7 +261,7 @@ const CandidateSearchPage = () => {
                     onViewProfile={handleViewProfile}
                   />
                 </div>
-              </aside>
+              </aside> 
             )}
 
             {/* Main content */}

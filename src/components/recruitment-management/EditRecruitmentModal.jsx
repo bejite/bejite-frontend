@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaPencilAlt, FaTimes } from "react-icons/fa";
-import { AutocompleteInput } from "../forms/AutocompleteInput";
-import { INDUSTRY_OPTIONS } from "../../data/jobTypeData";
 import { RecruiterSelect } from "../recruiter/recruiterOnboardingUi";
-
-const DEPARTMENT_SUGGESTIONS = INDUSTRY_OPTIONS.filter(
-  (opt) => opt && opt !== "Not Available",
-);
 
 export default function EditRecruitmentModal({
   isOpen,
@@ -79,8 +73,8 @@ export default function EditRecruitmentModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto nfl-scroll pr-1 sm:pr-2 flex-1 min-h-0 space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 ">
+          <div className="overflow-y-auto nfl-scroll px-1.5 sm:px-2.5 py-1.5 flex-1 min-h-0 space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                 Recruitment Title
@@ -108,17 +102,17 @@ export default function EditRecruitmentModal({
                   className="w-full bg-white border border-gray-300 text-gray-800 text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 font-medium disabled:opacity-60"
                 />
               </div>
-              <div className="relative z-20">
+              <div>
                 <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                   Department
                 </label>
-                <AutocompleteInput
+                <input
+                  type="text"
+                  disabled={submitting}
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Enter or select department"
-                  formName="employer-job"
-                  fieldName="industry_sector"
-                  staticOptions={DEPARTMENT_SUGGESTIONS}
+                  placeholder="e.g. Engineering, Sales, Finance"
+                  className="w-full bg-white border border-gray-300 text-gray-800 text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 placeholder:text-gray-400 font-medium disabled:opacity-60"
                 />
               </div>
             </div>
@@ -135,7 +129,7 @@ export default function EditRecruitmentModal({
               />
             </div>
 
-            <div>
+            <div className="px-2">
               <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                 Description
               </label>

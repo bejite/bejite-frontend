@@ -22,6 +22,7 @@ import {
 } from "../../services/paymentApi";
 import { getUser, isAuthenticated } from "../../utils/tokenManager";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
+import Loader from "../../components/ui/Loader";
 
 const RECRUIT_RETURN_KEY = "aseRecruitReturnJobId";
 const TOP_CANDIDATE_LIMIT = 10;
@@ -297,8 +298,8 @@ const RecruitWithASE = () => {
   if (pageLoading) {
     return (
       <NewsFeedLayout showSidebars={false}>
-        <div className="flex items-center justify-center h-96">
-          <FaSpinner className="animate-spin text-5xl text-[#16730F]" />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader fullscreen={false} description="Loading recruitment session..." />
         </div>
       </NewsFeedLayout>
     );
@@ -324,14 +325,11 @@ const RecruitWithASE = () => {
   if (searching) {
     return (
       <NewsFeedLayout showSidebars={false}>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <FaSpinner className="animate-spin text-5xl text-[#16730F] mx-auto mb-4" />
-            <p className="text-gray-600">Analyzing applicants with ASE...</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Ranking candidates by skills and experience
-            </p>
-          </div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader
+            fullscreen={false}
+            description="Analyzing applicants with ASE... Ranking candidates by skills and experience"
+          />
         </div>
       </NewsFeedLayout>
     );

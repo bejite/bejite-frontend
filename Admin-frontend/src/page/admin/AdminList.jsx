@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import RecruiterSelect from "../../components/admin/RecruiterSelect";
 import {
@@ -297,8 +298,7 @@ const AdminList = () => {
                     colSpan={isSuperAdmin ? 5 : 4}
                     className="px-6 py-12 text-center"
                   >
-                    <div className="animate-spin inline-block rounded-full h-8 w-8 border-b-2 border-[#16730F]" />
-                    <p className="text-gray-500 mt-2">Loading admins...</p>
+                    <Loader fullscreen={false} size="sm" description="Loading admins..." />
                   </td>
                 </tr>
               ) : filteredAdmins.length > 0 ? (

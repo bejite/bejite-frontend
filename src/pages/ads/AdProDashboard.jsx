@@ -13,6 +13,7 @@ import {
   Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/ui/Loader";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import DeleteModal from "../../components/modal/DeleteModal";
 import { toast } from "react-toastify";
@@ -337,9 +338,7 @@ export default function AdProDashboard() {
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A3E32]" />
-            </div>
+            <Loader fullscreen={false} description="Loading campaigns & metrics..." />
           ) : (
             <>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8 min-w-0">

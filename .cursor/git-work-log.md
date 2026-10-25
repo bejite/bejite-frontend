@@ -1,5 +1,167 @@
 # Git Work Log
 
+## 2026-10-25 17:53 (WAT) — Standardize All Loading Spinners with Consistent Bejite Logo Loader Across Main App and Admin
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Replaced disparate generic circular spinners and icon spinners across all main application pages and the admin portal with a unified, branded Bejite logo spinner (`Loader.jsx`) matching the official design. Enhanced `Loader.jsx` in both `src` and `Admin-frontend` to seamlessly support modal/fullscreen, inline/container, size scaling (`sm`, `md`, `lg`), custom descriptive text, and contrast-aware typography.
+- **Changed**:
+  - `src/components/ui/Loader.jsx`: Upgraded Bejite logo loader component to support `fullscreen={false}` for embedded page sections, `inline` mode, multi-size scaling, custom status description text, and dark-background color overrides (`textColor`).
+  - `Admin-frontend/src/components/ui/Loader.jsx`: Ported the upgraded Bejite logo loader to the admin portal.
+  - `src/components/PageLoader.jsx`: Replaced generic CSS spinner with the Bejite logo loader for top-level React Suspense route fallbacks.
+  - `Admin-frontend/src/App.jsx`: Updated `RouteFallback` to use the Bejite logo loader.
+  - `src/pages/Connections.jsx`: Replaced initial page spinner ("Loading connections...") and network refresh spinners with the Bejite logo loader.
+  - `src/pages/auth/AuthSuccess.jsx`: Replaced auth completion route spinner with the Bejite logo loader.
+  - `src/components/candidate-search-page/CandidateSearchResults.jsx`: Replaced candidate search query spinner with contrast-adjusted white Bejite logo loader.
+  - `src/components/candidate-search-page/UserMainProfileCard.jsx`: Replaced candidate profile loading spinner with Bejite logo loader.
+  - `src/components/recruitment-management/SelectRecruiterModal.jsx`: Replaced recruiter search loading spinner with Bejite logo loader.
+  - `src/components/MutualConnectionsModal.jsx`: Replaced mutual connections loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/EmployerDashboard.jsx`: Replaced employer dashboard initial loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/JobApplications.jsx`: Replaced applications table loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/ASESubscriptionDashboard.jsx`: Replaced subscription dashboard loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/ASEPricingPage.jsx`: Replaced pricing dashboard loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/SentInvitations.jsx`: Replaced sent invitations loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/Notifications.jsx`: Replaced main notifications and modal loading spinners with Bejite logo loader.
+  - `src/pages/employerDashboard/RecruitWithASE.jsx`: Replaced recruiter session and query loading spinners with Bejite logo loader.
+  - `src/pages/employerDashboard/EditJob.jsx`: Replaced job details loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/RepostJob.jsx`: Replaced job details loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/ExtendJob.jsx`: Replaced job extension loading spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/BulkCreateJobs.jsx`: Replaced file parsing/upload spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/JobExtendCallback.jsx`: Replaced payment verification spinner with Bejite logo loader.
+  - `src/pages/employerDashboard/ASEPaymentCallback.jsx`: Replaced payment verification spinner with Bejite logo loader.
+  - `src/pages/individual/InterviewNotifications.jsx`: Replaced candidate interview invitations loading spinner with Bejite logo loader.
+  - `src/pages/jobseekerSignup/Jobs/JobVacancyListing.jsx`: Replaced job search vacancy loading spinner with Bejite logo loader.
+  - `src/pages/jobseekerSignup/JobConnection.jsx`: Replaced initial recruiters loading spinner with Bejite logo loader.
+  - `src/pages/ads/AdProDashboard.jsx`: Replaced campaign metrics loading spinner with Bejite logo loader.
+  - `src/components/Ads/AdProAsyncState.jsx`: Replaced ad loading fallback with Bejite logo loader.
+  - `src/pages/badge/BadgeStatus.jsx`: Replaced verification status loading spinner with Bejite logo loader.
+  - `src/pages/badge/BadgePaymentCallback.jsx`: Replaced badge payment processing spinner with Bejite logo loader.
+  - `src/pages/badge/BadgeHolder.jsx`: Replaced badge verification and employment metrics loading spinners with Bejite logo loader.
+  - `src/pages/admin/*` (`AdminDashboard.jsx`, `AdminEngagement.jsx`, `AdminDemographics.jsx`, `AdminJobs.jsx`, `AdminList.jsx`, `AdminRecruitment.jsx`, `AdminRevenue.jsx`, `AdminUsers.jsx`, `AdminAdPro.jsx`): Standardized all admin table and dashboard loading states with Bejite logo loader.
+  - `Admin-frontend/src/page/admin/*` and `Admin-frontend/src/components/*`: Standardized all admin page loaders, review modals, and async state components with Bejite logo loader.
+- **Conventional type**: `feat(ui)`
+
+### Proposed Commit Message
+
+```
+feat(ui): standardize all loading indicators with branded Bejite logo loader
+
+Replace generic and inconsistent CSS spinners across all pages in the main
+application and admin portal with the official branded Bejite logo loader.
+
+- Enhance `Loader.jsx` to support inline embedding, scaling, and custom descriptions
+- Standardize full-page route loaders and suspense fallbacks
+- Update connections, employer dashboards, candidate profiles, and modals
+- Standardize all admin dashboards, analytics, and detail modals
+```
+
+---
+
+## 2026-10-25 15:20 (WAT) — Implement Reusable Recruiter Selection Modal for Assigned Interviewer
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Built a professional, reusable recruiter selection modal (`SelectRecruiterModal`) triggered when clicking on the "Assigned Interviewer" input in pipeline stage modals (`StageBuilderModal` and `EditPipelineStageModal`). Fetches real recruiters from backend discovery and connection endpoints with instant search filtering, verified badges, and selection syncing to read-only inputs without dummy data or fallbacks.
+- **Changed**:
+  - `src/services/recruitersApi.js`: Created dedicated API service to query backend recruiter discovery (`/auth/signup/discover-recruiters`), connection search (`/api/connections/search`), and network discovery (`/api/connections/discover`), normalizing recruiter profiles and filtering out admins without dummy data.
+  - `src/components/recruitment-management/SelectRecruiterModal.jsx`: Created reusable modal with live search filter, loading spinner, error state with retry, empty state, recruiter avatar/badge cards, selection toggle, and confirm/clear actions.
+  - `src/components/recruitment-management/EditPipelineStageModal.jsx`: Made "Assigned Interviewer" input `readOnly` and clickable, added recruiter badge icon button, and integrated `SelectRecruiterModal`.
+  - `src/components/recruitment-management/StageBuilderModal.jsx`: Made "Assigned Interviewer" input `readOnly` and clickable, added recruiter badge icon button, and integrated `SelectRecruiterModal`.
+- **Conventional type**: `feat(recruitment-management)`
+
+### Proposed Commit Message
+
+```
+feat(recruitment-management): add reusable recruiter selection modal for assigned interviewers
+
+Employers needed a seamless way to assign specific recruiters as interviewers
+when configuring recruitment pipeline stages, instead of manually typing names.
+
+- Create `SelectRecruiterModal` with live search, loading/error states, and profile cards
+- Implement `fetchRecruiters` in `recruitersApi.js` calling backend endpoints with no mock fallbacks
+- Convert "Assigned Interviewer" inputs to read-only clickable triggers in Edit and Builder modals
+- Auto-populate selected recruiter name into the stage configuration on confirm
+```
+
+---
+
+## 2026-10-25 14:55 (WAT) — Fix React Hook Order Violation in CandidateSearchResults
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Fixed a fatal React runtime error ("Rendered more hooks than during the previous render") in CandidateSearchResults caused by invoking `useCallback` after early conditional returns.
+- **Changed**:
+  - `src/components/candidate-search-page/CandidateSearchResults.jsx`: Reordered hooks and event handlers so that `isCandidateInvited` and modal callbacks are declared unconditionally at the top of the component function before any `if (loading)` or `if (error)` early returns.
+- **Conventional type**: `fix(candidate-search)`
+
+### Proposed Commit Message
+
+```
+fix(candidate-search): fix react hook order violation in CandidateSearchResults
+
+We encountered a crash where CandidateSearchResults triggered an error boundary
+saying "Rendered more hooks than during the previous render". This happened because
+the `isCandidateInvited` callback hook was placed below the loading and error guard
+returns, causing the number of hooks to change between renders.
+
+- Move `isCandidateInvited` and modal handlers to top of component before early returns
+- Ensure all hooks execute in identical order on every render cycle
+```
+
+---
+
+## 2026-10-25 14:45 (WAT) — Change Candidate Invite Button to Reinvite on Sent and Make Recruitment Department Field Plain Typable Input
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Updated candidate search results so that when an employer invites a candidate for an interview, the button dynamically changes from "Invite for interview" to "Reinvite for interview" (persisting both immediately in session and from existing employer interview invitations). Also removed the dropdown/autocomplete from the Department field in recruitment exercise modals (Create and Edit), turning it into a straightforward typable text input.
+- **Changed**:
+  - `src/components/candidate-search-page/CandidateSearchResults.jsx`: Added `invitedCandidateIds` tracking fetched from `/api/interview-invitations/employer` on mount and updated on invite success. Passed `isInvited` state down to `ProfileActions` to dynamically toggle the action button text between "Invite for interview" and "Reinvite for interview", styled with responsive hover states.
+  - `src/components/candidate-search-page/InterviewInviteModal.jsx`: Supported `isReinvite` prop to update the dialog title to "Re-invite for Interview" and submit button to "Send Re-invite". Made modal container responsive.
+  - `src/components/recruitment-management/CreateRecruitmentModal.jsx`: Removed `AutocompleteInput` and suggestion dropdown from Department field, replacing it with a standard typable `<input>` with placeholder `e.g. Engineering, Sales, Finance`.
+  - `src/components/recruitment-management/EditRecruitmentModal.jsx`: Removed `AutocompleteInput` from Department field, replacing it with a standard typable text input.
+- **Conventional type**: `feat(candidate-search)`
+
+### Proposed Commit Message
+
+```
+feat(candidate-search): toggle reinvite button state and make recruitment department typable
+
+- Change candidate card action button to "Reinvite for interview" once an interview invite has been sent
+- Fetch and sync existing employer invitations on mount to recognize previously invited candidates
+- Support re-invite context inside InterviewInviteModal
+- Remove autocomplete dropdown in Create and Edit Recruitment modals to make Department field plain typable
+```
+
+---
+
+## 2026-10-25 13:17 (WAT) — Fix Input Borders Cutting Off and Modal Responsiveness Across Bejite
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Resolved input borders cutting off and disappearing in modals across both main frontend and admin frontend. Fixed Chrome autofill user-agent styling that painted over the top border and forced a light-blue background, added safe scroll padding to eliminate clipping boundaries at Y=0, and made all modals responsive with flexible height bounds and sticky headers/footers.
+- **Changed**:
+  - `src/index.css` & `Admin-frontend/src/index.css`: Added global `-webkit-autofill` rules to prevent browser autofill from painting over top borders or altering background colors.
+  - `src/components/modal/confirmBadgeModal.jsx` & `Admin-frontend/src/components/modal/confirmBadgeModal.jsx`: Upgraded `ChangePasswordModal`, `ChangeEmailModal`, `TwoFactorModal`, `ProfileVisibilityModal`, and `ConfirmBadgeModal` to `max-w-md` with `p-1.5 sm:p-2` on scroll containers and clear focus ring transitions.
+  - `src/components/modal/AccountActionFlowModal.jsx`: Made modal container fully responsive (`max-h-[calc(100dvh-2rem)]`, sticky header/footer, flex scroll body, removed awkward header indent).
+  - `src/components/recruitment-management/`: Added vertical and horizontal padding (`px-1.5 sm:px-2.5 py-1.5`) to scroll containers in `CreateRecruitmentModal`, `EditRecruitmentModal`, `EditPipelineStageModal`, `StageBuilderModal`, `InteractiveModals`, `CandidateFeedbackModal`, and `MoveCandidateModal` to prevent input border and focus ring clipping.
+  - `src/components/ConfirmModal.jsx` & `Admin-frontend/src/components/ConfirmModal.jsx`: Made confirmation dialogs responsive with `max-w-md` and overflow scrolling.
+  - `Admin-frontend/src/components/modal/DeleteConfirmModal.jsx`: Added responsive height and scroll wrapper.
+- **Conventional type**: `fix(modal)`
+
+### Proposed Commit Message
+
+```
+fix(modal): prevent input border cutoff and improve responsiveness across all modals
+
+Input top borders were getting clipped in modals due to a combination of Chrome's
+native autofill background overriding the top 1px border and scrollable modal containers
+having 0px top padding at the clipping boundary Y=0. In addition, modals were exceeding
+viewport heights on smaller displays.
+
+- Add global CSS autofill reset in index.css to prevent browser styles from obliterating input borders
+- Add padding to modal scroll bodies so inputs and focus rings never touch the clipping plane
+- Upgrade account and settings modals (password, email, 2FA, visibility) to max-w-md with sticky headers/footers
+- Ensure recruitment management and confirmation modals are fully responsive with max-h constraints
+```
+
+---
+
 ## 2026-10-13 22:20 (WAT) — Redesign Awards and Certificates Step with Full-Width Responsive Layout
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

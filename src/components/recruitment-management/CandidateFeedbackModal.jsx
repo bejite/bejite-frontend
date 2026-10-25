@@ -148,7 +148,7 @@ export default function CandidateFeedbackModal({
           </div>
         </div>
 
-        <div className="overflow-y-auto nfl-scroll flex-1 min-h-0 space-y-3.5 pr-1 sm:pr-2">
+        <div className="overflow-y-auto nfl-scroll flex-1 min-h-0 space-y-3.5 px-1.5 sm:px-2.5 py-1.5">
           <div className="bg-[#16730F] text-white rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               {isBulk ? (
@@ -288,6 +288,7 @@ export default function CandidateFeedbackModal({
                 type="textarea"
                 rows={4}
                 value={feedbackText}
+                
                 onChange={(e) => setFeedbackText(e.target.value)}
                 placeholder="Communication skills, technical performance, interview preparation, or system design problem-solving ability."
                 disabled={submitting}

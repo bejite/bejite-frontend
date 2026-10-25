@@ -10,6 +10,7 @@ import { formatDisplayText } from "../../utils/displayFormatUtils";
 import { filterAdminUsersFromSearch } from "../../utils/filterAdminUsers";
 import AvailabilityStatusDot from "./AvailabilityStatusDot";
 import { buildCandidateSearchParams } from "./buildCandidateSearchParams";
+import Loader from "../ui/Loader";
 
 const CandidateSearchResults = ({
   onViewProfile,
@@ -26,6 +27,7 @@ const CandidateSearchResults = ({
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [invitedCandidateIds, setInvitedCandidateIds] = useState(() => new Set());
   const [accessBlock, setAccessBlock] = useState(null);
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +35,52 @@ const CandidateSearchResults = ({
   // Refs to track and cancel duplicate requests (handles React StrictMode)
   const abortControllerRef = useRef(null);
   const requestIdRef = useRef(0);
+
+  // Fetch already invited candidates for this employer
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchExistingInvitations = async () => {
+      try {
+        const token =
+          localStorage.getItem("accessToken") ||
+          localStorage.getItem("authToken") ||
+          localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/interview-invitations/employer`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) return;
+        const resData = await res.json();
+        const invitations = resData?.data || [];
+        if (!isCancelled && Array.isArray(invitations)) {
+          const ids = new Set(
+            invitations
+              .map((inv) => inv.candidate_id ?? inv.candidateId)
+              .filter(Boolean)
+              .map((id) => Number(id))
+          );
+          setInvitedCandidateIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn("Could not fetch employer invitations:", err?.message || err);
+      }
+    };
+
+    fetchExistingInvitations();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const formatCandidates = useCallback((candidatesData) => {
     const filtered = filterAdminUsersFromSearch(candidatesData);
@@ -68,6 +116,14 @@ const CandidateSearchResults = ({
         hasVerifiedBadge: Boolean(candidate.hasVerifiedBadge),
         first_name: candidate.first_name,
         last_name: candidate.last_name,
+        isInvited: Boolean(
+          candidate.is_invited ||
+          candidate.isInvited ||
+          candidate.has_invited ||
+          candidate.has_invitation ||
+          candidate.invitation_status ||
+          candidate.invited
+        ),
       };
     });
   }, []);
@@ -259,6 +315,50 @@ const CandidateSearchResults = ({
     };
   }, [searchCriteria, enabled, fetchCandidates]);
 
+  const isCandidateInvited = useCallback(
+    (candidate) => {
+      if (!candidate) return false;
+      const cid = Number(candidate.id);
+      return (
+        invitedCandidateIds.has(cid) ||
+        Boolean(candidate.isInvited || candidate.is_invited)
+      );
+    },
+    [invitedCandidateIds],
+  );
+
+  const handleInviteClick = (candidate) => {
+    setSelectedCandidate(candidate);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCandidate(null);
+  };
+
+  const handleInviteSuccess = (invitationData) => {
+    const candidateId = Number(
+      invitationData?.candidate_id ??
+      invitationData?.candidateId ??
+      selectedCandidate?.id
+    );
+    if (candidateId) {
+      setInvitedCandidateIds((prev) => {
+        const next = new Set(prev);
+        next.add(candidateId);
+        return next;
+      });
+      setCandidates((prev) =>
+        prev.map((c) =>
+          Number(c.id) === candidateId ? { ...c, isInvited: true } : c
+        )
+      );
+    }
+    setInviteSuccess(true);
+    setTimeout(() => setInviteSuccess(false), 3500);
+  };
+
   const handleLoadMore = () => {
     if (loadingMore || !pagination?.hasNext) {
       return;
@@ -268,11 +368,12 @@ const CandidateSearchResults = ({
 
   if (loading) {
     return (
-      <div className={`bg-[#1A3E32] w-full ${compact ? "px-4 py-6 rounded-none min-h-[50vh] flex items-center" : "px-4 sm:px-6 py-8 rounded-2xl shadow-lg"}`}>
-        <div className="text-center w-full">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          <p className="text-white mt-4">Loading candidates...</p>
-        </div>
+      <div className={`bg-[#1A3E32] w-full flex items-center justify-center ${compact ? "px-4 py-6 rounded-none min-h-[50vh]" : "px-4 sm:px-6 py-8 rounded-2xl shadow-lg"}`}>
+        <Loader
+          fullscreen={false}
+          description="Loading candidates..."
+          textColor="text-white"
+        />
       </div>
     );
   }
@@ -290,20 +391,6 @@ const CandidateSearchResults = ({
     );
   }
 
-  const handleInviteClick = (candidate) => {
-    setSelectedCandidate(candidate);
-    setIsModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedCandidate(null);
-  };
-
-  const handleInviteSuccess = () => {
-    setInviteSuccess(true);
-    setTimeout(() => setInviteSuccess(false), 3000);
-  };
 
   return (
     <div className={`bg-[#1A3E32] w-full max-w-full min-w-0 overflow-hidden ${compact ? "px-3 py-3 rounded-none min-h-full" : "px-3 sm:px-4 py-4 rounded-2xl shadow-lg"}`}>
@@ -323,6 +410,7 @@ const CandidateSearchResults = ({
             <React.Fragment key={candidate.id}>
               <CandidateProfile 
                 candidate={candidate} 
+                isInvited={isCandidateInvited(candidate)}
                 onViewProfile={onViewProfile}
                 onInvite={handleInviteClick}
                 compact={compact}
@@ -347,6 +435,7 @@ const CandidateSearchResults = ({
         isOpen={isModalOpen}
         onClose={handleModalClose}
         candidate={selectedCandidate}
+        isReinvite={isCandidateInvited(selectedCandidate)}
         onSuccess={handleInviteSuccess}
       />
     </div>
@@ -586,7 +675,7 @@ const NoCandidatesFound = ({ navigate, compact }) => (
   </div>
 );
 
-const CandidateProfile = ({ candidate, onViewProfile, onInvite, compact }) => (
+const CandidateProfile = ({ candidate, isInvited = false, onViewProfile, onInvite, compact }) => (
   <div className={`min-w-0 max-w-full overflow-hidden ${compact ? "px-2 py-3" : "mt-3 px-0.5 py-2"}`}>
     <ProfileDetails
       user={candidate}
@@ -603,6 +692,7 @@ const CandidateProfile = ({ candidate, onViewProfile, onInvite, compact }) => (
         onViewProfile(candidate.id, candidate.user_id ?? candidate.userId)
       }
       onInvite={() => onInvite(candidate)}
+      isInvited={isInvited}
       compact={compact}
     />
   </div>
@@ -665,6 +755,7 @@ const ProfileDetails = ({
   availability,
   onViewProfile,
   onInvite,
+  isInvited = false,
   compact,
 }) => {
   const visibleSkills = skillLabels(skills);
@@ -739,26 +830,35 @@ const ProfileDetails = ({
         </div>
       )}
 
-      <ProfileActions onViewProfile={onViewProfile} onInvite={onInvite} compact={compact} />
+      <ProfileActions
+        onViewProfile={onViewProfile}
+        onInvite={onInvite}
+        isInvited={isInvited}
+        compact={compact}
+      />
     </div>
   );
 };
 
-const ProfileActions = ({ onViewProfile, onInvite, compact }) => (
+const ProfileActions = ({ onViewProfile, onInvite, isInvited = false, compact }) => (
   <div className="flex w-full min-w-0 flex-col gap-2">
     <button
       type="button"
       onClick={onViewProfile}
-      className={`w-full rounded-3xl bg-[#556B1F] hover:bg-[#6B8E23] text-white font-medium transition-colors px-3 leading-snug ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
+      className={`w-full rounded-3xl bg-[#556B1F] hover:bg-[#6B8E23] text-white font-medium transition-colors px-3 leading-snug cursor-pointer ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
     >
-      View Profile
+      View CV
     </button>
     <button
       type="button"
       onClick={onInvite}
-      className={`w-full rounded-3xl bg-[#6B8E23] hover:bg-[#556B1F] text-white font-medium transition-colors px-3 leading-snug whitespace-normal ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
+      className={`w-full rounded-3xl ${
+        isInvited
+          ? "bg-[#16730F] hover:bg-[#125B0C]"
+          : "bg-[#6B8E23] hover:bg-[#556B1F]"
+      } text-white font-medium transition-colors px-3 leading-snug whitespace-normal cursor-pointer ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
     >
-      Invite for interview
+      {isInvited ? "Reinvite for interview" : "Invite for interview"}
     </button>
   </div>
 );

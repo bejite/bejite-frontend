@@ -20,7 +20,7 @@ export default function FormField({
   ...props
 }) {
   return (
-    <div className={`space-y-1 ${className}`}>
+    <div className={`space-y-1 px-2 ${className}`}>
       {type === "select" ? (
         <RecruiterSelect
           label={label}
@@ -45,7 +45,7 @@ export default function FormField({
               value={value}
               onChange={onChange}
               placeholder={placeholder}
-              className={`w-full bg-white border border-gray-300 text-gray-800 text-xs sm:text-sm p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 placeholder:text-gray-400 font-medium resize-none ${inputClassName}`}
+              className={`w-full  bg-white border border-gray-300 text-gray-800 text-xs sm:text-sm p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 placeholder:text-gray-400 font-medium resize-none ${inputClassName}`}
               {...props}
             />
           ) : (

@@ -253,7 +253,7 @@ export default function AccountActionFlowModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={handleClose}
     >
       <motion.div
@@ -262,7 +262,7 @@ export default function AccountActionFlowModal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 border border-gray-100 relative my-8"
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full border border-gray-100 relative my-auto max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3.5rem)] flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -271,7 +271,7 @@ export default function AccountActionFlowModal({
           type="button"
           onClick={handleClose}
           disabled={submitting}
-          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-20"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -279,22 +279,22 @@ export default function AccountActionFlowModal({
 
         {/* STEP 1: Reason Selection */}
         {step === 1 && (
-          <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-start gap-4 pr-8">
+          <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+            {/* Header (pinned at top) */}
+            <div className="p-5 sm:p-7 pb-3 sm:pb-4 pr-12 sm:pr-14 shrink-0 flex items-start gap-3 sm:gap-4 border-b border-gray-100/80">
               <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
                   isDelete ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"
                 }`}
               >
                 {isDelete ? (
-                  <AlertTriangle className="w-6 h-6" />
+                  <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
                 ) : (
-                  <UserX className="w-6 h-6" />
+                  <UserX className="w-5 h-5 sm:w-6 sm:h-6" />
                 )}
               </div>
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
                   {isDelete ? "Delete Your Account" : "Deactivate Your Account"}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
@@ -304,102 +304,104 @@ export default function AccountActionFlowModal({
               </div>
             </div>
 
-            {/* Reasons List */}
-            <div className="max-h-72 overflow-y-auto pr-1 space-y-2.5 nfl-scroll">
-              {reasons.map((reason) => {
-                const isSelected = selectedReasonId === reason.id;
-                return (
-                  <div
-                    key={reason.id}
-                    onClick={() => setSelectedReasonId(reason.id)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
-                      isSelected
-                        ? isDelete
-                          ? "border-red-400 bg-red-50/40 shadow-xs ring-1 ring-red-400"
-                          : "border-[#1A3E32] bg-[#1A3E32]/5 shadow-xs ring-1 ring-[#1A3E32]"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/60"
-                    }`}
-                  >
-                    {/* Custom Radio Button */}
+            {/* Scrollable Body: Reasons List + Optional Other Field + Support Banner */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-3.5 nfl-scroll">
+              <div className="space-y-2 sm:space-y-2.5">
+                {reasons.map((reason) => {
+                  const isSelected = selectedReasonId === reason.id;
+                  return (
                     <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                      key={reason.id}
+                      onClick={() => setSelectedReasonId(reason.id)}
+                      className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-start gap-2.5 sm:gap-3 select-none ${
                         isSelected
                           ? isDelete
-                            ? "border-red-600 bg-red-600 text-white"
-                            : "border-[#1A3E32] bg-[#1A3E32] text-white"
-                          : "border-gray-300 bg-white"
+                            ? "border-red-400 bg-red-50/40 shadow-xs ring-1 ring-red-400"
+                            : "border-[#1A3E32] bg-[#1A3E32]/5 shadow-xs ring-1 ring-[#1A3E32]"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/60"
                       }`}
                     >
-                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p
-                          className={`text-xs sm:text-sm font-semibold ${
-                            isSelected ? "text-gray-900" : "text-gray-700"
-                          }`}
-                        >
-                          {reason.label}
-                        </p>
-                        {!reason.isSolid && (
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
-                            Support can help
-                          </span>
-                        )}
+                      {/* Custom Radio Button */}
+                      <div
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          isSelected
+                            ? isDelete
+                              ? "border-red-600 bg-red-600 text-white"
+                              : "border-[#1A3E32] bg-[#1A3E32] text-white"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3]" />}
                       </div>
-                      <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-relaxed">
-                        {reason.description}
-                      </p>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                          <p
+                            className={`text-xs sm:text-sm font-semibold ${
+                              isSelected ? "text-gray-900" : "text-gray-700"
+                            }`}
+                          >
+                            {reason.label}
+                          </p>
+                          {!reason.isSolid && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
+                              Support can help
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-relaxed">
+                          {reason.description}
+                        </p>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+
+              {/* If 'Other' is selected, show optional textarea */}
+              {selectedReasonId === "other_solid" && (
+                <div className="animate-in fade-in duration-200">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Optional details (tell us more):
+                  </label>
+                  <textarea
+                    value={otherText}
+                    onChange={(e) => setOtherText(e.target.value)}
+                    placeholder="Share any additional feedback..."
+                    maxLength={1000}
+                    rows={2}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 resize-none"
+                  />
+                </div>
+              )}
+
+              {/* Explanatory Banner when Support-Resolvable Reason is Chosen */}
+              {selectedReason && !selectedReason.isSolid && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-emerald-50 border border-emerald-200 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-start gap-2.5 sm:gap-3"
+                >
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <Headphones className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
-                );
-              })}
+                  <div className="text-xs text-emerald-900 leading-relaxed min-w-0">
+                    <p className="font-bold">We can help resolve this right now!</p>
+                    <p className="mt-0.5 text-emerald-800">{selectedReason.supportNote}</p>
+                    <p className="mt-1 font-semibold text-emerald-900">
+                      Clicking continue will take you to our Contact Us page so our team can assist you directly.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
             </div>
 
-            {/* If 'Other' is selected, show optional textarea */}
-            {selectedReasonId === "other_solid" && (
-              <div className="animate-in fade-in duration-200">
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Optional details (tell us more):
-                </label>
-                <textarea
-                  value={otherText}
-                  onChange={(e) => setOtherText(e.target.value)}
-                  placeholder="Share any additional feedback..."
-                  maxLength={1000}
-                  rows={2}
-                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/20 resize-none"
-                />
-              </div>
-            )}
-
-            {/* Explanatory Banner when Insufficient (Support-Resolvable) Reason is Chosen */}
-            {selectedReason && !selectedReason.isSolid && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start gap-3"
-              >
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                  <Headphones className="w-4 h-4" />
-                </div>
-                <div className="text-xs text-emerald-900 leading-relaxed">
-                  <p className="font-bold">We can help resolve this right now!</p>
-                  <p className="mt-0.5 text-emerald-800">{selectedReason.supportNote}</p>
-                  <p className="mt-1 font-semibold text-emerald-900">
-                    Clicking continue will take you to our Contact Us page so our team can assist you directly.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Action Buttons for Step 1 */}
-            <div className="flex items-center gap-3 pt-2">
+            {/* Footer Buttons (pinned at bottom) */}
+            <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t border-gray-100 bg-white/95 backdrop-blur-xs flex items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                className="flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold transition-colors cursor-pointer text-center"
               >
                 Cancel
               </button>
@@ -408,7 +410,7 @@ export default function AccountActionFlowModal({
                 type="button"
                 disabled={!selectedReasonId}
                 onClick={handleStep1Next}
-                className={`flex-1 py-3 px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   selectedReason && !selectedReason.isSolid
                     ? "bg-[#1A3E32] hover:bg-[#153228] shadow-md shadow-[#1A3E32]/20"
                     : isDelete
@@ -416,12 +418,12 @@ export default function AccountActionFlowModal({
                     : "bg-[#1A3E32] hover:bg-[#153228] shadow-md shadow-[#1A3E32]/20"
                 }`}
               >
-                <span>
+                <span className="truncate">
                   {selectedReason && !selectedReason.isSolid
-                    ? "Contact Support Instead"
+                    ? "Contact Support"
                     : "Next"}
                 </span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
             </div>
           </div>
@@ -429,131 +431,134 @@ export default function AccountActionFlowModal({
 
         {/* STEP 2: Final Confirmation ("Are you sure?") */}
         {step === 2 && (
-          <div className="space-y-6">
-            {/* Header with Warning Icon */}
-            <div className="text-center">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3.5 ${
-                  isDelete
-                    ? "bg-red-100 text-red-600 ring-8 ring-red-50"
-                    : "bg-amber-100 text-amber-600 ring-8 ring-amber-50"
-                }`}
-              >
-                {isDelete ? (
-                  <AlertTriangle className="w-8 h-8" />
-                ) : (
-                  <UserX className="w-8 h-8" />
-                )}
-              </div>
+          <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+            {/* Scrollable Body: Icon + Title + Description + Reason Box + Password / Google + Error */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-7 space-y-4 sm:space-y-5 nfl-scroll">
+              {/* Header with Warning Icon */}
+              <div className="text-center pt-1 sm:pt-2">
+                <div
+                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2.5 sm:mb-3.5 ${
+                    isDelete
+                      ? "bg-red-100 text-red-600 ring-6 sm:ring-8 ring-red-50"
+                      : "bg-amber-100 text-amber-600 ring-6 sm:ring-8 ring-amber-50"
+                  }`}
+                >
+                  {isDelete ? (
+                    <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />
+                  ) : (
+                    <UserX className="w-6 h-6 sm:w-8 sm:h-8" />
+                  )}
+                </div>
 
-              <h3 className="text-lg sm:text-xl font-extrabold text-gray-900">
-                {isDelete
-                  ? "Are you sure you want to delete your account?"
-                  : "Are you sure you want to deactivate your account?"}
-              </h3>
+                <h3 className="text-base sm:text-xl font-extrabold text-gray-900 leading-snug">
+                  {isDelete
+                    ? "Are you sure you want to delete your account?"
+                    : "Are you sure you want to deactivate your account?"}
+                </h3>
 
-              <p className="text-xs sm:text-sm text-gray-500 mt-2 leading-relaxed px-2">
-                {isDelete
-                  ? "This action is permanent and cannot be undone. All your profile information, job applications, connections, and posts will be permanently wiped from Bejite."
-                  : "Your profile will be temporarily hidden from other users, recruiters, and companies. You can reactivate anytime simply by logging back in with your credentials."}
-              </p>
-            </div>
-
-            {/* Selected Reason Confirmation Box */}
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
-                ✓
-              </div>
-              <div className="text-xs min-w-0 flex-1">
-                <span className="text-gray-400 font-medium">Your reason for leaving:</span>
-                <p className="font-bold text-gray-900 mt-0.5 [overflow-wrap:anywhere] max-h-28 overflow-y-auto nfl-scroll">
-                  {selectedReasonId === "other_solid" && otherText.trim()
-                    ? otherText.trim()
-                    : selectedReason?.label}
+                <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-2 leading-relaxed px-1 sm:px-2">
+                  {isDelete
+                    ? "This action is permanent and cannot be undone. All your profile information, job applications, connections, and posts will be permanently wiped from Bejite."
+                    : "Your profile will be temporarily hidden from other users, recruiters, and companies. You can reactivate anytime simply by logging back in with your credentials."}
                 </p>
               </div>
-            </div>
 
-            {/* Confirm it's you (delete only) */}
-            {isDelete && !usesGoogle && (
-              <div>
-                <label
-                  htmlFor="delete-account-password"
-                  className="block text-xs font-semibold text-gray-700 mb-1.5"
-                >
-                  Enter your password to confirm
-                </label>
-                <div className="relative">
-                  <input
-                    id="delete-account-password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (submitError) setSubmitError("");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleFinalConfirm();
-                    }}
-                    disabled={submitting}
-                    placeholder="Current password"
-                    className="w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 disabled:bg-gray-50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {/* Selected Reason Confirmation Box */}
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 flex items-start gap-2.5 sm:gap-3">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+                  ✓
+                </div>
+                <div className="text-xs min-w-0 flex-1">
+                  <span className="text-gray-400 font-medium">Your reason for leaving:</span>
+                  <p className="font-bold text-gray-900 mt-0.5 [overflow-wrap:anywhere] max-h-24 sm:max-h-28 overflow-y-auto nfl-scroll">
+                    {selectedReasonId === "other_solid" && otherText.trim()
+                      ? otherText.trim()
+                      : selectedReason?.label}
+                  </p>
                 </div>
               </div>
-            )}
 
-            {isDelete && usesGoogle && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-700">
-                  Confirm it's you by signing in with Google
-                </p>
-                {googleToken ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Google account confirmed</span>
-                  </div>
-                ) : GOOGLE_CLIENT_ID ? (
-                  <div className="flex justify-center">
-                    <GoogleLogin
-                      onSuccess={(response) => {
-                        setGoogleToken(response?.credential || "");
-                        setSubmitError("");
+              {/* Confirm it's you (delete only) */}
+              {isDelete && !usesGoogle && (
+                <div>
+                  <label
+                    htmlFor="delete-account-password"
+                    className="block text-xs font-semibold text-gray-700 mb-1.5"
+                  >
+                    Enter your password to confirm
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="delete-account-password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (submitError) setSubmitError("");
                       }}
-                      onError={() =>
-                        setSubmitError("Google sign-in was cancelled or failed. Please try again.")
-                      }
-                      text="continue_with"
-                      shape="pill"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleFinalConfirm();
+                      }}
+                      disabled={submitting}
+                      placeholder="Current password"
+                      className="w-full px-3.5 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 disabled:bg-gray-50"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                ) : (
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Google confirmation isn't available right now. Please contact support to
-                    delete your account.
+                </div>
+              )}
+
+              {isDelete && usesGoogle && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Confirm it's you by signing in with Google
                   </p>
-                )}
-              </div>
-            )}
+                  {googleToken ? (
+                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>Google account confirmed</span>
+                    </div>
+                  ) : GOOGLE_CLIENT_ID ? (
+                    <div className="flex justify-center">
+                      <GoogleLogin
+                        onSuccess={(response) => {
+                          setGoogleToken(response?.credential || "");
+                          setSubmitError("");
+                        }}
+                        onError={() =>
+                          setSubmitError("Google sign-in was cancelled or failed. Please try again.")
+                        }
+                        text="continue_with"
+                        shape="pill"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Google confirmation isn't available right now. Please contact support to
+                      delete your account.
+                    </p>
+                  )}
+                </div>
+              )}
 
-            {submitError && (
-              <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{submitError}</span>
-              </div>
-            )}
+              {submitError && (
+                <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 sm:px-3.5 py-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{submitError}</span>
+                </div>
+              )}
+            </div>
 
-            {/* Final Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
+            {/* Final Action Buttons (pinned at bottom) */}
+            <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t border-gray-100 bg-white/95 backdrop-blur-xs flex items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -561,28 +566,32 @@ export default function AccountActionFlowModal({
                   setStep(1);
                 }}
                 disabled={submitting}
-                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Change Reason</span>
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span className="truncate">Change Reason</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleFinalConfirm}
                 disabled={confirmBlocked}
-                className={`flex-1 py-3 px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDelete
                     ? "bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/30"
                     : "bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/30"
                 }`}
               >
-                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isDelete ? (
-                  <span>{submitting ? "Deleting..." : "Delete Account Forever"}</span>
-                ) : (
-                  <span>{submitting ? "Deactivating..." : "Deactivate Account"}</span>
-                )}
+                {submitting && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                <span className="truncate">
+                  {isDelete
+                    ? submitting
+                      ? "Deleting..."
+                      : "Delete Account Forever"
+                    : submitting
+                    ? "Deactivating..."
+                    : "Deactivate Account"}
+                </span>
               </button>
             </div>
           </div>

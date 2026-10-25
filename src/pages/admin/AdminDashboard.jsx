@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
+import Loader from '../../components/ui/Loader';
 import { toast } from 'react-toastify';
 import { 
   Users, Briefcase, FileText, Activity, 
@@ -76,11 +77,7 @@ const COLORS = ['#16730F', '#2563eb', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex h-[calc(100vh-100px)] items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading dashboard metrics..." />;
   }
 
   return (

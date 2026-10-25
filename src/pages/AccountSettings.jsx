@@ -498,7 +498,7 @@ export default function AccountSettings() {
         )}
         {modal === "deactivate" && (
           <AccountActionFlowModal
-            key="deactivate-flow"
+            key="deactivate-flow" 
             isOpen={true}
             mode="deactivate"
             onClose={() => setModal(null)}

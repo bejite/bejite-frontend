@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import { CreditCard, DollarSign, Activity, TrendingUp } from "lucide-react";
 import {
@@ -63,11 +64,7 @@ const AdminRevenue = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="h-[80vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading revenue metrics..." />;
   }
 
   // Format currency
