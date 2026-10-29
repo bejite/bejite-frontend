@@ -20,6 +20,12 @@ import {
   BadgePaymentCallback,
   JobVacancyListing,
   PitchPage,
+  ELearningDashboardPage,
+  MyLearningPage,
+  ExploreCoursesPage,
+  CourseDetailsPage,
+  CoursePlayerPage,
+  CourseProgressPage,
 } from "../lazyPages.js";
 import MessagesToChatsRedirect from "./MessagesToChatsRedirect.jsx";
 
@@ -86,6 +92,30 @@ export const socialRoutes = (
     <Route
       path="/notifications"
       element={guard(<Notifications />, "Please log in.")}
+    />
+    <Route
+      path="/e-learning"
+      element={guard(<ELearningDashboardPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/my-learning"
+      element={guard(<MyLearningPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/explore"
+      element={guard(<ExploreCoursesPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId"
+      element={guard(<CourseDetailsPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId/learn"
+      element={guard(<CoursePlayerPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId/progress"
+      element={guard(<CourseProgressPage />, "Please log in to access E-Learning.")}
     />
   </>
 );

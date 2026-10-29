@@ -1,5 +1,36 @@
 # Git Work Log
 
+## 2026-10-29 17:56 (WAT) — Build Jobseeker E-Learning Dashboard, Layout, and Reusable Component Library
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Built the complete **E-Learning (Bejite Academy)** experience exclusively for jobseekers with its own dedicated layout, reusable component suite inside `src/components/elearning/`, interactive course curriculum/video player/quiz/deliverable flows, and a jobseeker-only **E-Learning** link placed at the bottom of the News Feed right sidebar.
+- **Changed**:
+  - `src/components/elearning/*` & `src/components/layout/ELearningLayout.jsx`: Created reusable E-Learning UI components (`ELearningLayout`, `ELearningSidebar`, `ELearningButton`, `ELearningBadge`, `ELearningBackPill`, `ELearningSectionHeader`, `ELearningWelcomeBanner`, `ELearningSideCard`, `CourseProgressBar`, `EnrolledCourseCard`, `CourseCatalogCard`, `CurriculumModuleAccordion`, `CompletionCriterionCard`, `LessonVideoPlayer`, `LessonTakeawaysCard`, `KnowledgeQuizModal`, `DeliverableWorkspaceModal`, and `index.js` barrel export).
+  - `src/pages/elearning/*`: Built `ELearningDashboardPage`, `MyLearningPage`, `ExploreCoursesPage`, `CourseDetailsPage`, `CoursePlayerPage`, and `CourseProgressPage` matching the Figma designs.
+  - `src/services/elearningService.js`: Added jobseeker role helper (`isJobseekerAccount`), partner academy course catalogue, weighted progress/criteria calculation, and user-scoped persistence for enrollments, completed lessons, quiz scores, and deliverable submissions.
+  - `src/components/recruitment/recruitmentRightLinks.js`, `RecruitmentRight.jsx`, `RecruitmentRightMobileMenu.jsx`, & `public/assets/images/elearning-*.svg`: Appended **E-Learning** at the bottom of the News Feed right sidebar (below **Help**) strictly for jobseekers.
+  - `src/app/lazyPages.js` & `src/app/routes/socialRoutes.jsx`: Registered lazy-loaded E-Learning pages and protected `/e-learning/*` routes.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add jobseeker e-learning dashboard and reusable components
+
+Jobseekers need a dedicated Bejite Academy space where they can study
+employer-partner courses, complete quizzes and practical deliverables, and
+build skill evidence for their profile without cluttering the recruiter view.
+
+- Add an "E-Learning" link at the bottom of the News Feed right sidebar (and mobile drawer) that appears only for jobseeker accounts
+- Create a dedicated E-Learning layout and left navigation rail with Learning Dashboard, My Learning, and Explore Courses views, redirecting non-jobseekers back to the News Feed
+- Build a reusable component library under `src/components/elearning` for buttons, badges, progress bars, enrolled and partner course cards, collapsible curriculum modules, video lessons, quizzes, and project deliverables
+- Add full pages for the Learning Dashboard, Course Details & Syllabus, Interactive Lesson Player, and Track Progress & Completion Criteria
+
+Verified with ESLint and a production Vite build so all new routes load cleanly as code-split bundles.
+```
+
+---
+
 ## 2026-10-29 16:47 (WAT) — Restrict Assign Account to a Recruiter Exclusively to Recruiter Accounts
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

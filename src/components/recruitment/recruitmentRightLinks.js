@@ -1,3 +1,5 @@
+import { isJobseekerAccount } from "../../services/elearningService";
+
 export const RECRUITMENT_RIGHT_LINKS = [
   {
     label: "Saved Posts",
@@ -33,3 +35,18 @@ export const RECRUITMENT_RIGHT_LINKS = [
     path: "/help",
   },
 ];
+
+export const JOBSEEKER_ELEARNING_RIGHT_LINK = {
+  label: "E-Learning",
+  icon: "/assets/images/elearning-sidebar.svg",
+  mobileIcon: "/assets/images/elearning-nav.svg",
+  path: "/e-learning",
+  tourId: "e-learning",
+};
+
+export function getRecruitmentRightLinks(user) {
+  if (isJobseekerAccount(user)) {
+    return [...RECRUITMENT_RIGHT_LINKS, JOBSEEKER_ELEARNING_RIGHT_LINK];
+  }
+  return RECRUITMENT_RIGHT_LINKS;
+}
