@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   Search,
@@ -43,7 +44,9 @@ import {
   assignAccountToRecruiter,
   updateAccountDelegation,
   revokeAccountDelegation,
+  isRecruiterAccount,
 } from "../services/accountDelegationService";
+import { getUser, mergeAuthUsers } from "../utils/tokenManager";
 import { profilePhotoUrl } from "../utils/profilePhotoUrl";
 
 const PERMISSION_ICONS = {
@@ -133,6 +136,12 @@ function RecruiterAvatar({ recruiter, sizeClass = "w-11 h-11", textClass = "text
 export default function AssignRecruiterSettings() {
   const navigate = useNavigate();
   const formRef = useRef(null);
+  const reduxUser = useSelector((state) => state.auth?.user);
+  const currentUser = useMemo(() => {
+    const localUser = getUser();
+    return mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
+  }, [reduxUser]);
+  const canManageDelegation = isRecruiterAccount(currentUser);
 
   // Existing delegations & audit logs
   const [delegations, setDelegations] = useState([]);
@@ -187,6 +196,7 @@ export default function AssignRecruiterSettings() {
   }, []);
 
   useEffect(() => {
+    if (!canManageDelegation) return undefined;
     let cancelled = false;
     setDelegationsLoading(true);
     Promise.all([getAccountDelegations(), getAccountDelegationLogs()])
@@ -214,7 +224,7 @@ export default function AssignRecruiterSettings() {
     return () => {
       cancelled = true;
     };
-  }, [showToast]);
+  }, [canManageDelegation, showToast]);
 
   const loadRecruiterDirectory = useCallback(async (query = "") => {
     setRecruitersLoading(true);
@@ -232,12 +242,13 @@ export default function AssignRecruiterSettings() {
   }, []);
 
   useEffect(() => {
+    if (!canManageDelegation) return undefined;
     const timer = setTimeout(() => {
       loadRecruiterDirectory(searchQuery);
     }, searchQuery.trim() ? 280 : 0);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, loadRecruiterDirectory]);
+  }, [canManageDelegation, searchQuery, loadRecruiterDirectory]);
 
   const assignedByRecruiterId = useMemo(() => {
     const map = new Map();
@@ -468,6 +479,10 @@ export default function AssignRecruiterSettings() {
     }
     return map;
   }, []);
+
+  if (!canManageDelegation) {
+    return <Navigate to="/account-settings" replace />;
+  }
 
   return (
     <NewsFeedLayout classes={false} showSidebars={false}>

@@ -23,8 +23,10 @@ import {
 } from "../lazyPages.js";
 import MessagesToChatsRedirect from "./MessagesToChatsRedirect.jsx";
 
-const guard = (element, message) => (
-  <ProtectedRoute redirectMessage={message}>{element}</ProtectedRoute>
+const guard = (element, message, requiredRole = null) => (
+  <ProtectedRoute redirectMessage={message} requiredRole={requiredRole}>
+    {element}
+  </ProtectedRoute>
 );
 
 export const socialRoutes = (
@@ -58,7 +60,8 @@ export const socialRoutes = (
       path="/account-settings/assign-recruiter"
       element={guard(
         <AssignRecruiterSettings />,
-        "Please log in to manage recruiter account assignments."
+        "Only recruiters can assign account access.",
+        "recruiter"
       )}
     />
     <Route

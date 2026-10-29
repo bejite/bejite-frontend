@@ -76,6 +76,18 @@ export const DELEGATION_DURATIONS = [
 const STORAGE_PREFIX = "bejite:account-delegations";
 const LOG_STORAGE_PREFIX = "bejite:account-delegation-logs";
 
+export function isRecruiterAccount(user) {
+  if (!user || typeof user !== "object") return false;
+  const role = String(user.role || "").trim().toLowerCase();
+  if (!role || role === "jobseeker") return false;
+  return (
+    role === "recruiter" ||
+    role === "employer" ||
+    role === "corporate_recruiter" ||
+    role === "individual_recruiter"
+  );
+}
+
 let delegationApiUnsupported = false;
 
 function resolveOwnerScopeKey() {

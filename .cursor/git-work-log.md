@@ -1,5 +1,32 @@
 # Git Work Log
 
+## 2026-10-29 16:47 (WAT) — Restrict Assign Account to a Recruiter Exclusively to Recruiter Accounts
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Restricted the **Account Delegation / Assign Account to a Recruiter** settings section and `/account-settings/assign-recruiter` route strictly to recruiter accounts (`recruiter` / `employer`), hiding it completely from jobseeker accounts and blocking direct route access.
+- **Changed**:
+  - `src/services/accountDelegationService.js`: Added `isRecruiterAccount(user)` helper to strictly verify recruiter eligibility (`recruiter`, `employer`, `corporate_recruiter`, `individual_recruiter`) while excluding `jobseeker` and non-recruiter roles.
+  - `src/pages/AccountSettings.jsx`: Hid the **Account Delegation -> Assign Account to a Recruiter** section and skipped delegation fetches whenever `isRecruiterAccount(user)` is `false`.
+  - `src/app/routes/socialRoutes.jsx`: Enforced `requiredRole="recruiter"` on `/account-settings/assign-recruiter` via `ProtectedRoute`.
+  - `src/pages/AssignRecruiterSettings.jsx`: Added live role check (`isRecruiterAccount(currentUser)`) redirecting non-recruiters immediately to `/account-settings` and skipping recruiter directory/delegation fetches.
+- **Conventional type**: `fix(account-settings)`
+
+### Proposed Commit Message
+
+```
+fix(account-settings): show assign account to a recruiter only for recruiters
+
+Jobseekers should not see or access recruiter account delegation controls in
+Account Settings. Only recruiter accounts need to delegate hiring workflows to
+another recruiter.
+
+- Hide the Account Delegation ("Assign Account to a Recruiter") section in Account Settings when signed in as a jobseeker or non-recruiter
+- Guard `/account-settings/assign-recruiter` with `requiredRole="recruiter"` on the route and redirect non-recruiters back to Account Settings if their role changes
+- Skip loading delegation state and recruiter directories unless the active account is a recruiter
+```
+
+---
+
 ## 2026-10-29 14:35 (WAT) — Move Recruiter Assignment to Dedicated Account Settings Page (Partial & Full Delegation)
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

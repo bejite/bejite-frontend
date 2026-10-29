@@ -54,6 +54,7 @@ import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
 import {
   getAccountDelegations,
+  isRecruiterAccount,
   summarizeDelegations,
 } from "../services/accountDelegationService";
 
@@ -67,6 +68,7 @@ export default function AccountSettings() {
     const localUser = getUser();
     return mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
   }, [reduxUser]);
+  const isRecruiter = isRecruiterAccount(user);
 
   const displayName = formatDisplayPersonName(user, "User");
   const email = user?.email?.trim() || "";
@@ -135,17 +137,19 @@ export default function AccountSettings() {
         }
       })
       .catch(() => {});
-    getAccountDelegations()
-      .then((list) => {
-        if (!cancelled) {
-          setDelegationSummary(summarizeDelegations(list));
-        }
-      })
-      .catch(() => {});
+    if (isRecruiter) {
+      getAccountDelegations()
+        .then((list) => {
+          if (!cancelled) {
+            setDelegationSummary(summarizeDelegations(list));
+          }
+        })
+        .catch(() => {});
+    }
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isRecruiter]);
 
   const handleChannelToggle = async (channel) => {
     if (prefsLoading || channelLoading) return;
@@ -270,28 +274,32 @@ export default function AccountSettings() {
         },
       ],
     },
-    {
-      title: "Account Delegation",
-      rows: [
-        {
-          icon: UserCheck,
-          iconBg: "bg-[#EAF5E9]",
-          label: "Assign Account to a Recruiter",
-          sublabel: delegationSummary.sublabel,
-          action: (
-            <div className="flex items-center gap-2 shrink-0">
-              {delegationSummary.activeCount > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full bg-[#EAF5E9] text-[#16730F] text-xs font-semibold">
-                  {delegationSummary.activeCount} Active
-                </span>
-              )}
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-            </div>
-          ),
-          onClick: () => navigate("/account-settings/assign-recruiter"),
-        },
-      ],
-    },
+    ...(isRecruiter
+      ? [
+          {
+            title: "Account Delegation",
+            rows: [
+              {
+                icon: UserCheck,
+                iconBg: "bg-[#EAF5E9]",
+                label: "Assign Account to a Recruiter",
+                sublabel: delegationSummary.sublabel,
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {delegationSummary.activeCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#EAF5E9] text-[#16730F] text-xs font-semibold">
+                        {delegationSummary.activeCount} Active
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/assign-recruiter"),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: "Notifications",
       rows: [
