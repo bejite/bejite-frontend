@@ -1,5 +1,96 @@
 # Git Work Log
 
+## 2026-10-29 14:35 (WAT) — Move Recruiter Assignment to Dedicated Account Settings Page (Partial & Full Delegation)
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Removed the recruiter selection popup modal (`SelectRecruiterModal`) from pipeline stage modals (`StageBuilderModal` and `EditPipelineStageModal`), restoring plain typable interviewer inputs, and built a dedicated enterprise-style **Assign Account to a Recruiter** page under Account Settings (`/account-settings/assign-recruiter`) supporting both **Partial Assignment** (granular module permissions + quick presets) and **Full Assignment** (complete operational access while keeping owner password, 2FA, billing, and deletion locked), access expiration controls, handover notes, pause/resume/revoke actions, and an activity log.
+- **Changed**:
+  - `src/components/recruitment-management/StageBuilderModal.jsx` & `EditPipelineStageModal.jsx`: Removed `SelectRecruiterModal` popup trigger and `readOnly` behavior, restoring `Assigned Interviewer` to a standard typable input.
+  - `src/components/recruitment-management/SelectRecruiterModal.jsx`: Deleted obsolete popup modal component.
+  - `src/services/recruitersApi.js`: Filtered out the currently signed-in user and jobseeker-only profiles so recruiter discovery returns strictly eligible real recruiters.
+  - `src/services/accountDelegationService.js`: Added account delegation service defining partial permission scopes, quick presets, expiration rules, summary helpers, and API-first persistence with user-scoped local fallback and activity logs.
+  - `src/pages/AssignRecruiterSettings.jsx`: Built full settings page at `/account-settings/assign-recruiter` with live recruiter search, Partial vs. Full assignment cards, granular permission toggles, duration/custom expiry picker, handover note, active assignments management (Edit, Pause/Resume, Revoke with confirmation), and delegation activity log.
+  - `src/pages/AccountSettings.jsx`: Added **Account Delegation -> Assign Account to a Recruiter** row showing live assignment status and active count badge.
+  - `src/app/lazyPages.js` & `src/app/routes/socialRoutes.jsx`: Registered lazy-loaded `AssignRecruiterSettings` page and protected `/account-settings/assign-recruiter` route.
+- **Conventional type**: `feat(account-settings)`
+
+### Proposed Commit Message
+
+```
+feat(account-settings): add partial and full recruiter account assignment page
+
+Instead of opening a recruiter picker popup inside individual interview stage
+modals, account owners need a proper settings page—like modern SaaS platforms—
+where they can delegate their account to a trusted recruiter with either
+partial permissions or full operational access.
+
+- Remove the recruiter popup modal from Stage Builder and Edit Pipeline Stage so Assigned Interviewer is a normal typable field again
+- Add an "Assign Account to a Recruiter" entry under Account Settings showing active assignment status
+- Create a dedicated `/account-settings/assign-recruiter` page to search real recruiters and grant Partial Assignment (per-feature toggles and presets) or Full Assignment (all hiring workflows while keeping password, 2FA, billing, and account deletion locked to the owner)
+- Support access expiration windows, handover notes, editing permissions, pausing/resuming access, revoking assignments, and viewing a delegation activity log
+```
+
+---
+
+## 2026-10-29 13:20 (WAT) — Enable Rich Thumbnail, Title, and Description Link Previews for Shared Pitches
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Restored and upgraded rich Open Graph / Twitter Card link previews when sharing or copying pitch links across WhatsApp, X, LinkedIn, Slack, Facebook, and Telegram. Fixed shared pitch URLs to use `/v/:pitchId`, replaced the suspended Render backend proxy in `vercel.json` with a Vercel serverless OG handler (`api/share.js`) backed by `api.bejite.com` (also supporting crawler requests to `/pitch?id=:pitchId`), upgraded solid-black `so_0` Cloudinary video thumbnails to `so_auto` frames, and added a raster `1200x630` `public/og-default.png` fallback image.
+- **Changed**:
+  - `src/utils/pitchShare.js`: Updated `getPitchShareUrl` to generate `/v/:pitchId` share URLs and normalized whitespace in shared pitch captions.
+  - `api/share.js`: Created Vercel serverless Open Graph & Twitter Card handler for `/v/:pitchId` (plus `/p/:postId`, `/j/:jobId`, `/a/:campaignId`, and crawler requests to `/pitch?id=:pitchId`), upgrading `so_0` Cloudinary video thumbnails to `1200x630` `so_auto` JPEGs and redirecting browsers cleanly into the app.
+  - `vercel.json`: Replaced suspended `bejite-backend-9mg2.onrender.com` rewrites with `/api/share` rewrites for `/p/:postId`, `/j/:jobId`, `/a/:campaignId`, `/v/:pitchId`, and social-crawler requests on `/pitch?id=:pitchId` and `/pitches?id=:pitchId`.
+  - `vite.config.js`: Added local dev middleware invoking `api/share.js` so `npm run dev` serves the exact same Open Graph HTML and redirects locally.
+  - `src/utils/pitchThumbnail.js` & `src/services/pitchesApi.js`: Added Cloudinary video thumbnail normalizer (`so_0` -> `so_auto`) for uploaded and fetched pitches so pitch posters and saved thumbnails avoid black first frames.
+  - `src/components/pitch/*` (`PitchVideoPlayer.jsx`, `PitchReelCard.jsx`, `MyPitchesView.jsx`, `CreatePitchModal.jsx`, `modal/PitchSuccessView.jsx`): Applied normalized video posters across pitch players/cards and passed pitch descriptions into post-publish share fallbacks.
+  - `public/og-default.png` & `index.html`: Added `1200x630` PNG fallback social card image (replacing `.svg` `og:image`, which WhatsApp/X/LinkedIn ignore).
+- **Conventional type**: `fix(pitch-share)`
+
+### Proposed Commit Message
+
+```
+fix(pitch-share): show thumbnail, title, and description previews on shared pitch links
+
+Sharing or copying a pitch link to WhatsApp, X, LinkedIn, or Slack previously
+showed only a generic text-only Bejite preview instead of the pitch thumbnail,
+title, and description. This happened because pitch share links pointed directly
+to the client-side `/pitch?id=...` route, `vercel.json` still proxied share
+routes to a suspended Render URL instead of `api.bejite.com`, default fallback
+meta tags used an `.svg` image that social platforms ignore, and Cloudinary
+video thumbnails captured a black frame at 0 seconds (`so_0`).
+
+- Switch shared and copied pitch links to `/v/:pitchId` while also serving rich previews to social crawlers on `/pitch?id=:pitchId`
+- Add a Vercel share preview handler (`api/share.js`) and update `vercel.json` and `vite.config.js` to pull live metadata from `api.bejite.com`
+- Upgrade Cloudinary pitch thumbnails from `so_0` to `so_auto` so shared previews and in-app video posters show a real frame instead of a black box
+- Add a 1200x630 `og-default.png` fallback image for platforms that do not render SVG preview images
+```
+
+---
+
+## 2026-10-26 11:10 (WAT) — Resolve AdminInboxContext File Casing Conflict on Windows
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Renamed `AdminInboxContext.jsx` to `AdminInboxProvider.jsx` to eliminate a file-casing collision with `adminInboxContext.js` on case-insensitive filesystems, and updated `Admin-frontend/src/App.jsx` to import from the new provider file.
+- **Changed**:
+  - `Admin-frontend/src/context/AdminInboxProvider.jsx`: Renamed from `AdminInboxContext.jsx` to match its exported provider component and eliminate the collision with `adminInboxContext.js`.
+  - `Admin-frontend/src/App.jsx`: Updated import path from `./context/AdminInboxContext` to `./context/AdminInboxProvider` and cleaned up commented-out import.
+- **Conventional type**: `fix(admin)`
+
+### Proposed Commit Message
+
+```
+fix(admin): resolve admin inbox context file casing collision
+
+Fix a file casing collision between adminInboxContext.js and
+AdminInboxContext.jsx on case-insensitive operating systems (Windows/macOS).
+
+- Rename AdminInboxContext.jsx to AdminInboxProvider.jsx so its file name clearly reflects the provider component it exports.
+- Update import of AdminInboxProvider in App.jsx to point to AdminInboxProvider.jsx.
+- Prevent module resolution from erroneously resolving to adminInboxContext.js during bundling.
+```
+
+---
+
 ## 2026-10-25 17:53 (WAT) — Standardize All Loading Spinners with Consistent Bejite Logo Loader Across Main App and Admin
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

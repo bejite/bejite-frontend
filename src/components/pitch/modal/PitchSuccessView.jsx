@@ -1,6 +1,7 @@
 import React from "react";
 import { Check, Clock, Play, Share2, BarChart2 } from "lucide-react";
 import Button from "../../ui/Button";
+import { resolvePitchPosterUrl } from "../../../utils/pitchThumbnail";
 
 export default function PitchSuccessView({
   publishedPitchData,
@@ -11,6 +12,8 @@ export default function PitchSuccessView({
   onGoToMyPitches,
   onClose,
 }) {
+  const posterUrl = resolvePitchPosterUrl(publishedPitchData);
+
   return (
     <div className="p-5 sm:p-8 md:p-10 text-center flex flex-col items-center">
       {/* Green circular checkmark */}
@@ -28,10 +31,17 @@ export default function PitchSuccessView({
       {/* Pitch Summary Box */}
       <div className="w-full max-w-sm rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-4 bg-gray-50/50 flex items-center gap-3 sm:gap-3.5 text-left mb-4 sm:mb-6">
         <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#1A3E32] shrink-0 overflow-hidden flex items-center justify-center">
-          <span className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[8px] font-bold uppercase tracking-wider">
+          {posterUrl ? (
+            <img
+              src={posterUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : null}
+          <span className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 z-10 px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[8px] font-bold uppercase tracking-wider">
             Live
           </span>
-          <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white/80 text-white/80 translate-x-0.5" />
+          <Play className="relative z-10 w-4 h-4 sm:w-5 sm:h-5 fill-white/80 text-white/80 translate-x-0.5 drop-shadow" />
         </div>
 
         <div className="min-w-0 flex-1">

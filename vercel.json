@@ -2,20 +2,55 @@
   "rewrites": [
     {
       "source": "/p/:postId",
-      "destination": "https://bejite-backend-9mg2.onrender.com/share/post/:postId"
+      "destination": "/api/share?type=post&id=:postId"
     },
     {
       "source": "/j/:jobId",
-      "destination": "https://bejite-backend-9mg2.onrender.com/share/job/:jobId"
+      "destination": "/api/share?type=job&id=:jobId"
     },
     {
       "source": "/a/:campaignId",
-      "destination": "https://bejite-backend-9mg2.onrender.com/share/ad/:campaignId"
+      "destination": "/api/share?type=ad&id=:campaignId"
     },
     {
       "source": "/v/:pitchId",
-      "destination": "https://bejite-backend-9mg2.onrender.com/share/pitch/:pitchId"
+      "destination": "/api/share?type=pitch&id=:pitchId"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/pitch",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<pitchId>[^&]+)"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebookexternalhit|[Ff]acebot|[Mm]eta-[Ee]xternal[Aa]gent|[Tt]witterbot|[Ll]inked[Ii]n[Bb]ot|[Ss]lackbot|[Ss]lack-[Ii]mg[Pp]roxy|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Pp]interest|[Ss]kype[Uu]ri[Pp]review|[Vv]k[Ss]hare|[Rr]edditbot|[Ee]mbedly|[Ii]framely).*"
+        }
+      ],
+      "destination": "/api/share?type=pitch&id=:pitchId&from=pitch"
+    },
+    {
+      "source": "/pitches",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<pitchId>[^&]+)"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebookexternalhit|[Ff]acebot|[Mm]eta-[Ee]xternal[Aa]gent|[Tt]witterbot|[Ll]inked[Ii]n[Bb]ot|[Ss]lackbot|[Ss]lack-[Ii]mg[Pp]roxy|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Pp]interest|[Ss]kype[Uu]ri[Pp]review|[Vv]k[Ss]hare|[Rr]edditbot|[Ee]mbedly|[Ii]framely).*"
+        }
+      ],
+      "destination": "/api/share?type=pitch&id=:pitchId&from=pitches"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

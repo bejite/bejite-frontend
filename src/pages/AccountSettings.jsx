@@ -6,6 +6,7 @@ import {
   Eye,
   EyeOff,
   LogOut,
+  UserCheck,
   UserX,
   Bell,
   Globe,
@@ -51,6 +52,10 @@ import {
 import { getTwoFactorStatus } from "../services/twoFactorApi";
 import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
+import {
+  getAccountDelegations,
+  summarizeDelegations,
+} from "../services/accountDelegationService";
 
 export default function AccountSettings() {
   useSyncProfilePhoto();
@@ -86,6 +91,9 @@ export default function AccountSettings() {
   const [toastMessage, setToastMessage] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [passwordRequired, setPasswordRequired] = useState(undefined);
+  const [delegationSummary, setDelegationSummary] = useState(() =>
+    summarizeDelegations([]),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +132,13 @@ export default function AccountSettings() {
         setTwoFactorEnabled(Boolean(data.enabled));
         if (typeof data.passwordRequired === "boolean") {
           setPasswordRequired(data.passwordRequired);
+        }
+      })
+      .catch(() => {});
+    getAccountDelegations()
+      .then((list) => {
+        if (!cancelled) {
+          setDelegationSummary(summarizeDelegations(list));
         }
       })
       .catch(() => {});
@@ -252,6 +267,28 @@ export default function AccountSettings() {
             ? "Enabled — extra login protection is on"
             : "Add an extra layer of security to your account",
           onClick: () => setModal("2fa"),
+        },
+      ],
+    },
+    {
+      title: "Account Delegation",
+      rows: [
+        {
+          icon: UserCheck,
+          iconBg: "bg-[#EAF5E9]",
+          label: "Assign Account to a Recruiter",
+          sublabel: delegationSummary.sublabel,
+          action: (
+            <div className="flex items-center gap-2 shrink-0">
+              {delegationSummary.activeCount > 0 && (
+                <span className="px-2.5 py-0.5 rounded-full bg-[#EAF5E9] text-[#16730F] text-xs font-semibold">
+                  {delegationSummary.activeCount} Active
+                </span>
+              )}
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </div>
+          ),
+          onClick: () => navigate("/account-settings/assign-recruiter"),
         },
       ],
     },

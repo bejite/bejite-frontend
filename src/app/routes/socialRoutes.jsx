@@ -14,6 +14,7 @@ import {
   Notifications,
   ActivityLog,
   AccountSettings,
+  AssignRecruiterSettings,
   BadgeStatus,
   BadgeHolder,
   BadgePaymentCallback,
@@ -52,6 +53,13 @@ export const socialRoutes = (
     <Route
       path="/account-settings"
       element={guard(<AccountSettings />, "Please log in to manage your account.")}
+    />
+    <Route
+      path="/account-settings/assign-recruiter"
+      element={guard(
+        <AssignRecruiterSettings />,
+        "Please log in to manage recruiter account assignments."
+      )}
     />
     <Route
       path="/badge-holder"

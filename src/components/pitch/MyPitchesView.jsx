@@ -1,5 +1,6 @@
 import React from "react";
 import { Play, Eye, Heart, Pencil, Trash2, ZapIcon } from "lucide-react";
+import { resolvePitchPosterUrl } from "../../utils/pitchThumbnail";
 
 export default function MyPitchesView({
   myPitchesSubTab,
@@ -101,9 +102,9 @@ function ActivePitchCard({ item, onView, onEdit, onDelete }) {
       <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
         {/* Dark thumbnail square */}
         <div className="relative w-14 h-14 xs:w-16 xs:h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-[#1A3E32] shrink-0 overflow-hidden flex items-center justify-center">
-          {item.videoPoster || item.videoThumbnailUrl ? (
+          {resolvePitchPosterUrl(item) ? (
             <img
-              src={item.videoPoster || item.videoThumbnailUrl}
+              src={resolvePitchPosterUrl(item)}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -215,9 +216,9 @@ function DraftPitchCard({ draft, onContinueEditing, onDelete }) {
       <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
         {/* Dark thumbnail square */}
         <div className="relative w-14 h-14 xs:w-16 xs:h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-[#1A3E32] shrink-0 overflow-hidden flex items-center justify-center">
-          {draft.videoPoster || draft.videoThumbnailUrl ? (
+          {resolvePitchPosterUrl(draft) ? (
             <img
-              src={draft.videoPoster || draft.videoThumbnailUrl}
+              src={resolvePitchPosterUrl(draft)}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
             />

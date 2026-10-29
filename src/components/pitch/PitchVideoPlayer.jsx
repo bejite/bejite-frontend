@@ -9,6 +9,7 @@ import {
   Maximize2,
 } from "lucide-react";
 import { formatTime } from "../../pages/pitch/pitchData";
+import { resolvePitchPosterUrl } from "../../utils/pitchThumbnail";
 
 export default function PitchVideoPlayer({
   pitch,
@@ -122,7 +123,7 @@ export default function PitchVideoPlayer({
       <video
         ref={videoRef}
         src={pitch.videoUrl}
-        poster={pitch.videoPoster}
+        poster={resolvePitchPosterUrl(pitch)}
         playsInline
         loop
         muted={isMuted}

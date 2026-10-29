@@ -77,6 +77,7 @@ export const SubscriptionRetentionPage = lazy(() => import("../pages/employerDas
 export const SubscriptionCancelConfirmPage = lazy(() => import("../pages/employerDashboard/SubscriptionCancelConfirmPage.jsx"));
 export const BadgeStatus = lazy(() => import("../pages/badge/BadgeStatus.jsx"));
 export const AccountSettings = lazy(() => import("../pages/AccountSettings.jsx"));
+export const AssignRecruiterSettings = lazy(() => import("../pages/AssignRecruiterSettings.jsx"));
 export const ActivityLog = lazy(() => import("../pages/ActivityLog.jsx"));
 export const BadgeHolder = lazy(() => import("../pages/badge/BadgeHolder.jsx"));
 export const BadgePaymentCallback = lazy(() => import("../pages/badge/BadgePaymentCallback.jsx"));
