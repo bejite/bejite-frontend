@@ -180,43 +180,56 @@ const DEFAULT_COURSES = [
       id: "dmf-quiz",
       title: "Digital Marketing Basics Quiz",
       description:
-        "Answer key questions to check your understanding of digital marketing audiences, channels, and planning.",
+        "Answer the questions to check your understanding of digital marketing, audiences, and campaign planning.",
       passMark: 80,
-      allowedAttempts: "Unlimited",
+      maxAttempts: 2,
+      allowedAttempts: "2 attempts",
+      timeLimitMinutes: 15,
       questions: [
         {
           id: "q1",
-          prompt:
-            "What is the primary advantage of defining a specific target audience before launching a campaign?",
+          prompt: "What is digital marketing?",
           options: [
-            "It guarantees viral reach on every social network automatically",
-            "It aligns messaging and channel selection with the people most likely to convert",
-            "It eliminates the need to measure campaign performance",
-            "It replaces product or service quality",
-          ],
-          correctIndex: 1,
-        },
-        {
-          id: "q2",
-          prompt:
-            "Which channel is strongest for capturing prospects who are actively searching for a specific solution right now?",
-          options: [
-            "Search engines (SEO & Search Ads)",
-            "Offline print flyers only",
-            "Unsegmented cold broadcasts",
-            "Internal team memos",
+            "Promoting products or services through digital channels.",
+            "Selling products only in physical stores.",
+            "Printing promotional posters only.",
+            "Managing office operations.",
           ],
           correctIndex: 0,
         },
         {
+          id: "q2",
+          prompt:
+            "What is the primary advantage of defining a specific target audience before launching a campaign?",
+          options: [
+            "It guarantees viral reach on every social network automatically.",
+            "It aligns messaging and channel selection with the people most likely to convert.",
+            "It eliminates the need to measure campaign performance.",
+            "It replaces product or service quality.",
+          ],
+          correctIndex: 1,
+        },
+        {
           id: "q3",
+          prompt:
+            "Which channel is strongest for capturing prospects who are actively searching for a specific solution right now?",
+          options: [
+            "Search engines (SEO & Search Ads).",
+            "Offline print flyers only.",
+            "Unsegmented cold broadcasts.",
+            "Internal team memos.",
+          ],
+          correctIndex: 0,
+        },
+        {
+          id: "q4",
           prompt:
             "Which element belongs in a well-structured one-page digital marketing campaign brief?",
           options: [
-            "Only a list of competitor logos",
-            "Target persona, primary SMART goal, key channels, and core message",
-            "Random daily posts with no call to action",
-            "A 50-page unmeasured brainstorm",
+            "Only a list of competitor logos.",
+            "Target persona, primary SMART goal, key channels, and core message.",
+            "Random daily posts with no call to action.",
+            "A 50-page unmeasured brainstorm.",
           ],
           correctIndex: 1,
         },
@@ -229,6 +242,19 @@ const DEFAULT_COURSES = [
       subtitle: "Submit your hands-on deliverable.",
       instructions:
         "Prepare a 1-page campaign brief outlining chosen target persona, primary campaign goal, key channels, and sample messaging.",
+      projectBrief:
+        'You have been hired as a freelance digital assistant for "Kikio Botanicals", an emerging eco-friendly skincare brand. The brand needs a structured, engaging 2-week social schedule across Instagram and LinkedIn to boost community engagement ahead of their new product launch.',
+      expectedDeliverable:
+        "Completed 2-week social calendar document containing 6 scheduled posts with copy, hooks, hashtags, and visual directions.",
+      placeholderUrl:
+        "https://docs.google.com/document/d/demo-campaign-brief/edit",
+      placeholderNotes:
+        "Attached full audience personas, channel allocation, and 2-week scheduled calendar.",
+      steps: [
+        "Create 2 distinct customer personas detailing demographics, shopping pain points, and preferred media channels.",
+        "Select Instagram and LinkedIn content pillars and map 6 launch-week posts with clear hooks, copy, hashtags, and visual directions.",
+        "Define 1 primary SMART engagement goal and double-check that sharing permissions are enabled before submitting.",
+      ],
     },
   },
   {
@@ -353,39 +379,52 @@ const DEFAULT_COURSES = [
     ],
     quiz: {
       id: "smcp-quiz",
-      title: "Social Content Planning Quiz",
+      title: "Content Planning Check",
       description:
         "Verify your grasp of content pillars, hooks, editorial batching, and engagement signals.",
-      passMark: 80,
-      allowedAttempts: "Unlimited",
+      passMark: 75,
+      maxAttempts: 3,
+      allowedAttempts: "3 attempts",
+      timeLimitMinutes: 15,
       questions: [
         {
           id: "sq1",
           prompt: "What is the main purpose of establishing 3–5 content pillars?",
           options: [
-            "To post identical copy every day",
-            "To organize consistent, relevant topics aligned with audience needs and brand goals",
-            "To avoid replying to comments",
-            "To replace visual design",
+            "To post identical copy every day.",
+            "To organize consistent, relevant topics aligned with audience needs and brand goals.",
+            "To avoid replying to comments.",
+            "To replace visual design.",
           ],
           correctIndex: 1,
         },
         {
           id: "sq2",
           prompt: "Which metric best indicates that readers found an educational post worth revisiting?",
-          options: ["Saves / Bookmarks", "Font size", "Post time zone", "Draft count"],
+          options: ["Saves / Bookmarks.", "Font size.", "Post time zone.", "Draft count."],
           correctIndex: 0,
         },
         {
           id: "sq3",
           prompt: "What makes a social publishing cadence effective long-term?",
           options: [
-            "Posting 15 times on one day and pausing for a month",
-            "A realistic, consistent schedule supported by batched preparation",
-            "Skipping audience research",
-            "Never reviewing analytics",
+            "Posting 15 times on one day and pausing for a month.",
+            "A realistic, consistent schedule supported by batched preparation.",
+            "Skipping audience research.",
+            "Never reviewing analytics.",
           ],
           correctIndex: 1,
+        },
+        {
+          id: "sq4",
+          prompt: "Why should every scheduled social post include a clear call to action or goal?",
+          options: [
+            "So audiences know the next step to take and engagement aligns with campaign objectives.",
+            "To make captions harder to read.",
+            "To hide brand identity.",
+            "To avoid tracking conversions.",
+          ],
+          correctIndex: 0,
         },
       ],
     },
@@ -396,6 +435,19 @@ const DEFAULT_COURSES = [
       subtitle: "Submit your structured 7-day content schedule.",
       instructions:
         "Submit a 7-day social content plan listing 3 content pillars, post headlines/hooks, chosen formats, and target call-to-action.",
+      projectBrief:
+        "Design a structured 7-day social content schedule for a fast-growing consumer or B2B brand preparing a monthly awareness push across Instagram, X, and LinkedIn.",
+      expectedDeliverable:
+        "A 7-day editorial calendar spreadsheet or document listing 3 core content pillars, daily post hooks, formats, and measurable calls to action.",
+      placeholderUrl:
+        "https://docs.google.com/spreadsheets/d/7-day-content-calendar/edit",
+      placeholderNotes:
+        "Attached 3 content pillars, 7 daily hooks/captions, visual briefs, and engagement KPIs.",
+      steps: [
+        "Define 3 repeatable brand content pillars aligned with audience pain points and brand goals.",
+        "Draft 7 scheduled posts specifying publish day, platform, format (Reel, Carousel, or Text), opening hook, and CTA.",
+        "Include the primary engagement metrics (saves, shares, profile visits) you will review after week one.",
+      ],
     },
   },
   {
@@ -524,7 +576,9 @@ const DEFAULT_COURSES = [
       description:
         "Assess your mastery of funnel diagnostics, message match, unit economics, and A/B testing.",
       passMark: 80,
-      allowedAttempts: "Unlimited",
+      maxAttempts: 2,
+      allowedAttempts: "2 attempts",
+      timeLimitMinutes: 15,
       questions: [
         {
           id: "iq1",
@@ -563,6 +617,19 @@ const DEFAULT_COURSES = [
       subtitle: "Submit your conversion audit & experiment plan.",
       instructions:
         "Audit a sample landing page funnel: identify 3 conversion bottlenecks and propose 2 prioritized A/B test hypotheses with target KPIs.",
+      projectBrief:
+        "You are consulting for a SaaS team whose paid search campaign drives strong click-through rates, but landing page sign-up conversion has stalled below 2%.",
+      expectedDeliverable:
+        "A concise funnel audit document identifying 3 message-match or form-friction bottlenecks and 2 structured A/B test hypotheses.",
+      placeholderUrl:
+        "https://docs.google.com/document/d/funnel-optimization-audit/edit",
+      placeholderNotes:
+        "Included above-the-fold teardown, 3 friction points, and 2 prioritized A/B experiment specs.",
+      steps: [
+        "Evaluate message match, social proof placement, and form friction across the target landing page.",
+        "Document 3 concrete conversion bottlenecks backed by funnel heuristics.",
+        "Write 2 'If we change X, then Y will improve because Z' A/B hypotheses with primary metrics.",
+      ],
     },
   },
   {
@@ -584,8 +651,8 @@ const DEFAULT_COURSES = [
       "Structure impact-driven case studies, record standout 24h pitches, and communicate project outcomes clearly in interviews.",
     totalDurationLabel: "Approx. 1h 30m total content",
     enrolledByDefault: true,
-    defaultCompletedLessonIds: ["cpir-l1", "cpir-l2"],
-    defaultCurrentLessonId: "cpir-l3",
+    defaultCompletedLessonIds: [],
+    defaultCurrentLessonId: "cpir-l1",
     learningOutcomes: [
       "Present project outcomes using the STAR framework.",
       "Record a concise, high-impact 60-second talent pitch.",
@@ -690,7 +757,9 @@ const DEFAULT_COURSES = [
       description:
         "Check your understanding of case study framing, pitch structure, and STAR interview responses.",
       passMark: 80,
-      allowedAttempts: "Unlimited",
+      maxAttempts: 2,
+      allowedAttempts: "2 attempts",
+      timeLimitMinutes: 15,
       questions: [
         {
           id: "cq1",
@@ -734,6 +803,19 @@ const DEFAULT_COURSES = [
       subtitle: "Submit one STAR story and your 60-second pitch outline.",
       instructions:
         "Write a concise 60-second pitch script for your target role plus one STAR-formatted project achievement summary.",
+      projectBrief:
+        "Prepare recruiter-ready evidence showcasing one of your strongest past projects or academic/freelance achievements alongside a crisp 60-second talent pitch script.",
+      expectedDeliverable:
+        "A 1-page STAR project case study (Situation, Task, Action, Result) paired with a natural 60-second video pitch script tailored to your target role.",
+      placeholderUrl:
+        "https://docs.google.com/document/d/star-case-study-pitch/edit",
+      placeholderNotes:
+        "Submitted full STAR project breakdown with quantified impact and 60-second role pitch script.",
+      steps: [
+        "Select one high-impact project and structure it clearly into Situation, Task, Action, and Result.",
+        "Quantify outcomes and clarify your individual contribution versus team deliverables.",
+        "Draft a 60-second spoken pitch script opening with your specialty, proof highlight, and target role.",
+      ],
     },
   },
 ];
@@ -769,6 +851,8 @@ function buildDefaultState() {
         status: "Not Submitted",
         content: "",
         portfolioUrl: "",
+        fileName: "",
+        fileSize: null,
         submittedAt: null,
       },
     };
@@ -1012,6 +1096,8 @@ export function recordQuizSubmission(courseId, answersMap = {}) {
       latestScore: scorePercent,
       bestScore,
       passed: Boolean(prevQuiz.passed || passed),
+      lastAnswers: { ...answersMap },
+      submittedAt: new Date().toISOString(),
     },
   };
   writeProgressStore(store);
@@ -1027,11 +1113,16 @@ export function recordQuizSubmission(courseId, answersMap = {}) {
 
 export function submitCourseDeliverable(
   courseId,
-  { content = "", portfolioUrl = "" } = {}
+  { content = "", portfolioUrl = "", fileName = "", fileSize = null } = {}
 ) {
-  const trimmed = String(content || "").trim();
-  if (!trimmed) {
-    throw new Error("Please enter your campaign brief or project summary.");
+  const trimmedNotes = String(content || "").trim();
+  const trimmedUrl = String(portfolioUrl || "").trim();
+  const trimmedFile = String(fileName || "").trim();
+
+  if (!trimmedNotes && !trimmedUrl && !trimmedFile) {
+    throw new Error(
+      "Please provide a project link, upload a project file, or add submission notes before submitting."
+    );
   }
 
   const store = readProgressStore();
@@ -1042,8 +1133,10 @@ export function submitCourseDeliverable(
     deliverable: {
       submitted: true,
       status: "Submitted",
-      content: trimmed,
-      portfolioUrl: String(portfolioUrl || "").trim(),
+      content: trimmedNotes,
+      portfolioUrl: trimmedUrl,
+      fileName: trimmedFile,
+      fileSize: fileSize || null,
       submittedAt: new Date().toISOString(),
     },
   };

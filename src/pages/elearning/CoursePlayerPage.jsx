@@ -16,16 +16,12 @@ import {
   CurriculumModuleAccordion,
   LessonVideoPlayer,
   LessonTakeawaysCard,
-  KnowledgeQuizModal,
-  DeliverableWorkspaceModal,
 } from "../../components/elearning";
 import {
   getCourseById,
   flattenCourseLessons,
   setCurrentLesson,
   markLessonCompleted,
-  recordQuizSubmission,
-  submitCourseDeliverable,
 } from "../../services/elearningService";
 
 export default function CoursePlayerPage() {
@@ -36,8 +32,6 @@ export default function CoursePlayerPage() {
   const [activeLessonId, setActiveLessonId] = useState(
     () => getCourseById(courseId)?.modules?.[0]?.lessons?.[0]?.id || null
   );
-  const [quizOpen, setQuizOpen] = useState(false);
-  const [deliverableOpen, setDeliverableOpen] = useState(false);
 
   useEffect(() => {
     const loaded = getCourseById(courseId);
@@ -198,7 +192,9 @@ export default function CoursePlayerPage() {
                       variant="primary"
                       size="sm"
                       fullWidth
-                      onClick={() => setQuizOpen(true)}
+                      onClick={() =>
+                        navigate(`/e-learning/courses/${course.id}/assessment`)
+                      }
                     >
                       Take Knowledge Quiz
                     </ELearningButton>
@@ -235,9 +231,13 @@ export default function CoursePlayerPage() {
                       variant="outline"
                       size="sm"
                       fullWidth
-                      onClick={() => setDeliverableOpen(true)}
+                      onClick={() =>
+                        navigate(`/e-learning/courses/${course.id}/project`)
+                      }
                     >
-                      Submit Practical Evidence
+                      {course.deliverableState?.submitted
+                        ? "View Project"
+                        : "Submit Practical Evidence"}
                     </ELearningButton>
                   </div>
                 </div>
@@ -347,29 +347,6 @@ export default function CoursePlayerPage() {
           </div>
         </div>
       </div>
-
-      {/* Interactive Modals */}
-      <KnowledgeQuizModal
-        quiz={course.quiz}
-        isOpen={quizOpen}
-        onClose={() => setQuizOpen(false)}
-        onSubmitQuiz={(answers) => {
-          const outcome = recordQuizSubmission(course.id, answers);
-          if (outcome?.course) setCourse(outcome.course);
-          return outcome;
-        }}
-      />
-
-      <DeliverableWorkspaceModal
-        deliverable={course.deliverable}
-        existingState={course.deliverableState}
-        isOpen={deliverableOpen}
-        onClose={() => setDeliverableOpen(false)}
-        onSubmitDeliverable={(payload) => {
-          const updated = submitCourseDeliverable(course.id, payload);
-          setCourse(updated);
-        }}
-      />
     </ELearningLayout>
   );
 }

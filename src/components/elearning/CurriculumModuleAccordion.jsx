@@ -235,7 +235,7 @@ export default function CurriculumModuleAccordion({
                               : "outline"
                         }
                         size="xs"
-                        pill
+                        className="rounded-lg px-3.5"
                         onClick={() => onSelectLesson?.(lesson, mod)}
                       >
                         {isCompleted ? "Review" : "Open"}

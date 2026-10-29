@@ -8,6 +8,7 @@ export default function ELearningSideCard({
   title = "",
   icon: Icon = null,
   headerBadge = null,
+  headerDivider = false,
   tone = "white",
   children,
   footer = null,
@@ -23,7 +24,7 @@ export default function ELearningSideCard({
       className={`border rounded-2xl p-5 space-y-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] ${surfaceClass} ${className}`}
     >
       {overline && (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#16730F]">
             {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
             <span>{overline}</span>
@@ -33,12 +34,16 @@ export default function ELearningSideCard({
       )}
 
       {title && (
-        <div className="flex items-center justify-between gap-2">
+        <div
+          className={`flex items-center justify-between gap-2 ${
+            headerDivider ? "pb-3 border-b border-gray-100" : ""
+          }`}
+        >
           <div className="flex items-center gap-2 min-w-0">
             {!overline && Icon && (
               <Icon className="w-4 h-4 text-[#16730F] shrink-0" />
             )}
-            <h3 className="text-sm font-extrabold text-gray-900 truncate">
+            <h3 className="text-sm font-extrabold text-gray-900 leading-snug">
               {title}
             </h3>
           </div>

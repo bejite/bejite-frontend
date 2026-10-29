@@ -73,7 +73,7 @@ export default function CompletionCriterionCard({
       {actionLabel && onAction && (
         <div className="self-start sm:self-center shrink-0">
           <ELearningButton
-            variant={satisfied ? "soft" : "primary"}
+            variant={satisfied ? "subtleGray" : "primary"}
             size="sm"
             pill
             rightIcon={ChevronRight}

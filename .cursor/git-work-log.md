@@ -1,5 +1,92 @@
 # Git Work Log
 
+## 2026-10-29 21:35 (WAT) — Add Dedicated Project Workspace Page & Polish Track Progress Sidebar Cards
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Built the dedicated **Practical Project Deliverable Workspace** page (`/e-learning/courses/:courseId/project`) with reusable components matching the UI mockup, wired **Open Project Workspace**, **View Project**, and **Submit Deliverable** directly to this page instead of a popup modal, and refined the **Track Progress** right-hand cards (`Assessment Status` & `Practical Evidence`) so headers and status pills never truncate or wrap awkwardly.
+- **Changed**:
+  - `src/components/elearning/ProjectWorkspaceBanner.jsx`, `ProjectBriefCard.jsx`, `ProjectSubmissionFormCard.jsx`, & `index.js`: Created reusable Project Workspace banner (`Not Yet Started` / `In Progress` / `Submitted`), project brief & expected deliverable card, and multi-format submission form card (Project URL, simulated PDF/DOCX/ZIP file dropzone, and Submission Notes & Executive Summary).
+  - `src/pages/elearning/CourseProjectPage.jsx`: Built the dedicated `/e-learning/courses/:courseId/project` page with two-column layout, `STEP BY STEP INSTRUCTIONS`, and `EVIDENCE BUILDING PATHWAY` sage card.
+  - `src/pages/elearning/CourseProgressPage.jsx`, `CoursePlayerPage.jsx`, & `CourseDetailsPage.jsx`: Routed `Open Project Workspace`, `View Project`, `Submit Deliverable`, and `Submit Practical Evidence` to `/e-learning/courses/:courseId/project`, widened right-column cards to `325px`, and added header dividers.
+  - `src/components/elearning/ELearningBadge.jsx`, `ELearningSideCard.jsx`, & `CurriculumModuleAccordion.jsx`: Prevented status pill wrapping (`whitespace-nowrap shrink-0`), removed side-card title truncation, added `headerDivider` support, and matched rounded `Review` / `Open` buttons in `Lesson & Curriculum Progress`.
+  - `src/services/elearningService.js`: Added full `projectBrief` (including the `"Kikio Botanicals"` scenario), `expectedDeliverable`, `steps`, and multi-format (`portfolioUrl`, `fileName`, `content`) persistence in `submitCourseDeliverable`.
+  - `src/app/lazyPages.js` & `src/app/routes/socialRoutes.jsx`: Registered lazy-loaded `CourseProjectPage` and protected `/e-learning/courses/:courseId/project` route.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add dedicated project workspace page and refine track progress UI
+
+Clicking "Open Project Workspace", "View Project", or "Submit Deliverable" on
+the Track Progress page should open a full Bejite Academy project workspace page
+rather than a small modal, and the right-hand status cards should display their
+titles and badges cleanly without clipping.
+
+- Create a dedicated `/e-learning/courses/:courseId/project` page with reusable `ProjectWorkspaceBanner`, `ProjectBriefCard`, and `ProjectSubmissionFormCard` components (supporting project links, PDF/DOCX/ZIP file uploads, and executive summary notes alongside step-by-step instructions and the Evidence Building Pathway note)
+- Route "Open Project Workspace", "View Project", "Submit Deliverable", and "Submit Practical Evidence" across Track Progress, Course Details, and Course Player directly to the new project page
+- Widen the Track Progress right-column status cards, add clean header dividers, and keep status badges (`Not Started`, `Not Submitted`, `Passed`, `Submitted`) on a single line without truncating card headings
+```
+
+---
+
+## 2026-10-29 20:18 (WAT) — Match My Learning ("View all my courses") Page & Reusable 2-Column Course Cards to UI Mockup
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Updated the **My Learning** page (`/e-learning/my-learning`, opened from **View all my courses** on the Learning Dashboard and **My Learning** in the left sidebar) to match the Figma design exactly, introducing reusable `ELearningFilterTabs` (`All courses`, `In Progress`, `Completed`) and `MyLearningCourseCard` 2-column cards.
+- **Changed**:
+  - `src/components/elearning/ELearningFilterTabs.jsx`: Added reusable sage/green filter pill tabs (`All courses`, `In Progress`, `Completed`).
+  - `src/components/elearning/MyLearningCourseCard.jsx`: Added reusable 2-column course card with soft-sage top header band (`MARKETING & GROWTH`, `In Progress`/`Completed`, level, module/lesson counts), partner badge, progress bar (`X of Y lessons finished` + `Quiz pending` / `Lesson pending` / `Project pending`), and bottom action row (`Continue Learning` / `Start Learning`, `Progress`, `Overview`).
+  - `src/components/elearning/index.js`: Exported `ELearningFilterTabs` and `MyLearningCourseCard`.
+  - `src/pages/elearning/MyLearningPage.jsx`: Updated banner copy, replaced stacked cards with the 2-column `MyLearningCourseCard` grid, and wired `ELearningFilterTabs`.
+  - `src/services/elearningService.js`: Set `career-portfolio-interview-readiness` default completed lessons to `0` so learners immediately see both `Continue Learning` (`Quiz pending`) and `Start Learning` (`0% Complete` / `Lesson pending`) card states.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): align my learning page and 2-column course cards with UI design
+
+When jobseekers click "View all my courses" from the Learning Dashboard (or "My
+Learning" in the sidebar), the page should display the clean 2-column My
+Learning layout with filter pills and compact progress cards.
+
+- Update the My Learning banner copy and add reusable `ELearningFilterTabs` (`All courses`, `In Progress`, and `Completed`)
+- Create a reusable `MyLearningCourseCard` component showing the sage category/status header band, module and lesson counts, real-time progress bar with pending requirement hints (`Lesson pending`, `Quiz pending`, `Project pending`), and `Continue Learning` / `Start Learning`, `Progress`, and `Overview` buttons
+- Render enrolled courses in a responsive 2-column grid on `/e-learning/my-learning`
+```
+
+---
+
+## 2026-10-29 19:55 (WAT) — Add Dedicated Multi-Step E-Learning Course Assessment Flow
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Replaced the inline quiz modal trigger on **Open Assessment** / **Start Assessment** with a dedicated multi-step E-Learning assessment page (`/e-learning/courses/:courseId/assessment`) and reusable assessment components covering the Intro overview, timed Question-by-Question runner, **"Ready to submit your assessment?"** confirmation screen, and post-submission answer review, plus updated completed-state button labels on `CourseProgressPage`.
+- **Changed**:
+  - `src/components/elearning/*` (`AssessmentIntroCard.jsx`, `AssessmentProgressHeader.jsx`, `AssessmentQuestionCard.jsx`, `AssessmentSubmitConfirmCard.jsx`, `AssessmentResultCard.jsx`, `CompletionCriterionCard.jsx`, `index.js`): Built reusable assessment step cards and progress header matching the UI mockups and updated satisfied completion criteria pills to subtle gray.
+  - `src/pages/elearning/CourseAssessmentPage.jsx`: Built full multi-step assessment workflow (`intro` -> timed `question` runner -> `confirm` `"Ready to submit your assessment?"` -> `result` / `?mode=review`).
+  - `src/pages/elearning/CourseProgressPage.jsx`, `CourseDetailsPage.jsx`, & `CoursePlayerPage.jsx`: Connected `Open Assessment`, `Start Assessment`, `Review Assessment`, `Review Quiz Answers`, `Take Quiz`, and `Take Knowledge Quiz` to `/e-learning/courses/:courseId/assessment` and aligned completed-state button labels (`Completed`, `Review Learning`, `Review Assessment`, `Review Quiz Answers`, `View Project`).
+  - `src/services/elearningService.js`: Added `maxAttempts`, `allowedAttempts`, `timeLimitMinutes`, updated `Digital Marketing Basics Quiz` & `Content Planning Check` questions, and persisted `lastAnswers` for review mode.
+  - `src/app/lazyPages.js` & `src/app/routes/socialRoutes.jsx`: Registered lazy-loaded `CourseAssessmentPage` and protected `/e-learning/courses/:courseId/assessment` route.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add multi-step course assessment page and submit confirmation
+
+Instead of opening a small quiz popup, clicking "Open Assessment" or "Start
+Assessment" should guide jobseekers through a full Bejite Academy assessment
+flow—from the overview card, into timed step-by-step questions, and finally to
+a clear confirmation screen before grading.
+
+- Route "Open Assessment", "Start Assessment", "Take Quiz", and "Review Quiz Answers" to a dedicated `/e-learning/courses/:courseId/assessment` page inside the E-Learning layout
+- Build reusable assessment components under `src/components/elearning` for the dark-green overview banner (`AssessmentIntroCard`), attempt/timer header (`AssessmentProgressHeader`), single-question option runner (`AssessmentQuestionCard`), "Ready to submit your assessment?" card (`AssessmentSubmitConfirmCard`), and answer review (`AssessmentResultCard`)
+- Update completed-state buttons and badges on the Course Progress page (`Review Learning`, `Review Assessment`, `Review Quiz Answers`, and `View Project`) and save submitted answers so learners can review their quiz results later
+```
+
+---
+
 ## 2026-10-29 17:56 (WAT) — Build Jobseeker E-Learning Dashboard, Layout, and Reusable Component Library
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

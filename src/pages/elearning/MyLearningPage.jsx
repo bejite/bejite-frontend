@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap } from "lucide-react";
 import {
   ELearningLayout,
   ELearningWelcomeBanner,
-  ELearningSectionHeader,
-  EnrolledCourseCard,
+  ELearningFilterTabs,
+  MyLearningCourseCard,
   ELearningButton,
 } from "../../components/elearning";
 import { getEnrolledCourses } from "../../services/elearningService";
 
 const FILTERS = [
-  { id: "all", label: "All Enrolled" },
+  { id: "all", label: "All courses" },
   { id: "in_progress", label: "In Progress" },
   { id: "completed", label: "Completed" },
 ];
@@ -36,73 +35,52 @@ export default function MyLearningPage() {
       <div className="space-y-6">
         <ELearningWelcomeBanner
           title="My Learning"
-          description="Resume your enrolled courses, review syllabus modules, and track completion criteria across assessments and portfolio deliverables."
-          rightSlot={
-            <ELearningButton
-              variant="primary"
-              onClick={() => navigate("/e-learning/explore")}
-            >
-              Browse More Courses
-            </ELearningButton>
-          }
+          description="Manage your enrolled courses, track real-time learning progress, continue where you left off, and review completed study materials."
         />
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ELearningSectionHeader
-            overline="ENROLLED CURRICULUM"
-            overlineIcon={GraduationCap}
-            title="Your Enrolled Courses"
-            subtitle={`${filteredCourses.length} ${
-              filteredCourses.length === 1 ? "course" : "courses"
-            } shown`}
-          />
-
-          <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl p-1">
-            {FILTERS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  filter === tab.id
-                    ? "bg-[#16730F] text-white"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ELearningFilterTabs
+          tabs={FILTERS}
+          activeTab={filter}
+          onChange={setFilter}
+        />
 
         {filteredCourses.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center space-y-3">
             <p className="text-sm font-bold text-gray-900">
-              No courses in this view yet
+              {filter === "completed"
+                ? "No completed courses yet"
+                : "No courses in this view yet"}
             </p>
             <p className="text-xs text-gray-500">
-              Switch filters or explore additional partner courses.
+              {filter === "completed"
+                ? "Finish all lessons, pass the assessment quiz, and submit your practical project to complete a course."
+                : "Switch filters or explore additional partner courses."}
             </p>
             <ELearningButton
               variant="soft"
-              onClick={() => navigate("/e-learning/explore")}
+              onClick={() =>
+                filter !== "all"
+                  ? setFilter("all")
+                  : navigate("/e-learning/explore")
+              }
             >
-              Explore Courses
+              {filter !== "all" ? "View All Courses" : "Explore Courses"}
             </ELearningButton>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredCourses.map((course) => (
-              <EnrolledCourseCard
+              <MyLearningCourseCard
                 key={course.id}
                 course={course}
-                progressMode="lessons"
-                onContinue={(c) =>
+                onPrimaryAction={(c) =>
                   navigate(`/e-learning/courses/${c.id}/learn`)
                 }
-                onViewDetails={(c) => navigate(`/e-learning/courses/${c.id}`)}
-                onTrackProgress={(c) =>
+                onProgressClick={(c) =>
                   navigate(`/e-learning/courses/${c.id}/progress`)
+                }
+                onOverviewClick={(c) =>
+                  navigate(`/e-learning/courses/${c.id}`)
                 }
               />
             ))}
@@ -112,4 +90,3 @@ export default function MyLearningPage() {
     </ELearningLayout>
   );
 }
-

@@ -16,14 +16,10 @@ import {
   CompletionCriterionCard,
   CurriculumModuleAccordion,
   ELearningSideCard,
-  KnowledgeQuizModal,
-  DeliverableWorkspaceModal,
 } from "../../components/elearning";
 import {
   getCourseById,
   setCurrentLesson,
-  recordQuizSubmission,
-  submitCourseDeliverable,
 } from "../../services/elearningService";
 
 export default function CourseProgressPage() {
@@ -31,8 +27,6 @@ export default function CourseProgressPage() {
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(() => getCourseById(courseId));
-  const [quizOpen, setQuizOpen] = useState(false);
-  const [deliverableOpen, setDeliverableOpen] = useState(false);
 
   useEffect(() => {
     setCourse(getCourseById(courseId));
@@ -105,7 +99,7 @@ export default function CourseProgressPage() {
               {criteria.allComplete ? (
                 <span className="inline-flex items-center gap-1 font-bold text-[#86EFAC]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Course Completed
+                  Completed
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 font-semibold">
@@ -118,7 +112,7 @@ export default function CourseProgressPage() {
         </div>
 
         {/* Two-Column Criteria & Detailed Lesson Progress Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_290px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_325px] gap-6 items-start">
           {/* Left Main Column */}
           <div className="space-y-6">
             {/* Configured Completion Criteria */}
@@ -149,7 +143,7 @@ export default function CourseProgressPage() {
                   currentLabel={`${course.completedLessonsCount} completed`}
                   actionLabel={
                     criteria.lessonsSatisfied
-                      ? "Review Lessons"
+                      ? "Review Learning"
                       : "Continue Learning"
                   }
                   onAction={() =>
@@ -168,10 +162,16 @@ export default function CourseProgressPage() {
                     currentLabel={`${quizState?.bestScore ?? 0}% score`}
                     actionLabel={
                       criteria.quizSatisfied
-                        ? "Review Quiz"
+                        ? "Review Assessment"
                         : "Start Assessment"
                     }
-                    onAction={() => setQuizOpen(true)}
+                    onAction={() =>
+                      navigate(
+                        criteria.quizSatisfied
+                          ? `/e-learning/courses/${course.id}/assessment?mode=review`
+                          : `/e-learning/courses/${course.id}/assessment`
+                      )
+                    }
                   />
                 )}
 
@@ -190,10 +190,12 @@ export default function CourseProgressPage() {
                     }
                     actionLabel={
                       deliverableState?.submitted
-                        ? "Edit Deliverable"
+                        ? "View Project"
                         : "Submit Deliverable"
                     }
-                    onAction={() => setDeliverableOpen(true)}
+                    onAction={() =>
+                      navigate(`/e-learning/courses/${course.id}/project`)
+                    }
                   />
                 )}
               </div>
@@ -236,6 +238,7 @@ export default function CourseProgressPage() {
               <ELearningSideCard
                 title="Assessment Status"
                 icon={HelpCircle}
+                headerDivider
                 headerBadge={
                   <ELearningBadge
                     variant={
@@ -254,10 +257,18 @@ export default function CourseProgressPage() {
                     variant="soft"
                     size="sm"
                     fullWidth
-                    leftIcon={PlayCircle}
-                    onClick={() => setQuizOpen(true)}
+                    leftIcon={quizState?.passed ? HelpCircle : PlayCircle}
+                    onClick={() =>
+                      navigate(
+                        quizState?.passed
+                          ? `/e-learning/courses/${course.id}/assessment?mode=review`
+                          : `/e-learning/courses/${course.id}/assessment`
+                      )
+                    }
                   >
-                    Open Assessment
+                    {quizState?.passed
+                      ? "Review Quiz Answers"
+                      : "Open Assessment"}
                   </ELearningButton>
                 }
               >
@@ -297,6 +308,7 @@ export default function CourseProgressPage() {
               <ELearningSideCard
                 title="Practical Evidence"
                 icon={FileText}
+                headerDivider
                 headerBadge={
                   <ELearningBadge
                     variant={
@@ -314,9 +326,13 @@ export default function CourseProgressPage() {
                     size="sm"
                     fullWidth
                     leftIcon={FileText}
-                    onClick={() => setDeliverableOpen(true)}
+                    onClick={() =>
+                      navigate(`/e-learning/courses/${course.id}/project`)
+                    }
                   >
-                    Open Project Workspace
+                    {deliverableState?.submitted
+                      ? "View Project"
+                      : "Open Project Workspace"}
                   </ELearningButton>
                 }
               >
@@ -346,29 +362,6 @@ export default function CourseProgressPage() {
           </div>
         </div>
       </div>
-
-      {/* Interactive Modals */}
-      <KnowledgeQuizModal
-        quiz={course.quiz}
-        isOpen={quizOpen}
-        onClose={() => setQuizOpen(false)}
-        onSubmitQuiz={(answers) => {
-          const outcome = recordQuizSubmission(course.id, answers);
-          if (outcome?.course) setCourse(outcome.course);
-          return outcome;
-        }}
-      />
-
-      <DeliverableWorkspaceModal
-        deliverable={course.deliverable}
-        existingState={course.deliverableState}
-        isOpen={deliverableOpen}
-        onClose={() => setDeliverableOpen(false)}
-        onSubmitDeliverable={(payload) => {
-          const updated = submitCourseDeliverable(course.id, payload);
-          setCourse(updated);
-        }}
-      />
     </ELearningLayout>
   );
 }

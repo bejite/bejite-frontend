@@ -32,7 +32,7 @@ export default function ELearningBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full leading-tight ${style} ${className}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full leading-tight whitespace-nowrap shrink-0 ${style} ${className}`}
     >
       {Icon && <Icon className="w-3 h-3 shrink-0" />}
       {children}

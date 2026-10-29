@@ -23,16 +23,12 @@ import {
   ELearningSideCard,
   ELearningSectionHeader,
   CourseCatalogCard,
-  KnowledgeQuizModal,
-  DeliverableWorkspaceModal,
 } from "../../components/elearning";
 import {
   getCourseById,
   getPartnerCourses,
   enrollInCourse,
   setCurrentLesson,
-  recordQuizSubmission,
-  submitCourseDeliverable,
 } from "../../services/elearningService";
 
 export default function CourseDetailsPage() {
@@ -43,8 +39,6 @@ export default function CourseDetailsPage() {
   const [partnerCourses, setPartnerCourses] = useState(() =>
     getPartnerCourses(course?.partnerId, course?.id)
   );
-  const [quizOpen, setQuizOpen] = useState(false);
-  const [deliverableOpen, setDeliverableOpen] = useState(false);
 
   useEffect(() => {
     const loaded = getCourseById(courseId);
@@ -168,7 +162,7 @@ export default function CourseDetailsPage() {
         </div>
 
         {/* Two-Column Syllabus & Details Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_290px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
           {/* Left Main Column */}
           <div className="space-y-6">
             {/* What You Will Learn */}
@@ -236,10 +230,24 @@ export default function CourseDetailsPage() {
                   </ELearningBadge>
                 </div>
 
-                <div className="border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-2.5">
-                  <h3 className="text-sm font-extrabold text-gray-900">
-                    {course.deliverable.title}
-                  </h3>
+                <div className="border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-extrabold text-gray-900">
+                      {course.deliverable.title}
+                    </h3>
+                    <ELearningButton
+                      variant="soft"
+                      size="xs"
+                      leftIcon={FileText}
+                      onClick={() =>
+                        navigate(`/e-learning/courses/${course.id}/project`)
+                      }
+                    >
+                      {course.deliverableState?.submitted
+                        ? "View Project"
+                        : "Open Project Workspace"}
+                    </ELearningButton>
+                  </div>
                   <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
                     INSTRUCTIONS:
                   </p>
@@ -294,7 +302,9 @@ export default function CourseDetailsPage() {
                     size="sm"
                     fullWidth
                     leftIcon={PlayCircle}
-                    onClick={() => setQuizOpen(true)}
+                    onClick={() =>
+                      navigate(`/e-learning/courses/${course.id}/assessment`)
+                    }
                   >
                     Take Quiz
                   </ELearningButton>
@@ -416,29 +426,6 @@ export default function CourseDetailsPage() {
           </section>
         )}
       </div>
-
-      {/* Interactive Modals */}
-      <KnowledgeQuizModal
-        quiz={course.quiz}
-        isOpen={quizOpen}
-        onClose={() => setQuizOpen(false)}
-        onSubmitQuiz={(answers) => {
-          const outcome = recordQuizSubmission(course.id, answers);
-          if (outcome?.course) setCourse(outcome.course);
-          return outcome;
-        }}
-      />
-
-      <DeliverableWorkspaceModal
-        deliverable={course.deliverable}
-        existingState={course.deliverableState}
-        isOpen={deliverableOpen}
-        onClose={() => setDeliverableOpen(false)}
-        onSubmitDeliverable={(payload) => {
-          const updated = submitCourseDeliverable(course.id, payload);
-          setCourse(updated);
-        }}
-      />
     </ELearningLayout>
   );
 }

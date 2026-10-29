@@ -26,6 +26,8 @@ import {
   CourseDetailsPage,
   CoursePlayerPage,
   CourseProgressPage,
+  CourseAssessmentPage,
+  CourseProjectPage,
 } from "../lazyPages.js";
 import MessagesToChatsRedirect from "./MessagesToChatsRedirect.jsx";
 
@@ -116,6 +118,14 @@ export const socialRoutes = (
     <Route
       path="/e-learning/courses/:courseId/progress"
       element={guard(<CourseProgressPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId/assessment"
+      element={guard(<CourseAssessmentPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId/project"
+      element={guard(<CourseProjectPage />, "Please log in to access E-Learning.")}
     />
   </>
 );

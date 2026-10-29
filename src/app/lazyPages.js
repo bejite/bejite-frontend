@@ -108,3 +108,5 @@ export const ExploreCoursesPage = lazy(() => import("../pages/elearning/ExploreC
 export const CourseDetailsPage = lazy(() => import("../pages/elearning/CourseDetailsPage.jsx"));
 export const CoursePlayerPage = lazy(() => import("../pages/elearning/CoursePlayerPage.jsx"));
 export const CourseProgressPage = lazy(() => import("../pages/elearning/CourseProgressPage.jsx"));
+export const CourseAssessmentPage = lazy(() => import("../pages/elearning/CourseAssessmentPage.jsx"));
+export const CourseProjectPage = lazy(() => import("../pages/elearning/CourseProjectPage.jsx"));
