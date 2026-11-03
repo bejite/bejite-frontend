@@ -1,9 +1,7 @@
+import Loader from "../ui/Loader";
+
 export function AdProLoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center py-24">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A3E32]" />
-    </div>
-  );
+  return <Loader fullscreen={false} description="Loading campaign details..." />;
 }
 
 export function AdProErrorBanner({ message }) {

@@ -29,13 +29,13 @@ export const DeleteConfirmModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 transition-opacity duration-200"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto transition-opacity duration-200"
       onClick={() => {
         if (!isLoading) onClose();
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 border border-slate-100 relative transition-transform duration-200"
+        className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 border border-slate-100 relative transition-transform duration-200 my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

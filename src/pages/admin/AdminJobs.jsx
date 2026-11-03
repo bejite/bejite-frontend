@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import {
   Search,
@@ -163,8 +164,7 @@ const AdminJobs = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="4" className="px-6 py-12 text-center">
-                      <div className="animate-spin inline-block rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-                      <p className="text-gray-500 mt-2">Loading jobs...</p>
+                      <Loader fullscreen={false} size="sm" description="Loading jobs..." />
                     </td>
                   </tr>
                 ) : currentJobs.length > 0 ? (

@@ -11,6 +11,7 @@ import {
   Banknote,
   Layers,
 } from "lucide-react";
+import Loader from "../ui/Loader";
 import axiosInstance from "../../utils/axiosInstance";
 
 const formatDate = (value) => {
@@ -172,10 +173,7 @@ const AdminJobDetailModal = ({ jobId, onClose }) => {
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {loading ? (
-            <div className="py-20 text-center">
-              <div className="animate-spin inline-block rounded-full h-10 w-10 border-b-2 border-[#16730F]" />
-              <p className="text-gray-500 mt-3">Loading job details…</p>
-            </div>
+            <Loader fullscreen={false} size="sm" description="Loading job details..." />
           ) : error ? (
             <div className="py-12 text-center text-red-600">{error}</div>
           ) : !job ? (

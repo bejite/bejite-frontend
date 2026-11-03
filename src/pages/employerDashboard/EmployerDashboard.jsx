@@ -16,6 +16,7 @@ import {
   getEmployerDashboard,
   deleteEmployerJob,
 } from "../../services/employerApi";
+import Loader from "../../components/ui/Loader";
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
@@ -262,8 +263,8 @@ const EmployerDashboard = () => {
   if (loading) {
     return (
       <NewsFeedLayout showSidebars={false}>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader fullscreen={false} description="Loading employer dashboard..." />
         </div>
       </NewsFeedLayout>
     );

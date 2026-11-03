@@ -22,6 +22,7 @@ import {
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
 import { formatDisplayText } from "../../utils/displayFormatUtils";
 import { RecruiterSelect } from "../../components/recruiter/recruiterOnboardingUi";
+import Loader from "../../components/ui/Loader";
 
 const ApplicantAvatar = ({
   application,
@@ -350,8 +351,8 @@ const JobApplications = () => {
   if (loading) {
     return (
       <NewsFeedLayout showSidebars={false}>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader fullscreen={false} description="Loading applications..." />
         </div>
       </NewsFeedLayout>
     );

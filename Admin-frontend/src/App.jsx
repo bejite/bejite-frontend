@@ -13,8 +13,9 @@ import AuthBootstrap from "./components/AuthBootstrap";
 import PushNotificationBootstrap from "./components/PushNotificationBootstrap";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
-import { AdminInboxProvider } from "./context/AdminInboxContext";
+import { AdminInboxProvider } from "./context/AdminInboxContext.jsx";
 import { getDefaultAdminPath } from "./constants/adminPermissions";
+import Loader from "./components/ui/Loader";
 
 const AdminLogin = lazy(() => import("./page/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./page/admin/AdminDashboard"));
@@ -43,7 +44,7 @@ const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 function RouteFallback() {
   return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[#16730F]" />
+      <Loader fullscreen={false} />
     </div>
   );
 }

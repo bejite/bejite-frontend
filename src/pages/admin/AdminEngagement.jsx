@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
+import Loader from '../../components/ui/Loader';
 import { toast } from 'react-toastify';
 import { Search, Heart, MessageSquare, Share2, Image as ImageIcon, Video, TrendingUp, Users, Activity } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
@@ -46,11 +47,7 @@ const AdminEngagement = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="h-[80vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading engagement data..." />;
   }
 
   // Format date for charts

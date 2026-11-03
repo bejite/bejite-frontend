@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import { Users, Building, MapPin, Globe } from "lucide-react";
 import {
@@ -66,14 +67,7 @@ const AdminDemographics = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div
-        className="h-[80vh] flex items-center justify-center capitalize   font-nunito-regular"
-        style={{ fontFamily: "NunitoRegular" }}
-      >
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading demographics data..." />;
   }
 
   // Format object data into chart arrays

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import Loader from "../../components/ui/Loader";
 import {
   verifyOneTimePayment,
   verifySubscriptionPayment,
@@ -128,11 +129,7 @@ const ASEPaymentCallback = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         {status === "processing" && (
-          <>
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900">Processing Payment</h2>
-            <p className="text-gray-600 mt-2">{message}</p>
-          </>
+          <Loader fullscreen={false} description={message || "Processing Payment..."} />
         )}
 
         {status === "success" && (

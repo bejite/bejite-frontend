@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import UserList from "../../components/UserList";
 import { discoverRecruitersForSignup } from "../../services/signupApi";
 import axiosInstance from "../../utils/axiosInstance";
@@ -199,7 +200,7 @@ const JobConnection = () => {
 
         {loadingUsers ? (
           <div className="w-full max-w-3xl flex justify-center py-16">
-            <span className="w-8 h-8 border-2 border-[#16730F] border-t-transparent rounded-full animate-spin" />
+            <Loader fullscreen={false} description="Loading recruiters..." />
           </div>
         ) : users.length === 0 ? (
           <p className="text-[#333] text-center py-8">

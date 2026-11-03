@@ -16,6 +16,7 @@ import {
   PendingReviewModal,
 } from "../../components/modal/confirmBadgeModal";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import Loader from "../../components/ui/Loader";
 import VerifiedBadgeIcon from "../../components/VerifiedBadgeIcon";
 import {
   getBadgeStatus,
@@ -224,7 +225,7 @@ export default function BadgeStatus() {
     return (
       <NewsFeedLayout classes={false} showSidebars={false}>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1A3E32]" />
+          <Loader fullscreen={false} description="Checking verification status..." />
         </div>
       </NewsFeedLayout>
     );

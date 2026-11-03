@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import { canAccessPath } from "../../constants/adminPermissions";
 import { useAdminInbox } from "../../context/useAdminInbox";
 import { NOTIFICATION_CATEGORIES } from "../../data/notificationData";
@@ -292,9 +293,7 @@ const AdminNotifications = () => {
 
         <div className="space-y-2.5">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[#16730F]" />
-            </div>
+            <Loader fullscreen={false} description="Loading notifications..." />
           ) : (
             <AnimatePresence mode="popLayout">
               {error && notifications.length === 0 ? (

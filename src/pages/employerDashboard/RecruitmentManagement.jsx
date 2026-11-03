@@ -193,6 +193,8 @@ const mapApiStagesToList = (stages = []) =>
     name: stg.name,
     description: stg.description || "",
     interviewer: stg.interviewer || "Recruiter",
+    interviewerUserId: stg.interviewerUserId || null,
+    interviewerEmail: stg.interviewerEmail || null,
     duration: stg.duration || `${stg.durationMins || 60} mins`,
     durationMins: stg.durationMins || 60,
     count: Number(stg.count) || 0,
@@ -719,6 +721,7 @@ export default function RecruitmentManagement() {
         name: newStageData.name,
         description: newStageData.description,
         interviewer: newStageData.interviewer,
+        interviewerUserId: newStageData.interviewerUserId || null,
         duration: newStageData.duration,
       });
       if (!response?.success) {
@@ -753,6 +756,7 @@ export default function RecruitmentManagement() {
           name: updatedStage.name,
           description: updatedStage.description,
           interviewer: updatedStage.interviewer,
+          interviewerUserId: updatedStage.interviewerUserId || null,
           duration: updatedStage.duration,
         },
       );

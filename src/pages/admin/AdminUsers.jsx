@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
+import Loader from '../../components/ui/Loader';
 import { toast } from 'react-toastify';
 import { Search, Mail, Shield, CheckCircle, XCircle, MoreVertical, X } from 'lucide-react';
 import { RecruiterSelect } from '../../components/recruiter/recruiterOnboardingUi';
@@ -270,8 +271,7 @@ const AdminUsers = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="4" className="px-6 py-12 text-center">
-                      <div className="animate-spin inline-block rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-                      <p className="text-gray-500 mt-2">Loading users...</p>
+                      <Loader fullscreen={false} size="sm" description="Loading users..." />
                     </td>
                   </tr>
 ) : users.length > 0 ? (

@@ -41,7 +41,7 @@ export const ConfirmBadgeModal = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -49,7 +49,7 @@ export const ConfirmBadgeModal = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-5"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-5 my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
       >
         <div className="text-center">
           <div className="w-16 h-16 bg-[#1A3E32]/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -118,7 +118,7 @@ export function EventModal({ event, onClose, onRegister, canRegister = true }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -126,7 +126,7 @@ export function EventModal({ event, onClose, onRegister, canRegister = true }) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl w-full max-w-lg overflow-hidden"
+        className="bg-white rounded-2xl w-full max-w-lg overflow-hidden my-auto max-h-[calc(100dvh-2rem)] flex flex-col"
       >
         {/* Cover */}
         <div className="relative h-44">
@@ -248,7 +248,7 @@ export function ConfirmModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -256,7 +256,7 @@ export function ConfirmModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-4 my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
       >
         <div
           className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${danger ? "bg-red-100" : "bg-[#1A3E32]/10"}`}
@@ -278,14 +278,14 @@ export function ConfirmModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 ${danger ? "bg-red-500 hover:bg-red-600" : "bg-[#1A3E32]"} disabled:opacity-50`}
+            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 ${danger ? "bg-red-500 hover:bg-red-600" : "bg-[#1A3E32] hover:bg-[#153329]"} disabled:opacity-50 transition-colors cursor-pointer`}
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmLabel}
@@ -328,7 +328,7 @@ export function ProfileVisibilityModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -336,17 +336,17 @@ export function ProfileVisibilityModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-4 my-auto max-h-[calc(100dvh-2rem)] flex flex-col"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <h3 className="font-bold text-gray-900">Profile Visibility</h3>
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-gray-400" />
+          <button onClick={onClose} type="button" className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {saved ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-6">
+          <div className="flex flex-col items-center justify-center gap-2 py-6 shrink-0">
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
               <Check className="w-6 h-6 text-green-600" />
             </div>
@@ -357,12 +357,12 @@ export function ProfileVisibilityModal({
           </div>
         ) : (
           <>
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2">
               {options.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setSelected(opt.value)}
-                  className={`w-full p-3 rounded-xl text-left transition-all ${
+                  className={`w-full p-3 rounded-xl text-left transition-all cursor-pointer ${
                     selected === opt.value
                       ? "bg-[#1A3E32]/10 border border-[#1A3E32]/20"
                       : "border border-gray-100 hover:bg-gray-50"
@@ -385,7 +385,7 @@ export function ProfileVisibilityModal({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Save Changes
@@ -461,7 +461,7 @@ export function ChangeEmailModal({ onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -469,14 +469,14 @@ export function ChangeEmailModal({ onClose }) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-4 my-auto max-h-[calc(100dvh-2rem)] flex flex-col"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <h3 className="font-bold text-gray-900">
             {step === 1 ? "Change Email" : "Verify New Email"}
           </h3>
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-gray-400" />
+          <button onClick={onClose} type="button" className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -491,46 +491,44 @@ export function ChangeEmailModal({ onClose }) {
             <p className="text-gray-400 text-xs">Your new email is {email}</p>
           </div>
         ) : step === 1 ? (
-          <>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-500 font-medium">
-                  New Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="newemail@example.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30 mt-1"
-                />
-              </div>
-              {error && <p className="text-xs text-red-500">{error}</p>}
-              <p className="text-xs text-gray-400">
-                We'll send a verification code to this email address.
-              </p>
+          <div className="space-y-3.5 flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2">
+            <div>
+              <label className="text-xs text-gray-500 font-medium">
+                New Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                placeholder="newemail@example.com"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 mt-1 transition-all"
+              />
             </div>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <p className="text-xs text-gray-400">
+              We'll send a verification code to this email address.
+            </p>
             <button
               onClick={handleSendCode}
               disabled={!email || isLoading}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Send Verification Code
             </button>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="space-y-3.5 flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2">
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Enter the 6-digit code sent to
               </p>
               <p className="font-medium text-gray-900">{email}</p>
             </div>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1.5 sm:gap-2 p-1.5">
               {code.map((digit, idx) => (
                 <input
                   key={idx}
@@ -541,7 +539,7 @@ export function ChangeEmailModal({ onClose }) {
                   value={digit}
                   onChange={(e) => handleCodeChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(idx, e)}
-                  className="w-10 h-12 text-center text-lg font-semibold rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30"
+                  className="w-9 h-11 sm:w-10 sm:h-12 text-center text-lg font-semibold rounded-xl border border-gray-200 focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 transition-all"
                 />
               ))}
             </div>
@@ -551,7 +549,7 @@ export function ChangeEmailModal({ onClose }) {
             <button
               onClick={handleVerifyCode}
               disabled={code.join("").length !== 6 || isLoading}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Verify & Update Email
@@ -562,11 +560,11 @@ export function ChangeEmailModal({ onClose }) {
                 setError("");
                 setCode(["", "", "", "", "", ""]);
               }}
-              className="text-xs text-[#1A3E32] text-center block w-full"
+              className="text-xs text-[#1A3E32] hover:underline text-center block w-full py-1 cursor-pointer"
             >
               ← Use different email
             </button>
-          </>
+          </div>
         )}
       </motion.div>
     </motion.div>
@@ -581,12 +579,12 @@ function ChangePasswordField({ placeholder, show, value, onToggle, onChange }) {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30"
+        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 transition-all"
       />
       <button
         type="button"
         onClick={onToggle}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
       >
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
@@ -672,7 +670,7 @@ export function ChangePasswordModal({ onClose, onUpdated }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -680,15 +678,15 @@ export function ChangePasswordModal({ onClose, onUpdated }) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-4 my-auto max-h-[calc(100dvh-2rem)] flex flex-col"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <h3 className="font-bold text-gray-900">Change Password</h3>
-          <button type="button" onClick={onClose}>
-            <X className="w-5 h-5 text-gray-400" />
+          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3.5 flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2">
           <ChangePasswordField
             placeholder="Current password"
             show={show.current}
@@ -727,7 +725,7 @@ export function ChangePasswordModal({ onClose, onUpdated }) {
               onChange={(e) =>
                 setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 transition-all"
             />
           )}
           {form.next && form.confirm && form.next !== form.confirm && (
@@ -741,7 +739,7 @@ export function ChangePasswordModal({ onClose, onUpdated }) {
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
         {saved ? (
-          <div className="flex items-center justify-center gap-2 py-3 text-green-600 font-semibold text-sm">
+          <div className="flex items-center justify-center gap-2 py-3 text-green-600 font-semibold text-sm shrink-0">
             <Check className="w-4 h-4" /> Password updated. Sign in again.
           </div>
         ) : (
@@ -749,7 +747,7 @@ export function ChangePasswordModal({ onClose, onUpdated }) {
             type="button"
             onClick={handleSave}
             disabled={!valid || isLoading}
-            className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             Save Password
@@ -870,7 +868,7 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={lockClose ? undefined : onClose}
     >
       <motion.div
@@ -878,13 +876,13 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-4 my-auto max-h-[calc(100dvh-2rem)] flex flex-col"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <h3 className="font-bold text-gray-900">Two-Factor Authentication</h3>
           {!lockClose && (
-            <button onClick={onClose} type="button">
-              <X className="w-5 h-5 text-gray-400" />
+            <button onClick={onClose} type="button" className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -896,7 +894,7 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
         )}
 
         {view === "intro" && (
-          <>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-1.5 sm:p-2">
             <div className="text-center">
               <Shield className="w-12 h-12 text-[#1A3E32] mx-auto mb-2" />
               <p className="text-sm text-gray-600">
@@ -911,12 +909,12 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
                   placeholder="Current password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -926,26 +924,26 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
             <button
               onClick={handleSetup}
               disabled={isLoading || (passwordRequired && !password)}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Set Up 2FA
             </button>
-          </>
+          </div>
         )}
 
         {view === "scan" && (
-          <>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-1.5 sm:p-2">
             <div className="text-center">
-              <div className="bg-gray-100 p-3 rounded-xl inline-block mx-auto mb-3">
+              <div className="bg-gray-100 p-2.5 sm:p-3 rounded-xl inline-block mx-auto mb-2 sm:mb-3">
                 {setup?.qrCodeDataUrl ? (
                   <img
                     src={setup.qrCodeDataUrl}
                     alt="Authenticator QR code"
-                    className="w-40 h-40 rounded-lg"
+                    className="w-32 h-32 sm:w-40 sm:h-40 rounded-lg mx-auto"
                   />
                 ) : (
-                  <div className="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-xs text-gray-500">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gray-200 rounded-lg flex items-center justify-center text-xs text-gray-500">
                     QR unavailable — use the key below
                   </div>
                 )}
@@ -956,7 +954,7 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
               <button
                 type="button"
                 onClick={() => copyText(setup?.secret || "", "secret")}
-                className="text-xs font-mono bg-gray-50 p-2 rounded-lg w-full flex items-center justify-center gap-2"
+                className="text-xs font-mono bg-gray-50 p-2 rounded-lg w-full flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 transition-colors"
               >
                 {formatTotpSecret(setup?.secret)}
                 <Copy className="w-3.5 h-3.5 text-gray-400" />
@@ -972,23 +970,23 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
               placeholder="Enter 6-digit code"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30 text-center tracking-widest"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 text-center tracking-widest transition-all"
               maxLength={6}
             />
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button
               onClick={handleVerify}
               disabled={isLoading || code.length !== 6}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Verify & Enable
             </button>
-          </>
+          </div>
         )}
 
         {view === "backup" && (
-          <>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-1.5 sm:p-2">
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
                 <Check className="w-6 h-6 text-green-600" />
@@ -1008,22 +1006,22 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
             <button
               type="button"
               onClick={() => copyText(backupCodes.join("\n"), "backup")}
-              className="w-full py-2 rounded-xl border border-gray-200 text-sm font-semibold flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-xl border border-gray-200 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <Copy className="w-4 h-4" />
               {copied === "backup" ? "Copied" : "Copy backup codes"}
             </button>
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-[#1A3E32] text-white text-sm font-semibold"
+              className="w-full py-2.5 rounded-xl bg-[#1A3E32] hover:bg-[#153329] text-white text-sm font-semibold transition-colors cursor-pointer"
             >
               I saved my backup codes
             </button>
-          </>
+          </div>
         )}
 
         {view === "enabled" && (
-          <>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-1.5 sm:p-2">
             <div className="text-center">
               <Shield className="w-12 h-12 text-[#1A3E32] mx-auto mb-2" />
               <p className="text-sm text-gray-600">
@@ -1037,19 +1035,19 @@ export function TwoFactorModal({ onClose, onEnabled, onDisabled }) {
               placeholder="6-digit code or backup code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 16))}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3E32]/30 text-center"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/30 text-center transition-all"
               maxLength={16}
             />
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button
               onClick={handleDisable}
               disabled={isLoading || !code.trim()}
-              className="w-full py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               Disable 2FA
             </button>
-          </>
+          </div>
         )}
       </motion.div>
     </motion.div>

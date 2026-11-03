@@ -15,6 +15,7 @@ import {
 import { EventModal } from "../../components/modal/confirmBadgeModal";
 import { EventCard } from "../../components/card/EventCard";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import Loader from "../../components/ui/Loader";
 import VerifiedBadge from "../../components/VerifiedBadge";
 import VerifiedBadgeIcon from "../../components/VerifiedBadgeIcon";
 import {
@@ -335,9 +336,7 @@ function MonthlyReportsPanel({ reports, selectedReport, loading, onOpen }) {
         </p>
       </div>
       {loading && !reports.length ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#1A3E32]" />
-        </div>
+        <Loader fullscreen={false} size="sm" description="Loading monthly reports..." />
       ) : reports.length === 0 ? (
         <p className="text-sm text-gray-500">
           No monthly reports yet. They appear after your first report cycle.
@@ -526,7 +525,7 @@ export default function BadgeHolder() {
     return (
       <NewsFeedLayout classes={false} showSidebars={false}>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1A3E32]" />
+          <Loader fullscreen={false} description="Loading badge details & metrics..." />
         </div>
       </NewsFeedLayout>
     );
@@ -617,9 +616,7 @@ export default function BadgeHolder() {
               </div>
 
               {metricsLoading && !employmentMetrics ? (
-                <div className="flex items-center justify-center py-10">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A3E32]" />
-                </div>
+                <Loader fullscreen={false} size="sm" description="Loading employment metrics..." />
               ) : (
                 <>
                   <EmploymentMetricsGrid

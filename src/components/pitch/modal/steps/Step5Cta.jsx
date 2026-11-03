@@ -172,10 +172,10 @@ export default function Step5Cta({ ctaType, ctaDescription, onSelectCta }) {
         >
           <div>
             <h4 className="font-bold text-xs sm:text-sm text-[#1A3E32] group-hover:text-[#16730F] transition-colors flex items-center gap-1.5">
-              Choosing what to write
+              Choose a Custom Title
             </h4>
             <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
-              Create a custom call to action with your own title and description
+              Create a custom title and description for your call to action.
             </p>
           </div>
 

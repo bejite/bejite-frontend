@@ -245,7 +245,7 @@ const AuthSuccess = () => {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-white">
-      <Loader />
+      <Loader fullscreen={false} description="Completing sign in..." />
     </div>
   );
 };

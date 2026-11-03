@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, LayoutTemplate, Loader2, X } from "lucide-react";
+import Loader from "../../components/ui/Loader";
 
 import EventHeader from "../../components/admin/events/EventHeader";
 import EventComposer from "../../components/admin/events/EventComposer";
@@ -388,10 +389,7 @@ export default function AdminEvents() {
 
           <div className="min-h-[400px]">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <Loader2 className="animate-spin mb-3" size={28} />
-                <p className="text-sm font-medium">Loading events…</p>
-              </div>
+              <Loader fullscreen={false} description="Loading events..." />
             ) : (
               <>
                 {currentTab === "history" && (
