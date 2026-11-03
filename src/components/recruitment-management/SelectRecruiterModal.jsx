@@ -25,6 +25,7 @@ export default function SelectRecruiterModal({
   onClose,
   onSelect,
   currentValue = "",
+  currentUserId = null,
   title = "Assign Interviewer",
   subtitle = "Search and assign a recruiter to conduct this interview stage.",
 }) {
@@ -54,7 +55,14 @@ export default function SelectRecruiterModal({
 
           // Preselect current recruiter if match found
           const trimmedCurrent = String(currentValue || "").trim().toLowerCase();
-          if (trimmedCurrent) {
+          const matchedById = currentUserId
+            ? (data || []).find(
+                (r) => r.userId && String(r.userId) === String(currentUserId)
+              )
+            : null;
+          if (matchedById) {
+            setSelectedRecruiter(matchedById);
+          } else if (trimmedCurrent) {
             const matched = (data || []).find(
               (r) =>
                 r.name?.toLowerCase() === trimmedCurrent ||
@@ -89,7 +97,7 @@ export default function SelectRecruiterModal({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, currentValue]);
+  }, [isOpen, currentValue, currentUserId]);
 
   // Focus search input when modal opens
   useEffect(() => {
@@ -292,8 +300,10 @@ export default function SelectRecruiterModal({
               const isSelected =
                 selectedRecruiter?.id === recruiter.id ||
                 (!selectedRecruiter &&
-                  String(currentValue || "").trim().toLowerCase() ===
-                    recruiter.name?.toLowerCase());
+                  (currentUserId
+                    ? String(recruiter.userId || "") === String(currentUserId)
+                    : String(currentValue || "").trim().toLowerCase() ===
+                      recruiter.name?.toLowerCase()));
 
               const photoSrc = profilePhotoUrl(recruiter.profilePhoto);
               const initials =

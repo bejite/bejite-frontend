@@ -6,6 +6,7 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
   const [stageName, setStageName] = useState("");
   const [description, setDescription] = useState("");
   const [interviewer, setInterviewer] = useState("Technical Panel");
+  const [interviewerUserId, setInterviewerUserId] = useState(null);
   const [duration, setDuration] = useState("60");
   const [isRecruiterModalOpen, setIsRecruiterModalOpen] = useState(false);
 
@@ -14,6 +15,7 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
       setStageName(stage.name || "");
       setDescription(stage.description || "");
       setInterviewer(stage.interviewer || "Technical Panel");
+      setInterviewerUserId(stage.interviewerUserId || null);
       setDuration(stage.duration ? String(stage.duration).replace(" mins", "") : "60");
     }
   }, [stage]);
@@ -30,6 +32,7 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
         name: stageName.trim(),
         description: description.trim(),
         interviewer: interviewer.trim(),
+        interviewerUserId,
         duration: duration || "60",
       });
     }
@@ -160,12 +163,10 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
         isOpen={isRecruiterModalOpen}
         onClose={() => setIsRecruiterModalOpen(false)}
         currentValue={interviewer}
-        onSelect={(selectedName) => {
-          if (selectedName) {
-            setInterviewer(selectedName);
-          } else {
-            setInterviewer("");
-          }
+        currentUserId={interviewerUserId}
+        onSelect={(selectedName, recruiter) => {
+          setInterviewer(selectedName || "");
+          setInterviewerUserId(recruiter?.userId || null);
         }}
       />
     </>
