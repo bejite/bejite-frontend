@@ -6,6 +6,7 @@ export default function StageBuilderModal({ isOpen, onClose, onAddStage }) {
   const [stageName, setStageName] = useState("");
   const [description, setDescription] = useState("");
   const [interviewer, setInterviewer] = useState("Technical Panel");
+  const [interviewerUserId, setInterviewerUserId] = useState(null);
   const [duration, setDuration] = useState("60");
   const [isRecruiterModalOpen, setIsRecruiterModalOpen] = useState(false);
 
@@ -21,6 +22,7 @@ export default function StageBuilderModal({ isOpen, onClose, onAddStage }) {
         name: stageName.trim(),
         description: description.trim() || "Candidate assessment stage",
         interviewer: interviewer.trim() || "Technical Panel",
+        interviewerUserId,
         duration: duration || "60",
         count: 0,
         status: "Active",
@@ -31,6 +33,7 @@ export default function StageBuilderModal({ isOpen, onClose, onAddStage }) {
     setStageName("");
     setDescription("");
     setInterviewer("Technical Panel");
+    setInterviewerUserId(null);
     setDuration("60");
     onClose();
   };
@@ -159,12 +162,10 @@ export default function StageBuilderModal({ isOpen, onClose, onAddStage }) {
         isOpen={isRecruiterModalOpen}
         onClose={() => setIsRecruiterModalOpen(false)}
         currentValue={interviewer}
-        onSelect={(selectedName) => {
-          if (selectedName) {
-            setInterviewer(selectedName);
-          } else {
-            setInterviewer("");
-          }
+        currentUserId={interviewerUserId}
+        onSelect={(selectedName, recruiter) => {
+          setInterviewer(selectedName || "");
+          setInterviewerUserId(recruiter?.userId || null);
         }}
       />
     </>

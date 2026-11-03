@@ -251,44 +251,146 @@ export async function restoreUserFromServer() {
   return existing;
 }
 
-/** Exchange refresh token for new access/refresh JWTs (regular users). Mutex prevents parallel rotation races. */
+const REFRESH_LOCK_KEY = 'bejite_refresh_lock';
+const REFRESH_LOCK_TTL_MS = 15_000;
+
+function readStoredTokens() {
+  return {
+    accessToken: getAccessToken(),
+    refreshToken: getRefreshToken(),
+  };
+}
+
+function writeStoredTokens(accessToken, refreshToken) {
+  if (accessToken) {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('authToken', accessToken);
+  }
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  }
+}
+
+function tryAcquireRefreshLock() {
+  const now = Date.now();
+  try {
+    const raw = localStorage.getItem(REFRESH_LOCK_KEY);
+    if (raw) {
+      const heldUntil = Number(raw);
+      if (Number.isFinite(heldUntil) && heldUntil > now) {
+        return false;
+      }
+    }
+    const until = String(now + REFRESH_LOCK_TTL_MS);
+    localStorage.setItem(REFRESH_LOCK_KEY, until);
+    // Confirm we won (another tab may have written at the same time).
+    return localStorage.getItem(REFRESH_LOCK_KEY) === until;
+  } catch {
+    return true;
+  }
+}
+
+function releaseRefreshLock() {
+  try {
+    localStorage.removeItem(REFRESH_LOCK_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function waitForPeerRefresh(previousRefreshToken, timeoutMs = 12_000) {
+  const started = Date.now();
+  const previousAccessToken = getAccessToken();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise((r) => setTimeout(r, 200));
+    const { accessToken, refreshToken } = readStoredTokens();
+    // Only treat a peer refresh as done when storage actually changed.
+    // Do not succeed just because the lock cleared — that can return the old tokens.
+    const refreshRotated =
+      Boolean(refreshToken) && refreshToken !== previousRefreshToken;
+    const accessRotated =
+      Boolean(accessToken) &&
+      accessToken !== previousAccessToken &&
+      !isTokenExpired(accessToken);
+    if (refreshRotated || accessRotated) {
+      return { accessToken, refreshToken };
+    }
+  }
+  return null;
+}
+
+/**
+ * Exchange refresh token for new access/refresh JWTs.
+ * Same-tab mutex + cross-tab lock so two tabs do not rotate the same refresh token.
+ */
 export const refreshAccessToken = async () => {
   if (refreshInFlight) {
     return refreshInFlight;
   }
 
   refreshInFlight = (async () => {
+    const previousRefreshToken = getRefreshToken();
+    if (!previousRefreshToken) {
+      throw new Error('No refresh token');
+    }
+
+    // Another tab may already have finished refreshing.
+    if (hasValidAccessToken()) {
+      const current = readStoredTokens();
+      if (current.refreshToken !== previousRefreshToken) {
+        await dispatchHydrateAuth();
+        return current;
+      }
+    }
+
+    if (!tryAcquireRefreshLock()) {
+      const peer = await waitForPeerRefresh(previousRefreshToken);
+      if (peer?.accessToken) {
+        await dispatchHydrateAuth();
+        return peer;
+      }
+      // Peer did not finish — try ourselves (lock may have expired).
+      tryAcquireRefreshLock();
+    }
+
+    const refreshTokenToUse = getRefreshToken() || previousRefreshToken;
     try {
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        throw new Error('No refresh token');
+      // Re-read after waiting: peer may have won while we acquired a stale lock.
+      if (
+        refreshTokenToUse !== previousRefreshToken &&
+        hasValidAccessToken()
+      ) {
+        return readStoredTokens();
       }
 
       const { data } = await axios.post(
         `${API_URL}/auth/refresh`,
-        { refreshToken },
+        { refreshToken: refreshTokenToUse },
         {
           withCredentials: true,
           timeout: 12_000,
         },
       );
 
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('authToken', data.accessToken);
-      }
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken);
-      }
-
+      writeStoredTokens(data.accessToken, data.refreshToken);
       await dispatchHydrateAuth();
       return data;
     } catch (err) {
+      // Race: another tab rotated first. Prefer tokens already written to storage.
       if (isRefreshAuthError(err)) {
-        discardStaleRefreshToken();
+        const peer = readStoredTokens();
+        if (peer.accessToken && !isTokenExpired(peer.accessToken)) {
+          await dispatchHydrateAuth();
+          return peer;
+        }
+        // Confirmed dead session — drop only if storage still holds the token that failed.
+        if (getRefreshToken() === refreshTokenToUse) {
+          discardStaleRefreshToken();
+        }
       }
       throw err;
     } finally {
+      releaseRefreshLock();
       refreshInFlight = null;
     }
   })();

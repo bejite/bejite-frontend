@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AdminInboxContext } from "./adminInboxContext";
+import { AdminInboxContext } from "./inboxContext";
 
 export function useAdminInbox() {
   const context = useContext(AdminInboxContext);
