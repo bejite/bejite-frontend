@@ -458,6 +458,7 @@ const Notifications = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'interview_invite':
+      case 'interviewer_assigned':
         return '📅'
       case 'invite_accepted':
         return '✅'
