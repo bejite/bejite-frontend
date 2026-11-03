@@ -32,8 +32,11 @@ function normalizeRecruiter(user) {
     user.author_profile_photo ||
     null;
 
+  const userId = user.id ?? user._id ?? null;
+
   return {
-    id: user.id ?? user._id ?? `${name}-${user.email || Math.random()}`,
+    id: userId ?? `${name}-${user.email || Math.random()}`,
+    userId: userId != null ? String(userId) : null,
     name,
     firstName,
     lastName,

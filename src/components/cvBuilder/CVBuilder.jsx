@@ -1,5 +1,5 @@
 import React from "react";
-import Bio from "./bio";
+import Bio from "./Bio";
 import Skills from "./skills";
 import Education from "./education";
 

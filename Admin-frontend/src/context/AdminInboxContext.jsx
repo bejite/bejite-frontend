@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchAdminInbox } from "../services/adminInboxApi";
-import { AdminInboxContext } from "./adminInboxContext";
+import { AdminInboxContext } from "./inboxContext";
 
 const POLL_MS = 60_000;
 
