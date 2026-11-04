@@ -39,7 +39,7 @@ export default function ELearningSidebar({ activeId, mode }) {
   const currentActive = activeId || resolveActiveNavId(location.pathname);
 
   const renderMobilePills = () => (
-    <div className="bg-white border border-gray-200 rounded-2xl p-2 flex items-center gap-1.5 overflow-x-auto">
+    <div className="bg-white border border-gray-200 rounded-2xl p-1.5 sm:p-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = currentActive === item.id;
@@ -48,13 +48,13 @@ export default function ELearningSidebar({ activeId, mode }) {
             key={item.id}
             type="button"
             onClick={() => navigate(item.path)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
               isActive
                 ? "bg-[#EFF5EF] text-[#16730F]"
                 : "text-[#1A3E32] hover:bg-gray-50"
             }`}
           >
-            <Icon className="w-4 h-4 text-[#16730F] shrink-0" />
+            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#16730F] shrink-0" />
             <span>{item.label}</span>
           </button>
         );

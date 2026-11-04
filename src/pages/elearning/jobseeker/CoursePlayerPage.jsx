@@ -98,24 +98,24 @@ export default function CoursePlayerPage() {
     <ELearningLayout activeNavId="dashboard">
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         {/* Top Player Header Bar */}
-        <div className="px-4 sm:px-6 py-3.5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3.5 min-w-0">
+        <div className="px-3 sm:px-6 py-3 sm:py-3.5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             <ELearningBackPill
               label="My Learning"
               onClick={() => navigate("/e-learning/jobseeker/my-learning")}
             />
             <div className="min-w-0">
-              <h1 className="text-sm font-extrabold text-gray-900 truncate">
+              <h1 className="text-xs sm:text-sm font-extrabold text-gray-900 truncate">
                 {course.title}
               </h1>
-              <p className="text-[11px] text-gray-400 truncate mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-gray-400 truncate mt-0.5">
                 {activeLesson.moduleTitle} • {activeLesson.title}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-            <div className="w-28 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+          <div className="flex items-center gap-2.5 sm:gap-3 self-end sm:self-center shrink-0">
+            <div className="w-24 sm:w-28 h-1.5 rounded-full bg-gray-100 overflow-hidden">
               <div
                 className="h-full rounded-full bg-[#16A34A] transition-all duration-300"
                 style={{ width: `${course.overallPercent}%` }}
@@ -127,11 +127,11 @@ export default function CoursePlayerPage() {
           </div>
         </div>
 
-        {/* Two-Column Curriculum + Lesson Viewer */}
+        {/* Two-Column Curriculum + Lesson Viewer (collapses smoothly on mobile: player first, curriculum second) */}
         <div className="grid grid-cols-1 lg:grid-cols-[295px_minmax(0,1fr)]">
-          {/* Left Pane: Course Curriculum & Requirements */}
-          <div className="border-b lg:border-b-0 lg:border-r border-gray-200 bg-[#FCFCFC] flex flex-col">
-            <div className="p-4 border-b border-gray-100">
+          {/* Left Pane: Course Curriculum & Requirements (rendered below player on mobile for instant playback) */}
+          <div className="order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-gray-200 bg-[#FCFCFC] flex flex-col">
+            <div className="p-3.5 sm:p-4 border-b border-gray-100">
               <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-gray-900">
                 <BookOpen className="w-3.5 h-3.5 text-[#16730F]" />
                 <span>COURSE CURRICULUM</span>
@@ -164,13 +164,13 @@ export default function CoursePlayerPage() {
             />
 
             {/* Bottom Assessment & Deliverable Cards */}
-            <div className="p-4 space-y-4 border-t border-gray-100">
+            <div className="p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 border-t border-gray-100">
               {course.quiz && (
                 <div className="space-y-1.5">
                   <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-400">
                     COURSE KNOWLEDGE ASSESSMENT
                   </p>
-                  <div className="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2.5">
+                  <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-3.5 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <HelpCircle className="w-3.5 h-3.5 text-[#16730F] shrink-0" />
@@ -207,7 +207,7 @@ export default function CoursePlayerPage() {
                   <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-400">
                     PRACTICAL PORTFOLIO EVIDENCE
                   </p>
-                  <div className="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2.5">
+                  <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-3.5 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <FileText className="w-3.5 h-3.5 text-[#16730F] shrink-0" />
@@ -245,9 +245,9 @@ export default function CoursePlayerPage() {
             </div>
           </div>
 
-          {/* Right Pane: Active Lesson Content */}
-          <div className="p-6 sm:p-8 space-y-6 bg-white flex flex-col justify-between">
-            <div className="space-y-6">
+          {/* Right Pane: Active Lesson Content (order-1 on mobile for immediate playback) */}
+          <div className="order-1 lg:order-2 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 bg-white flex flex-col justify-between">
+            <div className="space-y-5 sm:space-y-6">
               {/* Module Meta & Lesson Status */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#15372B]">
@@ -278,10 +278,10 @@ export default function CoursePlayerPage() {
 
               {/* Lesson Title & Summary */}
               <div>
-                <h2 className="text-2xl sm:text-[26px] font-extrabold text-[#112A20] tracking-tight">
+                <h2 className="text-xl sm:text-2xl lg:text-[26px] font-extrabold text-[#112A20] tracking-tight">
                   {activeLesson.title}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1.5 leading-relaxed max-w-2xl">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1.5 leading-relaxed max-w-2xl">
                   {activeLesson.summary}
                 </p>
               </div>
@@ -289,7 +289,7 @@ export default function CoursePlayerPage() {
               {/* Section Subheading & Video Player */}
               <div className="space-y-3">
                 {activeLesson.sectionHeading && (
-                  <h3 className="text-base font-extrabold text-gray-900">
+                  <h3 className="text-sm sm:text-base font-extrabold text-gray-900">
                     {activeLesson.sectionHeading}
                   </h3>
                 )}
@@ -316,18 +316,19 @@ export default function CoursePlayerPage() {
             </div>
 
             {/* Bottom Lesson Pagination Bar */}
-            <div className="pt-6 border-t border-gray-100 flex items-center justify-between gap-3">
+            <div className="pt-5 sm:pt-6 border-t border-gray-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
               <ELearningButton
                 variant="outline"
                 size="sm"
                 pill
                 disabled={activeIndex === 0}
                 onClick={handlePreviousLesson}
+                className="w-full sm:w-auto"
               >
                 Previous Lesson
               </ELearningButton>
 
-              <span className="text-xs text-gray-400 font-medium">
+              <span className="text-xs text-gray-400 font-medium order-first sm:order-none w-full sm:w-auto text-center">
                 Lesson {activeIndex + 1} of {flatLessons.length}
               </span>
 
@@ -336,6 +337,7 @@ export default function CoursePlayerPage() {
                 size="sm"
                 pill
                 onClick={handleNextLesson}
+                className="w-full sm:w-auto"
               >
                 {activeIndex < flatLessons.length - 1
                   ? "Next Lesson"

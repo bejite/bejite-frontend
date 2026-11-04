@@ -92,7 +92,7 @@ export default function CourseDetailsPage() {
         </div>
 
         {/* Hero Course Banner Card (Dual-State: Unenrolled [Image 2 & 3] & Enrolled [Image 4]) */}
-        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-6 sm:p-7 space-y-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-4 sm:p-7 space-y-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           {/* Badges Row */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="bg-[#133023] text-[#A6E88E] text-[11px] font-bold px-3 py-1 rounded-md">
@@ -123,7 +123,7 @@ export default function CourseDetailsPage() {
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#112A20] tracking-tight mt-1">
+            <h1 className="text-xl sm:text-2xl lg:text-[28px] font-extrabold text-[#112A20] tracking-tight mt-1">
               {course.title}
             </h1>
 
@@ -133,7 +133,7 @@ export default function CourseDetailsPage() {
           </div>
 
           {/* Course Meta Row */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600 pt-0.5">
+          <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs text-gray-600 pt-0.5">
             <span className="inline-flex items-center gap-1.5 font-medium">
               <Layers className="w-3.5 h-3.5 text-[#16730F]" />
               {course.totalModules} Modules
@@ -143,12 +143,12 @@ export default function CourseDetailsPage() {
               <BookOpen className="w-3.5 h-3.5 text-[#16730F]" />
               {course.totalLessons} Practical Lessons
             </span>
-            <span className="text-gray-300">•</span>
+            <span className="text-gray-300 hidden sm:inline">•</span>
             <span className="inline-flex items-center gap-1.5 font-medium">
               <Clock className="w-3.5 h-3.5 text-[#16730F]" />
               {course.totalDurationLabel || "Approx 21 hours of content"}
             </span>
-            <span className="text-gray-300">•</span>
+            <span className="text-gray-300 hidden sm:inline">•</span>
             <span>
               Partner:{" "}
               <strong className="text-gray-900 font-semibold">{course.partnerName}</strong>
@@ -162,7 +162,7 @@ export default function CourseDetailsPage() {
           */}
           {!course.enrolled ? (
             course.isPaid ? (
-              <div className="bg-[#122F22] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div className="bg-[#122F22] rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div className="space-y-1">
                   <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                     Course Fee: {course.priceBadge || "N50,000"}
@@ -177,14 +177,14 @@ export default function CourseDetailsPage() {
                   onClick={() =>
                     navigate(`/e-learning/jobseeker/courses/${course.id}/checkout`)
                   }
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4F7327] hover:bg-[#436221] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4F7327] hover:bg-[#436221] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   <Check className="w-4 h-4" />
                   <span>Proceed to Checkout (Paid Course)</span>
                 </button>
               </div>
             ) : (
-              <div className="bg-[#122F22] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div className="bg-[#122F22] rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div className="space-y-1">
                   <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                     Free Course Enrolment
@@ -197,7 +197,7 @@ export default function CourseDetailsPage() {
                 <button
                   type="button"
                   onClick={handleEnroll}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4F7327] hover:bg-[#436221] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4F7327] hover:bg-[#436221] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   <Check className="w-4 h-4" />
                   <span>Enroll in Course</span>
@@ -230,7 +230,7 @@ export default function CourseDetailsPage() {
                 <button
                   type="button"
                   onClick={handleStartOrContinue}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   <PlayCircle className="w-4 h-4" />
                   <span>{course.overallPercent > 0 ? "Continue Learning" : "Start Learning"}</span>
@@ -245,7 +245,7 @@ export default function CourseDetailsPage() {
           {/* Left Main Column */}
           <div className="space-y-6">
             {/* What You Will Learn (2x2 checkmark grid) */}
-            <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+            <section className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <Bookmark className="w-4 h-4 text-[#16730F]" />
                 <h2 className="text-base font-extrabold text-gray-900">
@@ -272,7 +272,7 @@ export default function CourseDetailsPage() {
             </section>
 
             {/* Course Curriculum & Lessons */}
-            <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+            <section className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 space-y-4">
               <div>
                 <h2 className="text-base font-extrabold text-gray-900">
                   Course Curriculum & Lessons
@@ -293,7 +293,7 @@ export default function CourseDetailsPage() {
 
             {/* Practical Project Deliverable */}
             {course.deliverable && (
-              <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+              <section className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#EEF7EE] text-[#16730F] flex items-center justify-center shrink-0">

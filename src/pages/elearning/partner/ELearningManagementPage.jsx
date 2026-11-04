@@ -189,13 +189,13 @@ export default function ELearningManagementPage() {
       classes="overflow-y-scroll overflow-x-hidden nfl-scroll scroll-smooth bg-white"
     >
       <div className="shrink-0 w-full bg-white">
-        <div className="max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        <div className="max-w-[1220px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-6">
           {/* Top Breadcrumb */}
           <div className="flex items-center gap-2 text-xs">
             <button
               type="button"
               onClick={() => navigate("/news-feed")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#EBF0EC] hover:bg-[#DCE6DF] text-[#183B2E] font-bold px-4 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#EBF0EC] hover:bg-[#DCE6DF] text-[#183B2E] font-bold px-3.5 sm:px-4 py-1.5 sm:py-2 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Go Back
@@ -209,10 +209,10 @@ export default function ELearningManagementPage() {
           {/* Page Header + Create Course CTA */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="max-w-2xl">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#112A20] tracking-tight">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#112A20] tracking-tight">
                 E-Learning Management
               </h1>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#5A6D62] leading-relaxed">
+              <p className="mt-1 text-xs sm:text-sm text-[#5A6D62] leading-relaxed">
                 Monitor recruitment progress, manage interview pipelines, and
                 track candidate outcomes across all hiring exercises. Manage
                 your courses and keep track of their progress.
@@ -222,7 +222,7 @@ export default function ELearningManagementPage() {
             <button
               type="button"
               onClick={() => navigate("/e-learning/partner/create")}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-sm px-7 py-3.5 transition-colors shadow-xs shrink-0 self-start sm:self-auto"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-sm px-7 py-3.5 transition-colors shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               Create Course
@@ -230,7 +230,7 @@ export default function ELearningManagementPage() {
           </div>
 
           {/* 4 KPI Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
             <RecruitmentStatCard
               icon={() => <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />}
               value={stats.total}

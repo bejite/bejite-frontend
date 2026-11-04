@@ -22,7 +22,7 @@ export default function CourseSubmitReviewModal({
       aria-labelledby="course-submit-review-modal-title"
     >
       <div
-        className="w-full max-w-[540px] rounded-[32px] bg-white p-7 sm:p-10 shadow-[0_24px_60px_rgba(17,42,32,0.18)] border border-gray-100 text-center space-y-6"
+        className="w-full max-w-[95vw] sm:max-w-[540px] rounded-2xl sm:rounded-[32px] bg-white p-5 sm:p-10 shadow-[0_24px_60px_rgba(17,42,32,0.18)] border border-gray-100 text-center space-y-5 sm:space-y-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Checkmark Badge */}

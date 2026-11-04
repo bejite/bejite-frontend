@@ -480,8 +480,8 @@ export default function CourseBuilderWizard({
       )}
 
       {/* Bottom Action Bar */}
-      <div className="pt-6 border-t border-[#E8EFE9] flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="pt-5 sm:pt-6 border-t border-[#E8EFE9] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             type="button"
             disabled={stepIndex === 0}
@@ -489,7 +489,7 @@ export default function CourseBuilderWizard({
               setStepIndex((prev) => Math.max(0, prev - 1));
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="rounded-full bg-[#EAF2EA] hover:bg-[#DCE8DC] text-[#153B2E] disabled:opacity-40 disabled:cursor-not-allowed font-bold text-xs sm:text-sm px-6 py-3 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial rounded-full bg-[#EAF2EA] hover:bg-[#DCE8DC] text-[#153B2E] disabled:opacity-40 disabled:cursor-not-allowed font-bold text-xs sm:text-sm px-5 sm:px-6 py-3 transition-colors cursor-pointer text-center"
           >
             Back to previous
           </button>
@@ -497,7 +497,7 @@ export default function CourseBuilderWizard({
           <button
             type="button"
             onClick={handleSaveDraft}
-            className="rounded-full bg-[#EAF2EA] hover:bg-[#DCE8DC] text-[#153B2E] font-bold text-xs sm:text-sm px-6 py-3 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial rounded-full bg-[#EAF2EA] hover:bg-[#DCE8DC] text-[#153B2E] font-bold text-xs sm:text-sm px-5 sm:px-6 py-3 transition-colors cursor-pointer text-center"
           >
             Save Draft
           </button>
@@ -506,7 +506,7 @@ export default function CourseBuilderWizard({
         <button
           type="button"
           onClick={handleContinue}
-          className="rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs sm:text-sm px-8 py-3 transition-colors shadow-xs cursor-pointer"
+          className="w-full sm:w-auto rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs sm:text-sm px-8 py-3 transition-colors shadow-xs cursor-pointer text-center"
         >
           {stepIndex === COURSE_BUILDER_STEPS.length - 1
             ? "Submit for Review"

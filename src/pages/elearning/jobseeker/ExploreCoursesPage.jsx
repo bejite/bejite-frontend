@@ -49,8 +49,8 @@ export default function ExploreCoursesPage() {
     <ELearningLayout activeNavId="explore">
       <div className="space-y-5">
         {/* Course Catalogue Banner (matching Image 2) */}
-        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-6 sm:p-7 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#112A20] tracking-tight">
+        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-4 sm:p-7 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#112A20] tracking-tight">
             Course Catalogue
           </h1>
           <p className="mt-1.5 text-xs sm:text-sm text-[#5A6D62] leading-relaxed">
@@ -59,9 +59,9 @@ export default function ExploreCoursesPage() {
         </div>
 
         {/* Search & Filter Bar (matching Image 2) */}
-        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-2xl p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           {/* Search Pill */}
-          <div className="relative flex-1 max-w-xl">
+          <div className="relative w-full md:max-w-xl">
             <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
@@ -82,7 +82,7 @@ export default function ExploreCoursesPage() {
           </div>
 
           {/* Controls: All Level Dropdown + Free / Paid Pills */}
-          <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto shrink-0 w-full md:w-auto">
             <div className="relative">
               <select
                 value={levelFilter}

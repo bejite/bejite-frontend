@@ -70,7 +70,7 @@ export default function AssessmentCompletedCard({
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Main Completed Screen Card (Image 1 & Image 2) */}
-      <div className="bg-white border border-gray-200 rounded-3xl p-8 sm:p-14 text-center shadow-xs space-y-6">
+      <div className="bg-white border border-gray-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-14 text-center shadow-xs space-y-5 sm:space-y-6">
         {/* Top Icon Circle */}
         {passed ? (
           <div className="w-12 h-12 rounded-full bg-[#E8F5E9] text-[#2E7D32] flex items-center justify-center mx-auto shadow-xs">
@@ -94,7 +94,7 @@ export default function AssessmentCompletedCard({
             </span>
           )}
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#112A20] tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#112A20] tracking-tight">
             {passed ? "Congratulations! You Passed" : "Pass Mark Not Met"}
           </h2>
 
@@ -156,12 +156,12 @@ export default function AssessmentCompletedCard({
         )}
 
         {/* Action Buttons Row */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 w-full">
           {passed ? (
             <button
               type="button"
               onClick={onProceedToProject}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <FileText className="w-4 h-4" />
               <span>Proceed to Practical Project &gt;</span>
@@ -170,7 +170,7 @@ export default function AssessmentCompletedCard({
             <button
               type="button"
               disabled
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E5E7EB] text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed select-none"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E5E7EB] text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed select-none"
             >
               <Lock className="w-4 h-4" />
               <span>Retake Locked</span>
@@ -179,7 +179,7 @@ export default function AssessmentCompletedCard({
             <button
               type="button"
               onClick={onRetakeAssessment}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#16730F] hover:bg-[#125E0C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Retake Assessment</span>
@@ -189,7 +189,7 @@ export default function AssessmentCompletedCard({
           <button
             type="button"
             onClick={onReturnToCurriculum}
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
           >
             <BookOpen className="w-4 h-4 text-gray-500" />
             <span>Return to Course Curriculum</span>

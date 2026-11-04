@@ -97,10 +97,10 @@ export default function ProjectBriefDrawer({
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
         <div className="w-screen max-w-xl bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300">
           {/* Drawer Header */}
-          <div className="p-6 border-b border-[#EDF3EE] bg-[#FAFCFA] flex items-start justify-between gap-4 shrink-0">
+          <div className="p-4 sm:p-6 border-b border-[#EDF3EE] bg-[#FAFCFA] flex items-start justify-between gap-3 sm:gap-4 shrink-0">
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded-md bg-[#EBF4EC] text-[#16730F] text-[10px] font-extrabold uppercase px-2.5 py-0.5 tracking-wider">

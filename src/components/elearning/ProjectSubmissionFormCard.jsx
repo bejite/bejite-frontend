@@ -44,7 +44,7 @@ export default function ProjectSubmissionFormCard({
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-7 space-y-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
     >
       <div>
         <h2 className="text-base sm:text-lg font-extrabold text-[#112A20]">
@@ -158,18 +158,24 @@ export default function ProjectSubmissionFormCard({
       </div>
 
       {/* Submit Action Row */}
-      <div className="pt-1 flex flex-wrap items-center justify-end gap-3">
+      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 w-full">
         {isSubmitted && onBackToProgress && (
           <ELearningButton
             variant="outline"
             size="md"
             onClick={onBackToProgress}
+            className="w-full sm:w-auto"
           >
             Back to Progress & Criteria
           </ELearningButton>
         )}
 
-        <ELearningButton type="submit" variant="primary" size="md">
+        <ELearningButton
+          type="submit"
+          variant="primary"
+          size="md"
+          className="w-full sm:w-auto"
+        >
           Submit Practical Evidence
         </ELearningButton>
       </div>

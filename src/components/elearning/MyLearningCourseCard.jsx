@@ -119,13 +119,13 @@ export default function MyLearningCourseCard({
       </div>
 
       {/* Bottom Action Row */}
-      <div className="px-5 pb-5 pt-1 flex items-center gap-2">
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-1 flex flex-wrap sm:flex-nowrap items-center gap-2">
         <ELearningButton
           variant="primary"
           size="md"
           leftIcon={PlayCircle}
           onClick={() => onPrimaryAction?.(course)}
-          className="flex-1"
+          className="flex-1 min-w-[140px]"
         >
           {primaryLabel}
         </ELearningButton>
@@ -134,7 +134,7 @@ export default function MyLearningCourseCard({
           variant="outline"
           size="md"
           onClick={() => onProgressClick?.(course)}
-          className="px-3.5 text-gray-700 font-medium"
+          className="px-3.5 text-gray-700 font-medium flex-1 sm:flex-initial"
         >
           Progress
         </ELearningButton>
@@ -143,7 +143,7 @@ export default function MyLearningCourseCard({
           variant="outline"
           size="md"
           onClick={() => onOverviewClick?.(course)}
-          className="px-3.5 text-gray-700 font-medium"
+          className="px-3.5 text-gray-700 font-medium flex-1 sm:flex-initial"
         >
           Overview
         </ELearningButton>

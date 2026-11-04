@@ -57,7 +57,7 @@ export default function ELearningManagementFilterBar({
   const hasDateRange = Boolean(dateFrom || dateTo);
 
   return (
-    <div className="rounded-3xl bg-[#EFF5EF] border border-[#D8E6D8] p-3.5 sm:p-4 flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5 sm:gap-3">
+    <div className="rounded-2xl sm:rounded-3xl bg-[#EFF5EF] border border-[#D8E6D8] p-3 sm:p-4 flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5 sm:gap-3">
       {/* Search Input */}
       <div className="relative flex-1 min-w-0">
         <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -71,7 +71,7 @@ export default function ELearningManagementFilterBar({
       </div>
 
       {/* Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
         {/* All Courses Filter */}
         <div className="relative">
           <select
@@ -136,7 +136,7 @@ export default function ELearningManagementFilterBar({
           </div>
 
           {dateOpen && (
-            <div className="absolute right-0 mt-2 w-68 rounded-2xl bg-white border border-gray-200 shadow-xl p-4 z-30 space-y-3">
+            <div className="absolute right-0 mt-2 w-68 max-w-[calc(100vw-40px)] rounded-2xl bg-white border border-gray-200 shadow-xl p-4 z-30 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                 Course Date Range
               </p>

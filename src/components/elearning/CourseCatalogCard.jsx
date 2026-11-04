@@ -144,11 +144,11 @@ export default function CourseCatalogCard({
             <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => onContinueCourse?.(course)}
-              className="flex-1 bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+              className="flex-1 min-w-[140px] bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
             >
               <PlayCircle className="w-4 h-4 shrink-0" />
               <span>{isStarted ? "Continue Learning" : "Start Learning"}</span>
@@ -157,7 +157,7 @@ export default function CourseCatalogCard({
             <button
               type="button"
               onClick={() => onProgressCourse?.(course)}
-              className="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2.5 px-3.5 rounded-xl transition-colors cursor-pointer text-center"
             >
               Progress
             </button>
@@ -165,7 +165,7 @@ export default function CourseCatalogCard({
             <button
               type="button"
               onClick={() => onViewCourse?.(course)}
-              className="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2.5 px-3.5 rounded-xl transition-colors cursor-pointer text-center"
             >
               Overview
             </button>

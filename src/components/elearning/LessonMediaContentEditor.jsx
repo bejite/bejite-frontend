@@ -207,9 +207,9 @@ export default function LessonMediaContentEditor({
       {/* 2-Column Content Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Course Lessons Sidebar */}
-        <div className="lg:col-span-4 rounded-3xl bg-white border border-[#E6ECE8] p-5 shadow-2xs">
+        <div className="lg:col-span-4 rounded-2xl sm:rounded-3xl bg-white border border-[#E6ECE8] p-4 sm:p-5 shadow-2xs">
           {/* Sidebar Top Header */}
-          <div className="flex items-center justify-between gap-2 pb-4 mb-3 border-b border-[#EEF3EF]">
+          <div className="flex items-center justify-between gap-2 pb-3.5 sm:pb-4 mb-3 border-b border-[#EEF3EF]">
             <div className="flex items-center gap-2 text-xs font-extrabold tracking-wider text-[#122B20] uppercase">
               <BookOpen className="w-4 h-4 text-[#16730F]" />
               Course Lessons
@@ -220,7 +220,7 @@ export default function LessonMediaContentEditor({
           </div>
 
           {/* Lessons List */}
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 max-h-[300px] lg:max-h-[calc(100vh-220px)] overflow-y-auto no-scrollbar pr-0.5">
             {flatLessons.map((item) => {
               const isSelected =
                 item.moduleIndex === selectedModuleIndex &&
@@ -310,7 +310,7 @@ export default function LessonMediaContentEditor({
               </button>
 
               {blockMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white border border-[#E5EAE5] shadow-[0_12px_36px_rgba(0,0,0,0.14)] p-2 z-30 space-y-1">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-36px)] rounded-2xl bg-white border border-[#E5EAE5] shadow-[0_12px_36px_rgba(0,0,0,0.14)] p-2 z-30 space-y-1">
                   {BLOCK_OPTIONS.map((opt) => {
                     const isSelected = mediaType === opt.type;
                     return (

@@ -49,7 +49,7 @@ export default function AssessmentProgressHeader({
       </div>
 
       {/* Segmented Step Bars */}
-      <div className="flex items-center gap-1.5 mt-2.5">
+      <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar py-0.5">
         {Array.from({ length: totalQuestions }).map((_, idx) => {
           const q = questions[idx];
           const isAnswered = q ? answers[q.id] != null : false;
@@ -62,7 +62,7 @@ export default function AssessmentProgressHeader({
               type="button"
               aria-label={`Go to question ${idx + 1}`}
               onClick={() => onJumpToQuestion && onJumpToQuestion(idx)}
-              className={`h-1.5 w-6 rounded-full transition-colors cursor-pointer ${
+              className={`h-1.5 flex-1 min-w-[14px] max-w-[28px] rounded-full transition-colors cursor-pointer shrink-0 ${
                 activeBar ? "bg-[#16730F]" : "bg-[#DCE4DF] hover:bg-gray-300"
               }`}
             />

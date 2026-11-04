@@ -45,9 +45,9 @@ export default function RecruiterCoursesTable({
   onEditCourse,
 }) {
   return (
-    <div className="rounded-3xl bg-white border border-[#E5ECE7] p-5 sm:p-7 shadow-xs">
+    <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#E5ECE7] p-4 sm:p-7 shadow-xs">
       {/* Header Row */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold text-[#112A20]">
             My Courses
