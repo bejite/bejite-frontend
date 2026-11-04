@@ -6,8 +6,8 @@ import {
   ELearningFilterTabs,
   MyLearningCourseCard,
   ELearningButton,
-} from "../../components/elearning";
-import { getEnrolledCourses } from "../../services/elearningService";
+} from "../../../components/elearning";
+import { getEnrolledCourses } from "../../../services/elearningService";
 
 const FILTERS = [
   { id: "all", label: "All courses" },
@@ -61,7 +61,7 @@ export default function MyLearningPage() {
               onClick={() =>
                 filter !== "all"
                   ? setFilter("all")
-                  : navigate("/e-learning/explore")
+                  : navigate("/e-learning/jobseeker/explore")
               }
             >
               {filter !== "all" ? "View All Courses" : "Explore Courses"}
@@ -74,13 +74,13 @@ export default function MyLearningPage() {
                 key={course.id}
                 course={course}
                 onPrimaryAction={(c) =>
-                  navigate(`/e-learning/courses/${c.id}/learn`)
+                  navigate(`/e-learning/jobseeker/courses/${c.id}/learn`)
                 }
                 onProgressClick={(c) =>
-                  navigate(`/e-learning/courses/${c.id}/progress`)
+                  navigate(`/e-learning/jobseeker/courses/${c.id}/progress`)
                 }
                 onOverviewClick={(c) =>
-                  navigate(`/e-learning/courses/${c.id}`)
+                  navigate(`/e-learning/jobseeker/courses/${c.id}`)
                 }
               />
             ))}
@@ -90,3 +90,4 @@ export default function MyLearningPage() {
     </ELearningLayout>
   );
 }
+

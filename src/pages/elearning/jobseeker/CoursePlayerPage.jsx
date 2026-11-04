@@ -16,13 +16,13 @@ import {
   CurriculumModuleAccordion,
   LessonVideoPlayer,
   LessonTakeawaysCard,
-} from "../../components/elearning";
+} from "../../../components/elearning";
 import {
   getCourseById,
   flattenCourseLessons,
   setCurrentLesson,
   markLessonCompleted,
-} from "../../services/elearningService";
+} from "../../../services/elearningService";
 
 export default function CoursePlayerPage() {
   const { courseId } = useParams();
@@ -102,7 +102,7 @@ export default function CoursePlayerPage() {
           <div className="flex items-center gap-3.5 min-w-0">
             <ELearningBackPill
               label="My Learning"
-              onClick={() => navigate("/e-learning/my-learning")}
+              onClick={() => navigate("/e-learning/jobseeker/my-learning")}
             />
             <div className="min-w-0">
               <h1 className="text-sm font-extrabold text-gray-900 truncate">
@@ -145,7 +145,7 @@ export default function CoursePlayerPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/e-learning/courses/${course.id}/progress`)
+                    navigate(`/e-learning/jobseeker/courses/${course.id}/progress`)
                   }
                   className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#16730F] hover:underline cursor-pointer"
                 >
@@ -193,7 +193,7 @@ export default function CoursePlayerPage() {
                       size="sm"
                       fullWidth
                       onClick={() =>
-                        navigate(`/e-learning/courses/${course.id}/assessment`)
+                        navigate(`/e-learning/jobseeker/courses/${course.id}/assessment`)
                       }
                     >
                       Take Knowledge Quiz
@@ -232,7 +232,7 @@ export default function CoursePlayerPage() {
                       size="sm"
                       fullWidth
                       onClick={() =>
-                        navigate(`/e-learning/courses/${course.id}/project`)
+                        navigate(`/e-learning/jobseeker/courses/${course.id}/project`)
                       }
                     >
                       {course.deliverableState?.submitted
@@ -350,4 +350,5 @@ export default function CoursePlayerPage() {
     </ELearningLayout>
   );
 }
+
 

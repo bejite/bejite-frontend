@@ -9,11 +9,12 @@ import {
   AssessmentQuestionCard,
   AssessmentSubmitConfirmCard,
   AssessmentResultCard,
-} from "../../components/elearning";
+  AssessmentCompletedCard,
+} from "../../../components/elearning";
 import {
   getCourseById,
   recordQuizSubmission,
-} from "../../services/elearningService";
+} from "../../../services/elearningService";
 
 export default function CourseAssessmentPage() {
   const { courseId } = useParams();
@@ -176,7 +177,7 @@ export default function CourseAssessmentPage() {
   };
 
   const handleBackNavigation = () => {
-    navigate(`/e-learning/courses/${course.id}/progress`);
+    navigate(`/e-learning/jobseeker/courses/${course.id}/progress`);
   };
 
   const activeQuestion = questions[currentIndex] || questions[0];
@@ -191,6 +192,13 @@ export default function CourseAssessmentPage() {
     Object.keys(answers).length > 0
       ? answers
       : course.quizState?.lastAnswers || {};
+  const resolvedCorrectCount =
+    submissionOutcome?.correct ??
+    questions.reduce(
+      (sum, q) =>
+        Number(resolvedReviewAnswers?.[q.id]) === q.correctIndex ? sum + 1 : sum,
+      0
+    );
 
   return (
     <ELearningLayout activeNavId="my-learning">
@@ -219,7 +227,7 @@ export default function CourseAssessmentPage() {
             <AssessmentIntroCard
               quiz={quiz}
               onReviewLessons={() =>
-                navigate(`/e-learning/courses/${course.id}/learn`)
+                navigate(`/e-learning/jobseeker/courses/${course.id}/learn`)
               }
               onStartAssessment={handleStartAssessment}
               startLabel="Start Assessment"
@@ -258,16 +266,24 @@ export default function CourseAssessmentPage() {
           )}
 
           {step === "result" && (
-            <AssessmentResultCard
-              quiz={quiz}
-              scorePercent={resolvedScore}
+            <AssessmentCompletedCard
               passed={resolvedPassed}
-              attemptsUsed={resolvedAttempts}
-              answers={resolvedReviewAnswers}
-              onBackToProgress={() =>
-                navigate(`/e-learning/courses/${course.id}/progress`)
+              scorePercent={resolvedScore}
+              correctCount={resolvedCorrectCount}
+              totalCount={totalQuestions || questions.length || 3}
+              passMark={quiz.passMark || 80}
+              attemptNumber={resolvedAttempts}
+              maxAttempts={displayMaxAttempts}
+              initialCooldownSeconds={38}
+              onProceedToProject={() =>
+                navigate(`/e-learning/jobseeker/courses/${course.id}/project`)
+              }
+              onReturnToCurriculum={() =>
+                navigate(`/e-learning/jobseeker/courses/${course.id}/learn`)
               }
               onRetakeAssessment={handleStartAssessment}
+              questions={questions}
+              answers={resolvedReviewAnswers}
             />
           )}
         </div>
@@ -275,3 +291,4 @@ export default function CourseAssessmentPage() {
     </ELearningLayout>
   );
 }
+

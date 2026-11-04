@@ -1,5 +1,477 @@
 # Git Work Log
 
+## 2026-11-04 03:00 (WAT) — Implement Partner Course Details Page, Assessment Preview Drawer, and Practical Project Brief Drawer
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented the full-page Partner Course Details view (`PartnerCourseDetailsPage.jsx`) supporting In Review (Image 1), Draft with edit actions (Image 2), and Published states (Image 3), alongside the View Assessment right sidebar slide-over panel (`AssessmentPreviewDrawer.jsx` - Image 4) and the View Brief right sidebar slide-over panel (`ProjectBriefDrawer.jsx` - Image 5).
+- **Changed**:
+  - `src/pages/elearning/partner/PartnerCourseDetailsPage.jsx`:
+    - Full details page matching Figma mockups with status-sensitive hero banner, course configuration breakdown across 7 sections, interactive "Edit" links in Draft state, and publication actions.
+    - Integrated `AssessmentPreviewDrawer`, `ProjectBriefDrawer`, and `CourseSubmitReviewModal`.
+  - `src/components/elearning/AssessmentPreviewDrawer.jsx`:
+    - Right sidebar slide-over drawer matching Image 4 with pass mark, question count, time limit, max attempts, learner instructions, and full question answer keys.
+  - `src/components/elearning/ProjectBriefDrawer.jsx`:
+    - Right sidebar slide-over drawer matching Image 5 with project scenario brief, deliverable breakdown, accepted submission format chips, and 4-tier grading rubric criteria.
+  - `src/components/elearning/index.js`:
+    - Exported `AssessmentPreviewDrawer` and `ProjectBriefDrawer`.
+  - `src/app/lazyPages.js` & `src/app/routes/employerRoutes.jsx`:
+    - Registered `/e-learning/partner/:courseId` and `/e-learning/partner/courses/:courseId` with legacy redirect support.
+  - `src/pages/elearning/partner/ELearningManagementPage.jsx` & `src/components/elearning/RecruiterCoursesTable.jsx`:
+    - Wired "View" button and course title clicks to navigate directly to `/e-learning/partner/:courseId`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add partner course details page and right sidebar preview drawers
+
+Implement Partner Course Details page matching Figma designs across In Review, Draft,
+and Published states, with assessment and project brief slide-over preview drawers.
+
+- Build PartnerCourseDetailsPage with 7-section inspection and status-sensitive actions
+- Build AssessmentPreviewDrawer for full quiz preview and answer key inspection
+- Build ProjectBriefDrawer for scenario, deliverable requirements, and rubric inspection
+- Connect RecruiterCoursesTable view actions to /e-learning/partner/:courseId
+- Register routes in employerRoutes with lazy loading and legacy fallbacks
+```
+
+---
+
+## 2026-11-04 02:40 (WAT) — Refactor CourseBuilderWizard into modular architecture and configure role-based e-learning sidebar navigation
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Refactored the monolithic 1,500-line `CourseBuilderWizard.jsx` into clean, single-responsibility step components, ensured zero barrel export file duplication across `pages/elearning`, and configured the right sidebar e-learning link to route recruiters directly to `/e-learning/partner` and jobseekers to `/e-learning/jobseeker`.
+- **Changed**:
+  - `src/components/elearning/CourseBuilderWizard.jsx`:
+    - Refactored wizard container from ~1,500 lines down to ~400 lines by delegating each step to its dedicated modular component.
+    - Preserved central state management for draft courses and modal controls.
+  - `src/components/elearning/CourseBasicInfoStep.jsx`:
+    - Extracted Step 1 (basic info, cover upload, subject area, audience, level, and learning outcomes editor).
+  - `src/components/elearning/CourseStructureStep.jsx`:
+    - Extracted Step 2 (organisation type, module cards, collapse/expand, reorder, child lesson list, add module/lesson modals).
+  - `src/components/recruitment/recruitmentRightLinks.js`:
+    - Configured `getRecruitmentRightLinks` to include `RECRUITER_ELEARNING_RIGHT_LINK` (`/e-learning/partner`) for recruiters and `JOBSEEKER_ELEARNING_RIGHT_LINK` (`/e-learning/jobseeker`) for jobseekers.
+- **Conventional type**: `refactor(elearning)`
+
+### Proposed Commit Message
+
+```
+refactor(elearning): modularize course builder wizard and update right sidebar routes
+
+Split the monolithic CourseBuilderWizard into modular step components and configure
+role-aware navigation for e-learning in the right sidebar.
+
+- Extract CourseBasicInfoStep and CourseStructureStep into clean separate components
+- Slim down CourseBuilderWizard from 1,500 lines to 400 lines
+- Wire getRecruitmentRightLinks to navigate recruiters to /e-learning/partner and jobseekers to /e-learning/jobseeker
+- Maintain clean direct exports without barrel redundancy
+```
+
+---
+
+## 2026-11-04 02:20 (WAT) — Implement Step 6 Pricing, Step 7 Completion, Step 8 Review, and Review Confirmation Modal
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented the remaining 3 steps of the partner Course Builder matching the design mockups: Step 6 Access and Pricing (Image 1), Step 7 Completion Requirements (Image 2), Step 8 Course Configuration Details Review (Image 3), and the Submit Course for Review Confirmation Modal (Image 4).
+- **Changed**:
+  - `src/components/elearning/CoursePricingStep.jsx`:
+    - Built Step 6 Access and Pricing matching Image 1:
+      - Enrollment Access Model cards: Free Access (`OPEN` badge) and Paid Course (`TUITION` badge).
+      - Dynamic Course Tuition Amount (NGN / ₦) input with formatted display.
+      - Quick suggested amount chips (`₦15,000`, `₦30,000`, `₦50,000`, `₦75,000`, `₦100,000`).
+  - `src/components/elearning/CourseCompletionStep.jsx`:
+    - Built Step 7 Completion Requirements matching Image 2:
+      - 3 interactive requirement cards with custom checkbox indicators:
+        - Complete required learning content with dynamic `{modules} modules • {lessons} lessons` badge.
+        - Complete configured assessment with dynamic quiz title and question count badge.
+        - Submit practical project with dynamic project title badge.
+  - `src/components/elearning/CourseReviewStep.jsx`:
+    - Built Step 8 Course Configuration Details Review matching Image 3:
+      - Top course hero banner with difficulty level, subject area, and fee badges.
+      - 7 distinct review blocks with checkmark indicators: Basic Information, Modules & Curriculum, Learning Content & Media, Assessment Configuration, Practical Project Deliverable, Access & Tuition Fee, and Completion Rules.
+      - Direct "Submit for Review" CTA button.
+  - `src/components/elearning/CourseSubmitReviewModal.jsx`:
+    - Built review confirmation popup matching Image 4:
+      - Centered modal with top green checkmark badge, title "Submit course for administrative review?", explanation copy, and "Keep Editing" / "Confirm Submission" actions.
+  - `src/components/elearning/CourseBuilderWizard.jsx`:
+    - Integrated `CoursePricingStep` (stepIndex 5), `CourseCompletionStep` (stepIndex 6), `CourseReviewStep` (stepIndex 7), and `CourseSubmitReviewModal`.
+    - Updated wizard bottom action buttons ("Back to previous", "Save Draft", "Continue" / "Submit for Review") matching Figma style.
+  - `src/components/elearning/index.js`:
+    - Exported all new step components and the review modal.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add pricing, completion requirements, review step, and confirmation modal
+
+Implement the final stages of the partner Course Builder wizard matching Figma designs:
+Step 6 Access & Pricing, Step 7 Completion Requirements, Step 8 Review, and confirmation modal.
+
+- Build CoursePricingStep with Free Access / Paid Course tuition models
+- Build CourseCompletionStep with dynamic learning, quiz, and project criteria
+- Build CourseReviewStep with 7 comprehensive configuration inspection blocks
+- Build CourseSubmitReviewModal for administrative publication review confirmation
+- Wire all remaining steps and modals into CourseBuilderWizard
+```
+
+---
+
+## 2026-11-04 01:55 (WAT) — Implement Question Modal Types, Step 5 Practical Project, and Partner E-Learning Route Aliases
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Aligned the Add Question modal across all question types (Single Choice, True or False, Text-Based, and Multiple Choice) matching Figma Images 1-3, implemented the complete Step 5 Practical Project configuration component matching Figma Images 4 and 5 with rubric criteria management and submission format selectors, and updated recruiter/employer routing to canonical Partner E-Learning routes.
+- **Changed**:
+  - `src/components/elearning/CourseQuestionModal.jsx`:
+    - Refined Single Choice and Multiple Choice views (Image 1) with radio button selectors, option letter indicators, input text, and delete actions.
+    - Added True or False view (Image 2) with fixed sage green option bars (`A. True`, `B. False`) and active radio indicator selection.
+    - Added Text-Based view (Image 3) with answer option input field for expected answers.
+    - Updated Question Type pill selectors with checkmark indicators and focus states.
+  - `src/components/elearning/ProjectConfigurationStep.jsx`:
+    - Implemented Step 5 Practical Project component:
+      - **Toggle Card (Image 4 & 5)**: "Yes, include a practical project" vs "No practical project needed" with disabled fallback notice card.
+      - **Project Details & Scenario Brief**: Project title, scenario brief instructions, practical competency skills, and deliverable requirements breakdown.
+      - **Deliverable Expectations & Submission Formats**: Expected submission title, multi-select format toggles (File Upload, External Link URL, Written Response), and submission guidelines.
+      - **Course Completion Requirement**: Mandatory vs optional practice activity toggle.
+      - **Evaluation Criteria & Grading Standards**: Rubric editor with suggested criteria quick chips, `+ Add Outcome` button, numbered badges, reorder up/down controls, and delete action.
+  - `src/components/elearning/CourseBuilderWizard.jsx`: Wired `ProjectConfigurationStep` into Step 5 (`stepIndex === 4`).
+  - `src/components/elearning/index.js`: Exported `ProjectConfigurationStep`.
+  - `src/app/routes/employerRoutes.jsx`: Renamed route sections from employer/recruiter to Partner E-Learning and added `LegacyCourseEditRedirect` for `/employer/e-learning/:courseId/edit` to redirect to `/e-learning/partner/:courseId/edit`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add question modal types, step 5 project config, and partner routes
+
+Align Add Question modal options with designs, implement Step 5 Practical
+Project builder with rubric management, and update legacy employer routes.
+
+- Update CourseQuestionModal for single choice, true/false, and text-based
+- Build ProjectConfigurationStep with scenario brief, formats, and rubric editor
+- Wire Step 5 Practical Project into CourseBuilderWizard
+- Redirect legacy employer/e-learning edit routes to canonical partner routes
+```
+
+---
+
+## 2026-11-04 01:25 (WAT) — Add Video, Audio, and PDF Block Dropdown with Subtitles in Course Builder
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Updated the Step 3 Learning Content & Media block type selector in the partner Course Builder to match Figma Image 1 and Image 2 with styled dropdown items for Video Block, Audio Block, and PDF Document, complete with subtitles, active states, dedicated previewers, and dynamic upload dropzones.
+- **Changed**:
+  - `src/components/elearning/LessonMediaContentEditor.jsx`:
+    - Added `BLOCK_OPTIONS` definitions with exact titles and subtitles matching Image 1:
+      - **Video Block**: "Upload MP4, WebM or MOV video"
+      - **Audio Block**: "Upload MP3, WAV audio lecture"
+      - **PDF Document**: "Viewable document in lesson reader"
+    - Redesigned dropdown menu with bold item headers, muted subtitles, generous vertical padding, active selection highlight (`bg-[#EFF6EF]`), and click-outside dismissal.
+    - Added dynamic trigger button text showing the current block selection ("Video Block", "Audio Block", "PDF Document") with animated chevron.
+    - Updated card header to show matching icons (`FileVideo`, `Headphones`, `FileText`) and block titles (`#1 Video Block`, `#1 Audio Block`, `#1 PDF Document`).
+    - Added dedicated PDF document preview state with reader link, and audio player controls for audio blocks.
+    - Updated dropzone text, file format hints, and file input accept attributes for Video, Audio, and PDF files.
+    - Updated replace CTA button label to "Replace Video", "Replace Audio", or "Replace PDF".
+    - Updated lesson sidebar badges to display "Video Content", "Audio Content", or "PDF Document".
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add block type dropdown with subtitles and PDF support in Course Builder
+
+Update the lesson content block type dropdown to match the design with Video,
+Audio, and PDF options including subtitles, dedicated previews, and dropzones.
+
+- Add Video Block, Audio Block, and PDF Document options with descriptions
+- Style dropdown menu with bold titles, subtitles, and active selection state
+- Implement dedicated preview cards for PDF documents and audio lectures
+- Update dropzone labels, accepted file formats, and replace actions dynamically
+- Show matching content type badges across the course lessons sidebar
+```
+
+---
+
+## 2026-11-04 01:06 (WAT) — Add Reusable Assessment Completed Screen Component (Pass and Fail Views)
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented the reusable `AssessmentCompletedCard` component matching Figma Image 1 (failed with cooldown timer and locked retake) and Image 2 (passed with criteria satisfied and proceed to project), integrating it seamlessly into `CourseAssessmentPage.jsx`.
+- **Changed**:
+  - `src/components/elearning/AssessmentCompletedCard.jsx`: Built reusable completed screen supporting:
+    - **Passed view (Image 2)**: Green circular checkmark, `ASSESSMENT PASSED` badge, `Congratulations! You Passed` heading, score summary, green criteria satisfied box (`Next milestone: Submit your practical project deliverable`), and action buttons (`Proceed to Practical Project >` and `Return to Course Curriculum`).
+    - **Failed view (Image 1)**: Red circular checkmark, `ASSESSMENT NOT PASSED` badge, `Pass Mark Not Met` heading, score summary, amber cooldown card with live countdown timer (`00:38`), and action buttons (`Retake Locked` while cooldown is active / `Retake Assessment` once unlocked, and `Return to Course Curriculum`).
+    - Expandable answer review section to review question-by-question choices.
+  - `src/components/elearning/index.js`: Exported `AssessmentCompletedCard`.
+  - `src/pages/elearning/jobseeker/CourseAssessmentPage.jsx`: Integrated `AssessmentCompletedCard` for the assessment completion step.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add reusable assessment completed screen for passed and failed states
+
+Implement the assessment result screens matching the design mockups for both
+passed and failed quiz outcomes with countdown timer and navigation actions.
+
+- Build `AssessmentCompletedCard` component with passed and failed UI states
+- Render passed view with criteria satisfied box and proceed to project CTA
+- Render failed view with amber cooldown countdown and retake lock
+- Support live countdown timer and review submitted answers breakdown
+- Wire completed card into jobseeker `CourseAssessmentPage`
+```
+
+---
+
+## 2026-11-04 00:27 (WAT) — Remove Redundant Forwarding and Index Export Files from E-Learning Pages
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Removed all redundant re-export and forwarding files from `src/pages/elearning/` and `src/pages/employerDashboard/`, keeping only the direct, self-contained page components inside `src/pages/elearning/jobseeker/` and `src/pages/elearning/partner/`.
+- **Changed**:
+  - `src/pages/elearning/`: Removed all loose forwarding shims (`CourseAssessmentPage.jsx`, `CourseCheckoutPage.jsx`, `CourseDetailsPage.jsx`, `CoursePlayerPage.jsx`, `CourseProgressPage.jsx`, `CourseProjectPage.jsx`, `ELearningDashboardPage.jsx`, `ExploreCoursesPage.jsx`, `MyLearningPage.jsx`, `index.js`).
+  - `src/pages/employerDashboard/`: Removed forwarding shims (`CourseBuilderPage.jsx`, `ELearningManagementPage.jsx`).
+  - `src/pages/elearning/jobseeker/`: Removed `index.js` barrel file; kept only the 9 standalone page components (`CourseAssessmentPage.jsx`, `CourseCheckoutPage.jsx`, `CourseDetailsPage.jsx`, `CoursePlayerPage.jsx`, `CourseProgressPage.jsx`, `CourseProjectPage.jsx`, `ELearningDashboardPage.jsx`, `ExploreCoursesPage.jsx`, `MyLearningPage.jsx`).
+  - `src/pages/elearning/partner/`: Removed `index.js` barrel file; kept only the 2 standalone partner components (`CourseBuilderPage.jsx`, `ELearningManagementPage.jsx`).
+  - `src/app/lazyPages.js`: Imports directly from the canonical file paths in `src/pages/elearning/jobseeker/` and `src/pages/elearning/partner/`.
+- **Conventional type**: `refactor(elearning)`
+
+### Proposed Commit Message
+
+```
+refactor(elearning): remove redundant forwarding files and barrel exports
+
+Clean up duplicate forwarding shims and barrel index files across the
+E-Learning pages hierarchy, ensuring every route imports directly from
+the main page component in jobseeker or partner.
+
+- Delete loose forwarding files in src/pages/elearning
+- Delete legacy elearning forwarding files in src/pages/employerDashboard
+- Delete unused index barrel files in jobseeker and partner directories
+- Ensure lazyPages loads directly from canonical page components
+```
+
+---
+
+## 2026-11-04 00:15 (WAT) — Implement Paid Course Details, Checkout Flow, Success & Error Views, and Modularize E-Learning Directory
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented the paid course details view (Image 2) with Course Fee banner and "Proceed to Checkout" action, built the complete Checkout workflow with course order summary, recipient details, and card payment simulation (Image 3), built the Payment Success screen (Image 4) and simulated error banner (Image 5), extracted reusable checkout components, and restructured all E-Learning pages under a unified `src/pages/elearning/` hierarchy with differentiated `jobseeker/` and `partner/` subfolders.
+- **Changed**:
+  - `src/pages/elearning/jobseeker/CourseDetailsPage.jsx`: Added support for paid course enrolment banner with dynamic Course Fee and "Proceed to Checkout (Paid Course)" action matching Image 2.
+  - `src/pages/elearning/jobseeker/CourseCheckoutPage.jsx`: Built the complete checkout experience with back navigation, order summary, recipient card, mock card payment form with agreement checkbox, simulated decline test toggle, price breakdown, and access guarantee.
+  - `src/components/elearning/CourseOrderSummaryCard.jsx`: Reusable order summary component with dark thumbnail card and course metadata.
+  - `src/components/elearning/CheckoutRecipientCard.jsx`: Reusable card displaying learner name and registered email.
+  - `src/components/elearning/CardPaymentForm.jsx`: Reusable payment card form with cardholder, card number, expiry, CVV, agreement checkbox, and simulation toggles.
+  - `src/components/elearning/CheckoutPriceBreakdown.jsx`: Reusable price breakdown card with total amount, pay CTA button, cancel link, and access guarantee.
+  - `src/components/elearning/PaymentSuccessCard.jsx`: Reusable success view matching Image 4 with confirmed badge, message, and "Start Learning" / "Go to My Learning" buttons.
+  - `src/components/elearning/PaymentErrorAlert.jsx`: Reusable decline alert banner matching Image 5 with warning icon, message, "Try Again Payment", and "Return to Course Details" buttons.
+  - `src/components/elearning/index.js`: Exported all new reusable checkout components.
+  - `src/services/elearningService.js`: Added `processCoursePayment` method supporting simulated success and decline outcomes with transaction receipts.
+  - `src/pages/elearning/jobseeker/`: Organized all jobseeker pages (`ELearningDashboardPage`, `MyLearningPage`, `ExploreCoursesPage`, `CourseDetailsPage`, `CourseCheckoutPage`, `CoursePlayerPage`, `CourseProgressPage`, `CourseAssessmentPage`, `CourseProjectPage`, `index.js`).
+  - `src/pages/elearning/partner/`: Organized all recruiter partner pages (`ELearningManagementPage`, `CourseBuilderPage`, `index.js`).
+  - `src/pages/elearning/index.js`: Unified export root for all jobseeker and partner pages.
+  - `src/app/lazyPages.js`: Updated lazy routes to point directly to the organized `jobseeker/` and `partner/` subfolders.
+  - `src/app/routes/socialRoutes.jsx`: Registered `/e-learning/jobseeker/courses/:courseId/checkout` and `/e-learning/courses/:courseId/checkout`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add paid course details, checkout flow, and modularize pages
+
+Implement paid course checkout and payment simulation matching the designs,
+and organize all E-Learning pages into jobseeker and partner subfolders.
+
+- Add paid course details banner with course fee and checkout CTA
+- Build full checkout experience with order summary, recipient card, and payment form
+- Implement payment success screen and declined payment simulation alert
+- Create reusable components for checkout summary, recipient, payment form, and alerts
+- Organize all E-Learning pages into jobseeker and partner directories
+- Register dedicated checkout routes for jobseekers with role protection
+```
+
+---
+
+## 2026-11-03 22:30 (WAT) — Fix E-Learning Sidebar Scrolling & Align Course Catalogue and Details Pages with Figma Designs
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Made the desktop E-Learning navigation sidebar fixed so that only the main body content scrolls. Implemented the Course Catalogue / Explore Courses page matching Image 2, and the Course Details page matching Image 3 (unenrolled state) and Image 4 (enrolled state) with live enrollment and navigation interactions.
+- **Changed**:
+  - `src/components/elearning/ELearningLayout.jsx`: Structured the shell as a fixed-viewport flexbox with a fixed left `<aside>` navigation rail and an independently scrollable main body column.
+  - `src/components/elearning/ELearningSidebar.jsx`: Enhanced with dual desktop rail and mobile pill modes, preserving active tab states for Dashboard, My Learning, and Explore Courses.
+  - `src/components/elearning/CourseCatalogCard.jsx`: Implemented dual-state cards matching Figma Image 2 (unenrolled with category and price pill, badges, and "View Course >"; enrolled with progress bar, % completion, finished lessons count, and three action buttons: "Continue/Start Learning", "Progress", and "Overview").
+  - `src/pages/elearning/ExploreCoursesPage.jsx`: Aligned with Figma Image 2 with "Course Catalogue" header, search pill, level filter dropdown, and Free/Paid toggle pills.
+  - `src/pages/elearning/CourseDetailsPage.jsx`: Rebuilt to match Figma Image 3 and Image 4 with back pill button, level/category/price badges, partner attribution, meta details, live enrollment state toggle (dark green "Free Course Enrolment" card with "Enroll in Course" CTA when unenrolled; progress bar with "Start/Continue Learning" CTA when enrolled), "What You Will Learn" 2x2 grid, curriculum module accordion, practical project deliverable card, partner card, knowledge quiz card, completion criteria, and talent ecosystem card.
+  - `src/services/elearningService.js`: Updated course catalog data (Digital Marketing Fundamentals, Social Media Content Planning, Intermediate Digital Marketing) with authentic syllabus modules, deliverables, and unenrolled/enrolled defaults.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): fix sidebar during scroll and align explore and course details with designs
+
+Fix the E-Learning sidebar so it stays in place while scrolling the main body,
+and implement the Course Catalogue and Course Details pages matching the Figma designs.
+
+- Fix the desktop sidebar position so only the body content scrolls
+- Implement the Course Catalogue explore page with search, level dropdown, and Free/Paid filters
+- Add dual-state catalogue cards for unenrolled and in-progress courses
+- Rebuild the Course Details page with unenrolled and enrolled interactive states
+- Add smooth enrollment switching from the free enrolment banner to active course progress
+- Include full curriculum accordion, practical project deliverable, and partner course recommendations
+```
+
+---
+
+## 2026-11-03 21:10 (WAT) — Move E-Learning to Dedicated Route Links & Remove from Sidebar Bottom
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Transitioned E-Learning from being pinned at the bottom of the right sidebar to dedicated route links for both Jobseekers (`/e-learning/jobseeker`) and Recruiters (`/e-learning/partner`), while maintaining backwards-compatible redirects.
+- **Changed**:
+  - `src/components/recruitment/recruitmentRightLinks.js`: Removed E-Learning link from `getRecruitmentRightLinks` so it no longer displays at the bottom of the right sidebar, while keeping updated route references in exported link objects.
+  - `src/app/routes/employerRoutes.jsx`: Added routes for `/e-learning/partner`, `/e-learning/partner/create`, and `/e-learning/partner/:courseId/edit`. Added redirects from `/employer/e-learning*` to the new `/e-learning/partner*` routes.
+  - `src/app/routes/socialRoutes.jsx`: Added dedicated jobseeker routes under `/e-learning/jobseeker` (`my-learning`, `explore`, `courses/:courseId/*`). Added role-aware redirect component for `/e-learning` index to route recruiters to `/e-learning/partner` and jobseekers to `/e-learning/jobseeker`. Added fallback redirects for legacy jobseeker paths.
+  - `src/components/elearning/ELearningSidebar.jsx`: Updated navigation item URLs to `/e-learning/jobseeker`, `/e-learning/jobseeker/my-learning`, and `/e-learning/jobseeker/explore`.
+  - `src/pages/employerDashboard/ELearningManagementPage.jsx`: Updated course creation and editing routes to `/e-learning/partner/create` and `/e-learning/partner/:courseId/edit`.
+  - `src/pages/employerDashboard/CourseBuilderPage.jsx`: Updated back navigation and redirects to `/e-learning/partner`.
+  - `src/pages/elearning/ELearningDashboardPage.jsx`: Updated all internal navigation links to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/MyLearningPage.jsx`: Updated course action links to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/ExploreCoursesPage.jsx`: Updated course detail view routes to `/e-learning/jobseeker/courses/:courseId`.
+  - `src/pages/elearning/CourseDetailsPage.jsx`: Updated back button and action routes to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/CoursePlayerPage.jsx`: Updated breadcrumb and sidebar links to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/CourseProgressPage.jsx`: Updated criteria and action buttons to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/CourseAssessmentPage.jsx`: Updated progress back navigation and review links to `/e-learning/jobseeker/*`.
+  - `src/pages/elearning/CourseProjectPage.jsx`: Updated banner and form links to `/e-learning/jobseeker/*`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): move elearning to link routes for jobseekers and recruiters
+
+Instead of pinning E-Learning at the bottom of the news feed right sidebar,
+provide dedicated direct route links for both jobseekers and partner recruiters.
+
+- Route jobseekers to `/e-learning/jobseeker` and associated subroutes
+- Route recruiters to `/e-learning/partner` and course creation/editing subroutes
+- Remove the E-Learning link item from the right sidebar bottom
+- Add role-aware redirect on `/e-learning` and backwards compatibility for existing URLs
+- Update all internal navigations across jobseeker and employer course pages
+```
+
+---
+
+## 2026-10-30 09:58 (WAT) — Add Step 4 Assessment Configuration & Reusable Question Modal
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Implemented Step 4 (**Assessment Configuration**) for the employer recruiter Course Builder matching Figma Images 1 & 2, and built a unified reusable `CourseQuestionModal` component matching Figma Images 3, 4, & 5 for adding and editing Multiple Choice, Single Choice, True or False, and Text-Based questions.
+- **Changed**:
+  - `src/components/elearning/CourseQuestionModal.jsx`: Created reusable modal supporting both `"add"` and `"edit"` modes, question type switching (`Multiple Choice`, `Single Choice`, `True or False`, `Text-Based`), question text input, dynamic answer options with correct-answer toggling, and score/points input.
+  - `src/components/elearning/AssessmentConfigurationStep.jsx`: Built Step 4 assessment configuration with assessment toggle ("Yes, Include an assessment" vs "No assessment for this course" with empty state card), Assessment Information (Title & Instructions), Questions manager with question reordering, editing, deletion, and "Correct Answer" badges, and Scoring & Attempt Rules (questions & points summary badges, Optional Passing Threshold toggle + score input, and Optional Retry Limit toggle + attempts input).
+  - `src/components/elearning/CourseBuilderWizard.jsx`: Replaced legacy inline assessment markup with the reusable `AssessmentConfigurationStep` component.
+  - `src/services/elearningService.js`: Added 4 starter assessment questions matching Image 2 (`What is digital marketing?`, `Which of the following can be a digital marketing channel?`, `A business should consider its target audience when choosing marketing content.`, and text-based evaluation).
+  - `src/components/elearning/index.js`: Exported `CourseQuestionModal` and `AssessmentConfigurationStep`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add assessment configuration step and reusable question modal
+
+Recruiters creating or editing courses need Step 4 (Assessment Configuration)
+to configure optional knowledge checks with multiple question types and
+scoring rules matching the UI designs.
+
+- Build a reusable `CourseQuestionModal` component handling both adding and editing questions across 4 formats: Multiple Choice, Single Choice, True/False, and Text-Based
+- Build a reusable `AssessmentConfigurationStep` component with inclusion toggles, assessment title/instructions, questions list with live option previews and correct answer badges, and scoring/retry limits
+- Integrate the assessment step into the course builder wizard and export reusable components
+```
+
+---
+
+## 2026-10-29 23:38 (WAT) — Align Step 3 Media Editor & Reusable Add/Edit Lesson Modal with Figma
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Rebuilt Step 3 (**Learning Content & Media**) using a reusable `LessonMediaContentEditor` component matching Figma Images 2 & 4, and updated `CourseLessonModal` to match Figma Image 3 with a unified modal for both adding and editing lessons.
+- **Changed**:
+  - `src/components/elearning/LessonMediaContentEditor.jsx`: Created reusable 2-column editor featuring the left `COURSE LESSONS` list (active item highlight, lesson numbers, dynamic content badges), active lesson header with block-type switcher (`Video Block` / `Audio Block`), media upload dropzone and embedded player, media status details (`case_study_walkthrough.mp4`, `Ready`, format, duration), `Replace Video` / `Replace Audio` button, and the `KEY TAKEAWAYS (CHECKPOINTS)` card.
+  - `src/components/elearning/CourseLessonModal.jsx`: Matched Figma Image 3 with clean inputs (`Lesson Title *`, `Module Description (Optional)`), pill action buttons (`Cancel` and `Save module`), and smooth dual-mode handling for both adding and editing lessons.
+  - `src/components/elearning/CourseBuilderWizard.jsx`: Integrated `LessonMediaContentEditor` into Step 3 (`Content`), and wired lesson creation and editing directly to the updated `CourseLessonModal`.
+  - `src/services/elearningService.js`: Updated course starter lessons with exact summaries from the mockup and added starter media metadata for the walkthrough video.
+  - `src/components/elearning/index.js`: Exported `LessonMediaContentEditor`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add media content editor and align lesson modal with UI
+
+The course builder needed Step 3 (Learning Content & Media) to support
+video/audio uploads and lesson takeaways, and the add/edit lesson popup
+needed to match the clean design from the mockups.
+
+- Build a reusable `LessonMediaContentEditor` component for Step 3 with a lesson navigation sidebar, block switcher, upload dropzone, embedded media preview, and key takeaways notes
+- Update `CourseLessonModal` to match the exact mockup fields and buttons for both adding and editing lessons
+- Connect the media editor and updated lesson modal to the course creation wizard
+```
+
+---
+
+## 2026-10-29 22:50 (WAT) — Fix Course Builder White Background & Add "Add Outcome" Modal
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Made the background on the recruiter E-Learning Management and Create/Edit Course pages solid white all the way down (there was a gray band once you scrolled past the first screen). Clicking **+ Add Outcome** now opens a popup with an outcome title field instead of adding an empty row.
+- **Changed**:
+  - `src/pages/employerDashboard/CourseBuilderPage.jsx` & `ELearningManagementPage.jsx`: Made the layout's scroll container white and stopped the inner wrapper from shrinking, so the white background covers all content.
+  - `src/components/elearning/CourseOutcomeModal.jsx` & `index.js`: Added a reusable Add/Edit Outcome modal styled like the module modal (title, subtitle, `Outcome Title *` input, `Cancel` / `Save outcome`).
+  - `src/components/elearning/CourseBuilderWizard.jsx`: **+ Add Outcome** opens `CourseOutcomeModal`. Saving fills the first empty outcome row, or adds a new row if none are empty.
+  - `src/components/elearning/CourseModuleModal.jsx`: In edit mode the title now reads `Edit Module`, matching the Figma.
+  - `src/services/elearningService.js`: Removed the blank starter outcome row and updated the starter text for Module 1's description.
+- **Conventional type**: `fix(elearning)`
+
+### Proposed Commit Message
+
+```
+fix(elearning): keep course builder background white and add outcome modal
+
+The recruiter course pages showed a gray band once you scrolled past the
+first screen, and "Add Outcome" just added an empty row with no clear prompt.
+
+- Make the E-Learning Management and Create/Edit Course pages white all the way down
+- Open a popup with an outcome title field when recruiters click "+ Add Outcome"
+- Change the module edit popup title to "Edit Module" to match the design
+```
+
+---
+
+## 2026-10-29 22:22 (WAT) — Add Recruiter E-Learning Management Dashboard & 8-Step Course Builder
+
+- **Repo**: `bejite-frontend` (branch: `emma.dev`)
+- **Summary**: Added a recruiter-only **E-Learning** link at the bottom of the News Feed right sidebar (`/employer/e-learning`), built the **E-Learning Management** dashboard matching the Figma design, created the reusable 8-step **Create / Edit Course** builder (`/employer/e-learning/create` & `/employer/e-learning/:courseId/edit`), and built a single reusable **Add / Edit Course Module** modal (`CourseModuleModal.jsx`) alongside a reusable **Add / Edit Lesson** modal (`CourseLessonModal.jsx`).
+- **Changed**:
+  - `src/components/recruitment/recruitmentRightLinks.js`: Appended `RECRUITER_ELEARNING_RIGHT_LINK` (`/employer/e-learning`) at the bottom of the right sidebar strictly when `isRecruiterAccount(user)` is `true` (while jobseekers continue seeing `/e-learning`).
+  - `src/components/elearning/CourseModuleModal.jsx` & `CourseLessonModal.jsx`: Built reusable modals handling both `"add"` and `"edit"` modes for course modules and module lessons.
+  - `src/components/elearning/CourseBuilderStepper.jsx`, `CourseBuilderWizard.jsx`, `ELearningManagementFilterBar.jsx`, `RecruiterCoursesTable.jsx`, `RecruiterCourseViewModal.jsx`, & `index.js`: Created reusable 8-step stepper (`Basic Info`, `Structure`, `Content`, `Assessment`, `Project`, `Pricing`, `Completion`, `Review`), full Create/Edit Course wizard, rounded-pill filter bar, dark-green-header `My Courses` table, and quick-view course management modal.
+  - `src/pages/employerDashboard/ELearningManagementPage.jsx` & `CourseBuilderPage.jsx`: Built the recruiter E-Learning Management dashboard and Create/Edit Course pages guarded by `isRecruiterAccount`.
+  - `src/services/elearningService.js` & `src/components/elearning/CourseCatalogCard.jsx`: Added recruiter course persistence (`bejite:recruiter-courses:v1`), live KPI stat calculation, and automatic catalog syncing so courses published by recruiters appear in the Bejite Academy learner catalogue with cover image support.
+  - `src/app/lazyPages.js` & `src/app/routes/employerRoutes.jsx`: Registered lazy-loaded `ELearningManagementPage` and `CourseBuilderPage` on `/employer/e-learning`, `/employer/e-learning/create`, and `/employer/e-learning/:courseId/edit`.
+- **Conventional type**: `feat(elearning)`
+
+### Proposed Commit Message
+
+```
+feat(elearning): add recruiter course management dashboard and course builder
+
+Recruiters need a dedicated place to create, organize, and publish Bejite Academy
+courses from their own sidebar, with reusable components for creating and editing
+courses and course modules.
+
+- Add an "E-Learning" entry at the bottom of the News Feed right sidebar visible only to recruiters, linking to `/employer/e-learning`
+- Build the E-Learning Management dashboard with live summary cards (`Total Course`, `Drafts`, `Published`, `In Review`), search and date-range filters, and the `My Courses` table
+- Create a reusable 8-step Course Builder (`Basic Info`, `Structure`, `Content`, `Assessment`, `Project`, `Pricing`, `Completion`, `Review`) shared between creating new courses and editing existing ones
+- Use a single reusable modal for both adding and editing course modules (and a matching reusable modal for adding and editing lessons), and sync published courses into the Academy catalogue
+```
+
+---
+
 ## 2026-10-29 21:35 (WAT) — Add Dedicated Project Workspace Page & Polish Track Progress Sidebar Cards
 
 - **Repo**: `bejite-frontend` (branch: `emma.dev`)

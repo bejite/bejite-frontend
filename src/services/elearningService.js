@@ -23,9 +23,9 @@ const DEFAULT_COURSES = [
       "Employer & Skill Partner offering practical, employer-vetted digital marketing and growth curriculums.",
     summary:
       "Learn the basics of digital marketing, including audiences, content, and campaign planning.",
-    totalDurationLabel: "Approx. 2h total content",
-    enrolledByDefault: true,
-    defaultCompletedLessonIds: ["dmf-l1", "dmf-l2", "dmf-l3"],
+    totalDurationLabel: "Approx 21 hours of content",
+    enrolledByDefault: false,
+    defaultCompletedLessonIds: [],
     defaultCurrentLessonId: "dmf-l4",
     learningOutcomes: [
       "Explain what digital marketing means.",
@@ -126,6 +126,22 @@ const DEFAULT_COURSES = [
               "Pair every content asset with a clear, measurable call to action.",
             ],
           },
+          {
+            id: "dmf-l4b",
+            title: "Validating Audience Insights",
+            type: "Exercise",
+            durationMinutes: 15,
+            summary:
+              "Validate customer pain points with direct qualitative feedback.",
+            sectionHeading: "Confirming Core Assumptions",
+            videoDuration: "04:10",
+            bodyParagraphs: [
+              "Test messaging against real user signals before committing production budget.",
+            ],
+            takeaways: [
+              "Listen directly to customer language to shape resonant messaging.",
+            ],
+          },
         ],
       },
       {
@@ -133,7 +149,7 @@ const DEFAULT_COURSES = [
         code: "MODULE 3",
         title: "Module 3: Planning a Simple Campaign",
         description:
-          "Set measurable goals and assemble a ready-to-launch checklist.",
+          "Set realistic goals and assemble a step-by-step launch checklist.",
         lessons: [
           {
             id: "dmf-l5",
@@ -173,17 +189,33 @@ const DEFAULT_COURSES = [
               "Review results post-launch to turn every campaign into a learning loop.",
             ],
           },
+          {
+            id: "dmf-l7",
+            title: "Reviewing Launch Metrics & Iteration",
+            type: "Exercise",
+            durationMinutes: 20,
+            summary:
+              "Measure initial results and identify iteration opportunities.",
+            sectionHeading: "Campaign Post-Mortems",
+            videoDuration: "05:10",
+            bodyParagraphs: [
+              "Review conversions post-launch to continuously improve campaign quality.",
+            ],
+            takeaways: [
+              "Turn every campaign launch into a repeatable learning asset.",
+            ],
+          },
         ],
       },
     ],
     quiz: {
       id: "dmf-quiz",
-      title: "Digital Marketing Basics Quiz",
+      title: "Knowledge Assessment Quiz",
       description:
-        "Answer the questions to check your understanding of digital marketing, audiences, and campaign planning.",
+        "Check your understanding of key concepts before attempting the practical project.",
       passMark: 80,
-      maxAttempts: 2,
-      allowedAttempts: "2 attempts",
+      maxAttempts: null,
+      allowedAttempts: "Unlimited",
       timeLimitMinutes: 15,
       questions: [
         {
@@ -233,15 +265,59 @@ const DEFAULT_COURSES = [
           ],
           correctIndex: 1,
         },
+        {
+          id: "q5",
+          prompt: "What is a core benefit of combining organic content with paid amplification?",
+          options: [
+            "Testing content organically before putting ad spend behind top performers.",
+            "Eliminating the need for customer personas.",
+            "Avoiding all analytics tracking.",
+            "Guaranteeing instant sales.",
+          ],
+          correctIndex: 0,
+        },
+        {
+          id: "q6",
+          prompt: "How does audience segmentation improve conversion rates?",
+          options: [
+            "By tailoring messaging to specific pain points and needs.",
+            "By showing the exact same ad to every demographic.",
+            "By removing calls to action.",
+            "By increasing generic impressions.",
+          ],
+          correctIndex: 0,
+        },
+        {
+          id: "q7",
+          prompt: "Which SMART metric best evaluates a top-of-funnel brand awareness campaign?",
+          options: [
+            "Reach, qualified video views, and brand search lift.",
+            "Employee headcount.",
+            "Internal code commits.",
+            "Office supplies count.",
+          ],
+          correctIndex: 0,
+        },
+        {
+          id: "q8",
+          prompt: "Why should every campaign conclude with an outcome review?",
+          options: [
+            "To document learnings, optimize benchmarks, and inform subsequent launches.",
+            "To delete all performance data.",
+            "To avoid testing new channels.",
+            "To ignore customer feedback.",
+          ],
+          correctIndex: 0,
+        },
       ],
     },
     deliverable: {
       id: "dmf-project",
       title: "Mini Campaign Brief",
-      badge: "Portfolio Deliverable",
-      subtitle: "Submit your hands-on deliverable.",
+      badge: "Evidence Deliverable",
+      subtitle: "Real-world project requirements for course completion.",
       instructions:
-        "Prepare a 1-page campaign brief outlining chosen target persona, primary campaign goal, key channels, and sample messaging.",
+        "Prepare a 1-page campaign brief for an imaginary business: target audience, chosen channel, content idea, and simple metric.",
       projectBrief:
         'You have been hired as a freelance digital assistant for "Kikio Botanicals", an emerging eco-friendly skincare brand. The brand needs a structured, engaging 2-week social schedule across Instagram and LinkedIn to boost community engagement ahead of their new product launch.',
       expectedDeliverable:
@@ -273,10 +349,10 @@ const DEFAULT_COURSES = [
     partnerDescription:
       "Employer & Skill Partner offering practical, employer-vetted digital marketing and growth curriculums.",
     summary:
-      "Learn how to organize content pillars, build a realistic editorial calendar, and measure engagement across social platforms.",
+      "Learn how to organize content ideas, define strategic pillars, and execute a consistent editorial content calendar.",
     totalDurationLabel: "Approx. 1h 25m total content",
-    enrolledByDefault: true,
-    defaultCompletedLessonIds: ["smcp-l1", "smcp-l2"],
+    enrolledByDefault: false,
+    defaultCompletedLessonIds: [],
     defaultCurrentLessonId: "smcp-l3",
     learningOutcomes: [
       "Define 3–4 repeatable brand content pillars.",
@@ -452,21 +528,21 @@ const DEFAULT_COURSES = [
   },
   {
     id: "intermediate-digital-marketing",
-    title: "Intermediate Digital Marketing",
+    title: "Intermediate digital Marketing",
     category: "Marketing & Growth",
     categoryUpper: "MARKETING & GROWTH",
     level: "Intermediate Level",
     levelShort: "Intermediate",
     levelUpper: "INTERMEDIATE LEVEL",
     accessLabel: "Paid Course",
-    priceBadge: "Paid Course",
+    priceBadge: "N50,000",
     isPaid: true,
     partnerId: "digital-growth-academy",
     partnerName: "Digital Growth Academy",
     partnerDescription:
       "Employer & Skill Partner offering practical, employer-vetted digital marketing and growth curriculums.",
     summary:
-      "Build full-funnel conversion journeys, manage performance campaign budgets, optimize landing pages, and measure ROI.",
+      "Scale customer acquisition, manage performance marketing campaigns, optimize conversion funnels, and calculate conversion metrics.",
     totalDurationLabel: "Approx. 2h 15m total content",
     enrolledByDefault: false,
     defaultCompletedLessonIds: [],
@@ -820,7 +896,7 @@ const DEFAULT_COURSES = [
   },
 ];
 
-const STORAGE_PREFIX = "bejite:elearning-progress:v1";
+const STORAGE_PREFIX = "bejite:elearning-progress:v2";
 
 function getStorageKey() {
   const user = getUser();
@@ -997,7 +1073,7 @@ export function enrichCourseWithProgress(course, courseState) {
 
 export function getAllCoursesWithProgress() {
   const store = readProgressStore();
-  return DEFAULT_COURSES.map((course) =>
+  return getCatalogCourses().map((course) =>
     enrichCourseWithProgress(course, store.courses[course.id])
   );
 }
@@ -1008,8 +1084,8 @@ export function getEnrolledCourses() {
 
 export function getCourseById(courseId) {
   const store = readProgressStore();
-  const target =
-    DEFAULT_COURSES.find((c) => c.id === courseId) || DEFAULT_COURSES[0];
+  const catalog = getCatalogCourses();
+  const target = catalog.find((c) => c.id === courseId) || catalog[0];
   if (!target) return null;
   return enrichCourseWithProgress(target, store.courses[target.id]);
 }
@@ -1030,6 +1106,35 @@ export function enrollInCourse(courseId) {
   };
   writeProgressStore(store);
   return getCourseById(courseId);
+}
+
+export function processCoursePayment(courseId, paymentDetails = {}) {
+  if (paymentDetails.shouldFail) {
+    return {
+      success: false,
+      message:
+        "The card simulation declined this transaction or network timed out. No funds were deducted and course access has not been enrolled.",
+    };
+  }
+
+  const updatedCourse = enrollInCourse(courseId);
+  const store = readProgressStore();
+  store.courses[courseId] = {
+    ...(store.courses[courseId] || {}),
+    paymentReceipt: {
+      transactionId: `BEJ-${Date.now().toString(36).toUpperCase()}`,
+      paidAt: new Date().toISOString(),
+      amount: updatedCourse?.priceBadge || "N50,000",
+      cardholder: paymentDetails.cardholderName || "Amara Okafor",
+      last4: String(paymentDetails.cardNumber || "4242").slice(-4),
+    },
+  };
+  writeProgressStore(store);
+
+  return {
+    success: true,
+    course: getCourseById(courseId),
+  };
 }
 
 export function setCurrentLesson(courseId, lessonId) {
@@ -1061,7 +1166,7 @@ export function markLessonCompleted(courseId, lessonId, nextLessonId = null) {
 }
 
 export function recordQuizSubmission(courseId, answersMap = {}) {
-  const course = DEFAULT_COURSES.find((c) => c.id === courseId);
+  const course = getCatalogCourses().find((c) => c.id === courseId);
   if (!course?.quiz) return null;
 
   const questions = course.quiz.questions || [];
@@ -1144,3 +1249,727 @@ export function submitCourseDeliverable(
   return getCourseById(courseId);
 }
 
+
+// ============================================================================
+// Recruiter E-Learning Course Management Store & Helpers
+// ============================================================================
+
+const RECRUITER_COURSES_STORAGE_KEY = "bejite:recruiter-courses:v1";
+
+export const COURSE_BUILDER_STEPS = [
+  { id: "basic_info", number: 1, label: "Basic Info" },
+  { id: "structure", number: 2, label: "Structure" },
+  { id: "content", number: 3, label: "Content" },
+  { id: "assessment", number: 4, label: "Assessment" },
+  { id: "project", number: 5, label: "Project" },
+  { id: "pricing", number: 6, label: "Pricing" },
+  { id: "completion", number: 7, label: "Completion" },
+  { id: "review", number: 8, label: "Review" },
+];
+
+export const COURSE_SUBJECT_AREAS = [
+  "Digital Marketing",
+  "UI/UX Design",
+  "Content & Social Media",
+  "Software Engineering",
+  "Data Analytics",
+  "Product Management",
+  "Career Readiness",
+  "Business Operations",
+];
+
+function slugifyCourseTitle(title) {
+  const base = String(title || "course")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return `${base || "course"}-${Date.now().toString(36)}`;
+}
+
+export function formatCourseRelativeTime(isoString, fallbackLabel = "Just now") {
+  if (!isoString) return fallbackLabel;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallbackLabel;
+
+  const diffSeconds = Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 1000));
+  if (diffSeconds < 60) return "Just now";
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) {
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function createEmptyCourseDraft() {
+  return {
+    id: null,
+    title: "",
+    summary: "",
+    coverImage: "",
+    coverImageName: "",
+    subjectArea: "Digital Marketing",
+    targetAudience: "",
+    levelShort: "Beginner",
+    learningOutcomes: [
+      "Explain what digital marketing means.",
+      "Identify a target audience.",
+      "Choose suitable content for a simple campaign",
+      "Outline a basic campaign plan",
+    ],
+    organisationType: "modules",
+    modules: [
+      {
+        id: "mod-1",
+        title: "Introduction to Digital Marketing",
+        description:
+          "Understand the landscape of modern digital marketing channels and user intent.",
+        lessons: [
+          {
+            id: "les-1-1",
+            title: "What Digital Marketing Means",
+            type: "Video",
+            durationMinutes: 15,
+            summary:
+              "Core concepts of digital outreach, audiences, and customer journeys.",
+            sectionHeading: "Introduction to Modern Digital Marketing",
+            mediaType: "video",
+            mediaUrl:
+              "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            mediaFileName: "case_study_walkthrough.mp4",
+            mediaFileSize: "62.1 MB",
+            mediaDuration: "15:10",
+            mediaFormat: "video/mp4",
+            mediaStatus: "Ready",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl:
+              "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            bodyText:
+              "Digital marketing encompasses every marketing effort that uses internet-connected devices and online channels to connect with prospective and current customers.",
+            takeaways: [
+              "Digital marketing uses digital channels to promote products, services, or brands.",
+              "Businesses choose channels based on their goals and audiences.",
+            ],
+          },
+          {
+            id: "les-1-2",
+            title: "Common Digital Marketing Channels",
+            type: "Video",
+            durationMinutes: 20,
+            summary:
+              "Overview of search, social, email, and content channels.",
+            sectionHeading: "Comparing Core Acquisition & Retention Channels",
+            mediaType: "video",
+            mediaUrl: "",
+            mediaFileName: "",
+            mediaFileSize: "",
+            mediaDuration: "",
+            mediaFormat: "",
+            mediaStatus: "",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl: "",
+            bodyText:
+              "High-performing marketing teams combine organic discovery channels with direct relationship channels and paid amplification.",
+            takeaways: [
+              "Search channels capture high-intent prospects actively looking for answers.",
+              "Social media builds brand awareness and top-of-funnel reach.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "mod-2",
+        title: "Understanding Your Audience",
+        description:
+          "Segment customer personas and align messaging with customer goals.",
+        lessons: [
+          {
+            id: "les-2-1",
+            title: "Identifying a Target Audience",
+            type: "Reading",
+            durationMinutes: 25,
+            summary:
+              "Techniques for building demographic and psychographic buyer personas.",
+            sectionHeading: "Building Practical Audience Personas",
+            mediaType: "reading",
+            mediaUrl: "",
+            mediaFileName: "",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl: "",
+            bodyText:
+              "A target audience is a specific group of people most likely to benefit from your product or service.",
+            takeaways: [
+              "Specific audience personas outperform broad, generic messaging.",
+            ],
+          },
+          {
+            id: "les-2-2",
+            title: "Choosing Content for an Audience",
+            type: "Reading",
+            durationMinutes: 20,
+            summary:
+              "Tailoring campaign format and tone of voice for specific audiences.",
+            sectionHeading: "Aligning Content Formats with Audience Intent",
+            mediaType: "reading",
+            mediaUrl: "",
+            mediaFileName: "",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl: "",
+            bodyText:
+              "Choose formats your audience naturally consumes and pair each asset with one clear call to action.",
+            takeaways: [
+              "Match content format and depth to your audience's stage of awareness.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "mod-3",
+        title: "Planning a Simple Campaign",
+        description:
+          "Set realistic targets and assemble a step-by-step launch checklist.",
+        lessons: [
+          {
+            id: "les-3-1",
+            title: "Setting a Campaign Goal",
+            type: "Exercise",
+            durationMinutes: 15,
+            summary:
+              "Establishing measurable KPIs using SMART frameworks.",
+            sectionHeading: "Defining SMART Marketing Objectives",
+            mediaType: "exercise",
+            mediaUrl: "",
+            mediaFileName: "",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl: "",
+            bodyText:
+              "Every effective campaign anchors on one primary measurable metric within a defined timeframe.",
+            takeaways: [
+              "Tie campaign KPIs directly to a concrete business outcome.",
+            ],
+          },
+          {
+            id: "les-3-2",
+            title: "Creating a Basic Campaign Outline",
+            type: "Exercise",
+            durationMinutes: 30,
+            summary:
+              "Step-by-step assembly of an actionable marketing plan.",
+            sectionHeading: "Structuring Your One-Page Campaign Plan",
+            mediaType: "exercise",
+            mediaUrl: "",
+            mediaFileName: "",
+            takeawaysText:
+              "By the end of the course, the learner should be able to:\ne.g 1.",
+            videoUrl: "",
+            bodyText:
+              "A concise campaign brief aligns writers, designers, and stakeholders around the who, what, where, and why of your launch.",
+            takeaways: [
+              "A one-page campaign outline keeps cross-functional execution aligned.",
+            ],
+          },
+        ],
+      },
+    ],
+    quiz: {
+      enabled: true,
+      title: "Digital Marketing Basics Quiz",
+      description:
+        "Answer the questions to check your understanding of digital marketing audiences and campaign planning.",
+      passMark: 80,
+      maxAttempts: 2,
+      timeLimitMinutes: 15,
+      passingScoreEnabled: true,
+      retryLimitEnabled: true,
+      questions: [
+        {
+          id: "q-1",
+          type: "multiple_choice",
+          prompt: "What is digital marketing?",
+          points: 1,
+          options: [
+            "Promoting products or services through digital channels.",
+            "Selling products only in physical stores.",
+            "Printing promotional flyers only.",
+            "Managing office operations.",
+          ],
+          correctAnswers: [0, 1],
+          correctIndex: 0,
+        },
+        {
+          id: "q-2",
+          type: "single_choice",
+          prompt: "Which of the following can be a digital marketing channel?",
+          points: 1,
+          options: [
+            "Social media",
+            "Email",
+            "A business website",
+            "All of the above",
+          ],
+          correctAnswers: [0],
+          correctIndex: 0,
+        },
+        {
+          id: "q-3",
+          type: "true_false",
+          prompt:
+            "A business should consider its target audience when choosing marketing content.",
+          points: 1,
+          options: ["True", "False"],
+          correctAnswers: [0],
+          correctIndex: 0,
+        },
+        {
+          id: "q-4",
+          type: "text_based",
+          prompt:
+            "A business should consider its target audience when choosing marketing content.",
+          points: 1,
+          correctText:
+            "Understanding audience intent and demographics allows businesses to select suitable content formats that drive measurable engagement.",
+          options: [],
+          correctAnswers: [],
+          correctIndex: 0,
+        },
+      ],
+    },
+    project: {
+      enabled: true,
+      title: "Practical Portfolio Deliverable",
+      brief:
+        "Complete a practical real-world deliverable demonstrating the skills learned across this course.",
+      expectedDeliverable:
+        "A structured strategy document, prototype link, or project archive ready for recruiter review.",
+      steps: [
+        "Review the scenario brief and define your target audience or problem statement.",
+        "Build your solution document or workspace asset with clear rationale.",
+        "Enable view permissions on your link or attach your project file before submitting.",
+      ],
+    },
+    pricing: {
+      isPaid: false,
+      currency: "NGN",
+      amount: "",
+    },
+    completion: {
+      requireAllLessons: true,
+      requireQuizPass: true,
+      requireProjectSubmission: true,
+      certificateNote:
+        "Completing this course records verified skill evidence on the learner's Bejite Academy profile.",
+    },
+    status: "draft",
+  };
+}
+
+function buildDefaultRecruiterCourses() {
+  const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const baseDraft = createEmptyCourseDraft();
+
+  return [
+    {
+      ...baseDraft,
+      id: "digital-marketing-fundamentals",
+      title: "Digital Marketing Fundamentals",
+      summary:
+        "Learn the basics of digital marketing, including audiences, content, and campaign planning.",
+      subjectArea: "Digital Marketing",
+      targetAudience: "Entry-level marketers, career switchers, and founders",
+      levelShort: "Beginner",
+      pricing: { isPaid: false, currency: "NGN", amount: "" },
+      status: "published",
+      createdAt: "2026-06-11T09:00:00.000Z",
+      updatedAt: tenMinsAgo,
+    },
+    {
+      ...baseDraft,
+      id: "intro-to-ui-ux-design",
+      title: "Introduction to UI/UX Design",
+      summary:
+        "Explore user experience, interface design, and interactive prototyping workflows.",
+      subjectArea: "UI/UX Design",
+      targetAudience: "Aspiring product designers and frontend builders",
+      levelShort: "Intermediate",
+      learningOutcomes: [
+        "Conduct lightweight user discovery and usability heuristics.",
+        "Build clean wireframes and reusable component systems in Figma.",
+        "Prototype end-to-end user flows ready for developer handoff.",
+      ],
+      modules: [
+        {
+          id: "uiux-m1",
+          title: "User Research & Information Architecture",
+          description:
+            "Map user journeys, pain points, and clear navigation hierarchies.",
+          lessons: [
+            {
+              id: "uiux-l1",
+              title: "Foundations of User-Centered Design",
+              type: "Reading",
+              durationMinutes: 20,
+              summary:
+                "Understand how research insights shape intuitive digital interfaces.",
+              sectionHeading: "Designing for Clarity & Usability",
+              videoUrl: "",
+              bodyText:
+                "User-centered design anchors every screen and interaction around real user goals, context, and accessibility.",
+              takeaways: [
+                "Solve user friction before polishing surface visuals.",
+                "Validate navigation flows early with low-fidelity wireframes.",
+              ],
+            },
+            {
+              id: "uiux-l2",
+              title: "Structuring User Flows & Wireframes",
+              type: "Exercise",
+              durationMinutes: 25,
+              summary:
+                "Translate product requirements into clear task flows and screen layouts.",
+              sectionHeading: "From User Story to Wireframe",
+              videoUrl: "",
+              bodyText:
+                "Mapping each decision point in a user flow uncovers edge cases early and keeps engineering handoffs clean.",
+              takeaways: [
+                "Map happy paths and empty/error states side by side.",
+              ],
+            },
+          ],
+        },
+      ],
+      pricing: { isPaid: true, currency: "NGN", amount: "15000" },
+      status: "draft",
+      createdAt: "2026-06-13T12:00:00.000Z",
+      updatedAt: tenMinsAgo,
+    },
+    {
+      ...baseDraft,
+      id: "social-media-content-planning-pro",
+      title: "Social Media Content Planning",
+      summary:
+        "Learn how to organise content ideas, define pillars, and scale multi-channel calendars.",
+      subjectArea: "Content & Social Media",
+      targetAudience: "Content strategists, brand managers, and creators",
+      levelShort: "Advanced",
+      learningOutcomes: [
+        "Architect repeatable multi-platform content pillars.",
+        "Design editorial workflows and creative briefs for teams.",
+        "Measure retention, saves, and attribution across social funnels.",
+      ],
+      pricing: { isPaid: true, currency: "NGN", amount: "25000" },
+      status: "in_review",
+      createdAt: "2026-06-15T15:30:00.000Z",
+      updatedAt: tenMinsAgo,
+    },
+    {
+      ...baseDraft,
+      id: "career-interview-readiness-archive",
+      title: "Portfolio & Case Study Storytelling",
+      summary:
+        "Structure measurable project outcomes and present clear case studies during hiring reviews.",
+      subjectArea: "Career Readiness",
+      targetAudience: "Jobseekers preparing portfolio case studies",
+      levelShort: "Beginner",
+      pricing: { isPaid: false, currency: "NGN", amount: "" },
+      status: "archived",
+      createdAt: "2026-06-10T10:00:00.000Z",
+      updatedAt: tenMinsAgo,
+    },
+  ];
+}
+
+function readRecruiterCoursesStore() {
+  const defaults = buildDefaultRecruiterCourses();
+  try {
+    const raw = localStorage.getItem(RECRUITER_COURSES_STORAGE_KEY);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return defaults;
+    return parsed;
+  } catch {
+    return defaults;
+  }
+}
+
+function writeRecruiterCoursesStore(courses) {
+  try {
+    localStorage.setItem(RECRUITER_COURSES_STORAGE_KEY, JSON.stringify(courses));
+  } catch {
+    // Ignore storage quota issues
+  }
+}
+
+export function getRecruiterManagedCourses() {
+  return readRecruiterCoursesStore();
+}
+
+export function getRecruiterCourseById(courseId) {
+  if (!courseId) return null;
+  const list = readRecruiterCoursesStore();
+  return list.find((c) => c.id === courseId) || null;
+}
+
+export function saveRecruiterCourse(draft, { status } = {}) {
+  const list = readRecruiterCoursesStore();
+  const nowIso = new Date().toISOString();
+  const user = getUser();
+  const partnerName =
+    user?.companyName ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    "Bejite Employer Partner";
+
+  const resolvedId = draft.id || slugifyCourseTitle(draft.title);
+  const nextStatus = status || draft.status || "draft";
+
+  const cleanedOutcomes = (draft.learningOutcomes || [])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  const normalizedRecord = {
+    ...createEmptyCourseDraft(),
+    ...draft,
+    id: resolvedId,
+    title: String(draft.title || "Untitled Course").trim(),
+    summary: String(draft.summary || "").trim(),
+    learningOutcomes:
+      cleanedOutcomes.length > 0
+        ? cleanedOutcomes
+        : ["Apply practical concepts covered in this course."],
+    partnerName,
+    status: nextStatus,
+    createdAt: draft.createdAt || nowIso,
+    updatedAt: nowIso,
+  };
+
+  const existingIndex = list.findIndex((c) => c.id === resolvedId);
+  let updatedList;
+  if (existingIndex >= 0) {
+    const copy = [...list];
+    copy.splice(existingIndex, 1);
+    updatedList = [normalizedRecord, ...copy];
+  } else {
+    updatedList = [normalizedRecord, ...list];
+  }
+
+  writeRecruiterCoursesStore(updatedList);
+  return normalizedRecord;
+}
+
+export function updateRecruiterCourseStatus(courseId, status) {
+  const list = readRecruiterCoursesStore();
+  const idx = list.findIndex((c) => c.id === courseId);
+  if (idx < 0) return null;
+  const updated = {
+    ...list[idx],
+    status,
+    updatedAt: new Date().toISOString(),
+  };
+  const nextList = [...list];
+  nextList[idx] = updated;
+  writeRecruiterCoursesStore(nextList);
+  return updated;
+}
+
+export function deleteRecruiterCourse(courseId) {
+  const list = readRecruiterCoursesStore();
+  const nextList = list.filter((c) => c.id !== courseId);
+  writeRecruiterCoursesStore(nextList);
+  return nextList;
+}
+
+function convertManagedCourseToCatalogCourse(managed) {
+  const levelShort = managed.levelShort || "Beginner";
+  const level = `${levelShort} Level`;
+  const category = managed.subjectArea || "Marketing & Growth";
+  const isPaid = Boolean(managed.pricing?.isPaid);
+  const formattedPrice =
+    isPaid && managed.pricing?.amount
+      ? `${managed.pricing.currency || "NGN"} ${Number(
+          managed.pricing.amount
+        ).toLocaleString()}`
+      : "Paid Course";
+
+  const rawModules =
+    managed.organisationType === "standalone"
+      ? [
+          {
+            id: `${managed.id}-standalone`,
+            title: "Course Lessons",
+            description: managed.summary || "Core instructional units.",
+            lessons: (managed.modules || []).flatMap((m) => m.lessons || []),
+          },
+        ]
+      : managed.modules || [];
+
+  const normalizedModules = rawModules.map((mod, mIdx) => {
+    const cleanTitle = String(mod.title || `Module ${mIdx + 1}`).trim();
+    const prefixedTitle = /^module\s+\d+/i.test(cleanTitle)
+      ? cleanTitle
+      : `Module ${mIdx + 1}: ${cleanTitle}`;
+    return {
+      id: mod.id || `${managed.id}-m${mIdx + 1}`,
+      code: `MODULE ${mIdx + 1}`,
+      title: prefixedTitle,
+      description: mod.description || "",
+      lessons: (mod.lessons || []).map((les, lIdx) => ({
+        id: les.id || `${managed.id}-l-${mIdx + 1}-${lIdx + 1}`,
+        title: les.title || `Lesson ${lIdx + 1}`,
+        type: les.type || "Reading",
+        durationMinutes: Number(les.durationMinutes) || 15,
+        summary: les.summary || "",
+        sectionHeading: les.sectionHeading || les.title || "Lesson Overview",
+        videoDuration: "05:00",
+        videoUrl: les.videoUrl || "",
+        bodyParagraphs: String(les.bodyText || les.summary || "")
+          .split(/\n+/)
+          .map((p) => p.trim())
+          .filter(Boolean),
+        takeaways:
+          Array.isArray(les.takeaways) && les.takeaways.length > 0
+            ? les.takeaways.filter(Boolean)
+            : ["Apply the key principles from this lesson in practice."],
+      })),
+    };
+  });
+
+  const totalMinutes = normalizedModules
+    .flatMap((m) => m.lessons)
+    .reduce((sum, l) => sum + (Number(l.durationMinutes) || 15), 0);
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  const totalDurationLabel =
+    hours > 0
+      ? `Approx. ${hours}h${mins > 0 ? ` ${mins}m` : ""} total content`
+      : `Approx. ${Math.max(15, totalMinutes)}m total content`;
+
+  return {
+    id: managed.id,
+    title: managed.title,
+    coverImage: managed.coverImage || "",
+    category,
+    categoryUpper: category.toUpperCase(),
+    level,
+    levelShort,
+    levelUpper: level.toUpperCase(),
+    accessLabel: isPaid ? "Paid Course" : "Free Course",
+    priceBadge: isPaid ? formattedPrice : "Free",
+    isPaid,
+    partnerId: "recruiter-academy-partner",
+    partnerName: managed.partnerName || "Digital Growth Academy",
+    partnerDescription:
+      "Employer & Skill Partner offering practical, employer-vetted courses on Bejite Academy.",
+    summary: managed.summary || "",
+    totalDurationLabel,
+    enrolledByDefault: false,
+    defaultCompletedLessonIds: [],
+    defaultCurrentLessonId: normalizedModules[0]?.lessons?.[0]?.id || null,
+    learningOutcomes: (managed.learningOutcomes || []).filter(Boolean),
+    modules: normalizedModules,
+    quiz: {
+      id: `${managed.id}-quiz`,
+      title: managed.quiz?.title || `${managed.title} Quiz`,
+      description:
+        managed.quiz?.description ||
+        "Check your understanding of the topics covered in this course.",
+      passMark: Number(managed.quiz?.passMark) || 80,
+      maxAttempts: Number(managed.quiz?.maxAttempts) || 2,
+      allowedAttempts: `${Number(managed.quiz?.maxAttempts) || 2} attempts`,
+      timeLimitMinutes: Number(managed.quiz?.timeLimitMinutes) || 15,
+      questions:
+        Array.isArray(managed.quiz?.questions) &&
+        managed.quiz.questions.length > 0
+          ? managed.quiz.questions
+          : [
+              {
+                id: `${managed.id}-q1`,
+                prompt: `Which statement best summarizes a core takeaway from ${managed.title}?`,
+                options: [
+                  (managed.learningOutcomes || [])[0] ||
+                    "Applying structured, audience-focused workflows.",
+                  "Skipping discovery and planning.",
+                  "Ignoring measurable outcomes.",
+                  "Working without clear objectives.",
+                ],
+                correctIndex: 0,
+              },
+            ],
+    },
+    deliverable: {
+      id: `${managed.id}-project`,
+      title: managed.project?.title || `${managed.title} Practical Brief`,
+      badge: "Portfolio Deliverable",
+      subtitle: "Submit your hands-on deliverable.",
+      instructions:
+        managed.project?.expectedDeliverable ||
+        "Submit your completed practical project link or file.",
+      projectBrief:
+        managed.project?.brief ||
+        managed.summary ||
+        "Complete the practical deliverable for this course.",
+      expectedDeliverable:
+        managed.project?.expectedDeliverable ||
+        "Completed project document, link, or archive.",
+      placeholderUrl: "https://docs.google.com/document/d/your-project/edit",
+      placeholderNotes:
+        "Attached completed project deliverable and executive summary.",
+      steps:
+        Array.isArray(managed.project?.steps) &&
+        managed.project.steps.length > 0
+          ? managed.project.steps.filter(Boolean)
+          : [
+              "Review the project brief and requirements carefully.",
+              "Prepare your practical deliverable and verify link permissions.",
+              "Submit your link or file with a concise summary.",
+            ],
+    },
+  };
+}
+
+function getCatalogCourses() {
+  const managedPublished = readRecruiterCoursesStore().filter(
+    (c) => c.status === "published"
+  );
+  const baseMap = new Map(DEFAULT_COURSES.map((c) => [c.id, c]));
+
+  const customPublished = [];
+  for (const managed of managedPublished) {
+    if (baseMap.has(managed.id)) {
+      // Preserve rich built-in course defaults while reflecting recruiter title/summary/level/pricing updates if edited
+      const existing = baseMap.get(managed.id);
+      const converted = convertManagedCourseToCatalogCourse(managed);
+      baseMap.set(managed.id, {
+        ...existing,
+        title: converted.title || existing.title,
+        summary: converted.summary || existing.summary,
+        coverImage: converted.coverImage || existing.coverImage,
+        level: converted.level,
+        levelShort: converted.levelShort,
+        levelUpper: converted.levelUpper,
+        isPaid: converted.isPaid,
+        accessLabel: converted.accessLabel,
+        priceBadge: converted.priceBadge,
+      });
+    } else {
+      customPublished.push(convertManagedCourseToCatalogCourse(managed));
+    }
+  }
+
+  return [...customPublished, ...Array.from(baseMap.values())];
+}

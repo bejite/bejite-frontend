@@ -8,11 +8,11 @@ import {
   ProjectBriefCard,
   ProjectSubmissionFormCard,
   ELearningSideCard,
-} from "../../components/elearning";
+} from "../../../components/elearning";
 import {
   getCourseById,
   submitCourseDeliverable,
-} from "../../services/elearningService";
+} from "../../../services/elearningService";
 
 export default function CourseProjectPage() {
   const { courseId } = useParams();
@@ -80,7 +80,7 @@ export default function CourseProjectPage() {
           status={bannerStatus}
           isSubmitted={isSubmitted}
           onCourseClick={() =>
-            navigate(`/e-learning/courses/${course.id}/progress`)
+            navigate(`/e-learning/jobseeker/courses/${course.id}/progress`)
           }
         />
 
@@ -113,7 +113,7 @@ export default function CourseProjectPage() {
               isSubmitted={isSubmitted}
               onSubmit={handleSubmit}
               onBackToProgress={() =>
-                navigate(`/e-learning/courses/${course.id}/progress`)
+                navigate(`/e-learning/jobseeker/courses/${course.id}/progress`)
               }
             />
           </div>
@@ -156,4 +156,5 @@ export default function CourseProjectPage() {
     </ELearningLayout>
   );
 }
+
 

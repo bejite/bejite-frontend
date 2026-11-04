@@ -1,5 +1,8 @@
-import { Route } from "react-router-dom";
+import { Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ProtectedRoute from "../../components/ProtectedRoute.jsx";
+import { getUser, mergeAuthUsers } from "../../utils/tokenManager.js";
+import { isRecruiterAccount } from "../../services/accountDelegationService.js";
 import {
   Recruitment,
   PostDetailPage,
@@ -24,6 +27,7 @@ import {
   MyLearningPage,
   ExploreCoursesPage,
   CourseDetailsPage,
+  CourseCheckoutPage,
   CoursePlayerPage,
   CourseProgressPage,
   CourseAssessmentPage,
@@ -36,6 +40,16 @@ const guard = (element, message, requiredRole = null) => (
     {element}
   </ProtectedRoute>
 );
+
+function ELearningIndexRedirect() {
+  const reduxUser = useSelector((state) => state.auth?.user);
+  const localUser = getUser();
+  const currentUser = mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
+  if (isRecruiterAccount(currentUser)) {
+    return <Navigate to="/e-learning/partner" replace />;
+  }
+  return <Navigate to="/e-learning/jobseeker" replace />;
+}
 
 export const socialRoutes = (
   <>
@@ -95,21 +109,66 @@ export const socialRoutes = (
       path="/notifications"
       element={guard(<Notifications />, "Please log in.")}
     />
+    {/* Base E-Learning Index Redirect (role-aware: recruiter -> /e-learning/partner, jobseeker -> /e-learning/jobseeker) */}
     <Route
       path="/e-learning"
+      element={guard(<ELearningIndexRedirect />, "Please log in to access E-Learning.")}
+    />
+
+    {/* Jobseeker E-Learning Dedicated Link Routes */}
+    <Route
+      path="/e-learning/jobseeker"
       element={guard(<ELearningDashboardPage />, "Please log in to access E-Learning.")}
     />
     <Route
-      path="/e-learning/my-learning"
+      path="/e-learning/jobseeker/my-learning"
       element={guard(<MyLearningPage />, "Please log in to access E-Learning.")}
     />
     <Route
-      path="/e-learning/explore"
+      path="/e-learning/jobseeker/explore"
       element={guard(<ExploreCoursesPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId"
+      element={guard(<CourseDetailsPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId/checkout"
+      element={guard(<CourseCheckoutPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId/learn"
+      element={guard(<CoursePlayerPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId/progress"
+      element={guard(<CourseProgressPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId/assessment"
+      element={guard(<CourseAssessmentPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/jobseeker/courses/:courseId/project"
+      element={guard(<CourseProjectPage />, "Please log in to access E-Learning.")}
+    />
+
+    {/* Jobseeker E-Learning Alias & Fallback Subroutes */}
+    <Route
+      path="/e-learning/my-learning"
+      element={<Navigate to="/e-learning/jobseeker/my-learning" replace />}
+    />
+    <Route
+      path="/e-learning/explore"
+      element={<Navigate to="/e-learning/jobseeker/explore" replace />}
     />
     <Route
       path="/e-learning/courses/:courseId"
       element={guard(<CourseDetailsPage />, "Please log in to access E-Learning.")}
+    />
+    <Route
+      path="/e-learning/courses/:courseId/checkout"
+      element={guard(<CourseCheckoutPage />, "Please log in to access E-Learning.")}
     />
     <Route
       path="/e-learning/courses/:courseId/learn"

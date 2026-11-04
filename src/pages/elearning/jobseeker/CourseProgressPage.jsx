@@ -16,11 +16,11 @@ import {
   CompletionCriterionCard,
   CurriculumModuleAccordion,
   ELearningSideCard,
-} from "../../components/elearning";
+} from "../../../components/elearning";
 import {
   getCourseById,
   setCurrentLesson,
-} from "../../services/elearningService";
+} from "../../../services/elearningService";
 
 export default function CourseProgressPage() {
   const { courseId } = useParams();
@@ -38,7 +38,7 @@ export default function CourseProgressPage() {
 
   const handleOpenLesson = (lesson) => {
     setCurrentLesson(course.id, lesson.id);
-    navigate(`/e-learning/courses/${course.id}/learn`);
+    navigate(`/e-learning/jobseeker/courses/${course.id}/learn`);
   };
 
   return (
@@ -48,7 +48,7 @@ export default function CourseProgressPage() {
         <div>
           <ELearningBackPill
             label="My Learning"
-            onClick={() => navigate("/e-learning/my-learning")}
+            onClick={() => navigate("/e-learning/jobseeker/my-learning")}
           />
         </div>
 
@@ -147,7 +147,7 @@ export default function CourseProgressPage() {
                       : "Continue Learning"
                   }
                   onAction={() =>
-                    navigate(`/e-learning/courses/${course.id}/learn`)
+                    navigate(`/e-learning/jobseeker/courses/${course.id}/learn`)
                   }
                 />
 
@@ -168,8 +168,8 @@ export default function CourseProgressPage() {
                     onAction={() =>
                       navigate(
                         criteria.quizSatisfied
-                          ? `/e-learning/courses/${course.id}/assessment?mode=review`
-                          : `/e-learning/courses/${course.id}/assessment`
+                          ? `/e-learning/jobseeker/courses/${course.id}/assessment?mode=review`
+                          : `/e-learning/jobseeker/courses/${course.id}/assessment`
                       )
                     }
                   />
@@ -194,7 +194,7 @@ export default function CourseProgressPage() {
                         : "Submit Deliverable"
                     }
                     onAction={() =>
-                      navigate(`/e-learning/courses/${course.id}/project`)
+                      navigate(`/e-learning/jobseeker/courses/${course.id}/project`)
                     }
                   />
                 )}
@@ -261,8 +261,8 @@ export default function CourseProgressPage() {
                     onClick={() =>
                       navigate(
                         quizState?.passed
-                          ? `/e-learning/courses/${course.id}/assessment?mode=review`
-                          : `/e-learning/courses/${course.id}/assessment`
+                          ? `/e-learning/jobseeker/courses/${course.id}/assessment?mode=review`
+                          : `/e-learning/jobseeker/courses/${course.id}/assessment`
                       )
                     }
                   >
@@ -327,7 +327,7 @@ export default function CourseProgressPage() {
                     fullWidth
                     leftIcon={FileText}
                     onClick={() =>
-                      navigate(`/e-learning/courses/${course.id}/project`)
+                      navigate(`/e-learning/jobseeker/courses/${course.id}/project`)
                     }
                   >
                     {deliverableState?.submitted
@@ -365,4 +365,5 @@ export default function CourseProgressPage() {
     </ELearningLayout>
   );
 }
+
 

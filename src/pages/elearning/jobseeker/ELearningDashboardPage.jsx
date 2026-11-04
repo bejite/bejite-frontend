@@ -8,10 +8,10 @@ import {
   ELearningSectionHeader,
   EnrolledCourseCard,
   ELearningButton,
-} from "../../components/elearning";
-import { getEnrolledCourses } from "../../services/elearningService";
-import { getUser, mergeAuthUsers } from "../../utils/tokenManager";
-import { formatDisplayPersonName } from "../../utils/personDisplayName";
+} from "../../../components/elearning";
+import { getEnrolledCourses } from "../../../services/elearningService";
+import { getUser, mergeAuthUsers } from "../../../utils/tokenManager";
+import { formatDisplayPersonName } from "../../../utils/personDisplayName";
 
 export default function ELearningDashboardPage() {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export default function ELearningDashboardPage() {
             title="Continue Learning"
             subtitle="Courses you are currently enrolled in with immediate next steps."
             actionLabel="View all my courses"
-            onActionClick={() => navigate("/e-learning/my-learning")}
+            onActionClick={() => navigate("/e-learning/jobseeker/my-learning")}
           />
 
           {enrolledCourses.length === 0 ? (
@@ -59,7 +59,7 @@ export default function ELearningDashboardPage() {
               </p>
               <ELearningButton
                 variant="primary"
-                onClick={() => navigate("/e-learning/explore")}
+                onClick={() => navigate("/e-learning/jobseeker/explore")}
               >
                 Explore Courses
               </ELearningButton>
@@ -72,13 +72,13 @@ export default function ELearningDashboardPage() {
                   course={course}
                   progressMode="lessons"
                   onContinue={(c) =>
-                    navigate(`/e-learning/courses/${c.id}/learn`)
+                    navigate(`/e-learning/jobseeker/courses/${c.id}/learn`)
                   }
                   onViewDetails={(c) =>
-                    navigate(`/e-learning/courses/${c.id}`)
+                    navigate(`/e-learning/jobseeker/courses/${c.id}`)
                   }
                   onTrackProgress={(c) =>
-                    navigate(`/e-learning/courses/${c.id}/progress`)
+                    navigate(`/e-learning/jobseeker/courses/${c.id}/progress`)
                   }
                 />
               ))}

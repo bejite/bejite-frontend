@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Route, Navigate, useParams } from "react-router-dom";
 import ProtectedRoute from "../../components/ProtectedRoute.jsx";
 import {
   CandidateSearchPage,
@@ -12,7 +12,20 @@ import {
   RepostJob,
   EditJob,
   RecruitmentManagement,
+  ELearningManagementPage,
+  CourseBuilderPage,
+  PartnerCourseDetailsPage,
 } from "../lazyPages.js";
+
+const LegacyCourseEditRedirect = () => {
+  const { courseId } = useParams();
+  return <Navigate to={`/e-learning/partner/${courseId}/edit`} replace />;
+};
+
+const LegacyCourseDetailsRedirect = () => {
+  const { courseId } = useParams();
+  return <Navigate to={`/e-learning/partner/${courseId}`} replace />;
+};
 
 const guard = (element, message, requiredRole = "recruiter") => (
   <ProtectedRoute
@@ -45,6 +58,59 @@ export const employerRoutes = (
           <RecruitmentManagement />,
           "Your session has expired. Please log in again.",
         )}
+      />
+      {/* Partner E-Learning Routes */}
+      <Route
+        path="/e-learning/partner"
+        element={guard(
+          <ELearningManagementPage />,
+          "Please log in as a recruiter.",
+        )}
+      />
+      <Route
+        path="/e-learning/partner/create"
+        element={guard(
+          <CourseBuilderPage />,
+          "Please log in as a recruiter.",
+        )}
+      />
+      <Route
+        path="/e-learning/partner/:courseId/edit"
+        element={guard(
+          <CourseBuilderPage />,
+          "Please log in as a recruiter.",
+        )}
+      />
+      <Route
+        path="/e-learning/partner/:courseId"
+        element={guard(
+          <PartnerCourseDetailsPage />,
+          "Please log in as a recruiter.",
+        )}
+      />
+      <Route
+        path="/e-learning/partner/courses/:courseId"
+        element={guard(
+          <PartnerCourseDetailsPage />,
+          "Please log in as a recruiter.",
+        )}
+      />
+      {/* Legacy Redirects for Partner E-Learning */}
+      <Route
+        path="/employer/e-learning"
+        element={<Navigate to="/e-learning/partner" replace />}
+      />
+      <Route
+        path="/employer/e-learning/create"
+        element={<Navigate to="/e-learning/partner/create" replace />}
+      />
+      <Route
+        path="/employer/e-learning/:courseId/edit"
+        element={<LegacyCourseEditRedirect />}
+      />
+      <Route
+        path="/employer/e-learning/:courseId"
+        element={<LegacyCourseDetailsRedirect />}
       />
       <Route
         path="/employer/create-job"

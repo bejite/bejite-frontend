@@ -33,16 +33,23 @@ export default function ELearningLayout({
         <NewsFeedHeader />
       </div>
 
-      {/* Scrollable E-Learning Workspace */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-14">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-start gap-6">
-            <ELearningSidebar activeId={activeNavId} />
+      {/* Main Layout Area: fixed desktop left sidebar + scrollable body content */}
+      <div className="flex-1 min-h-0 w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-hidden flex flex-col lg:flex-row items-stretch lg:items-start gap-6">
+        {/* Desktop Fixed Left Sidebar */}
+        <aside className="hidden lg:block w-[238px] shrink-0 h-full overflow-y-auto no-scrollbar">
+          <ELearningSidebar activeId={activeNavId} mode="desktop" />
+        </aside>
 
-            <main className={`flex-1 min-w-0 ${contentClassName}`}>
-              {children}
-            </main>
+        {/* Scrollable Body Content */}
+        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden nfl-scroll scroll-smooth pr-1 pb-16">
+          {/* Mobile Pill Switcher */}
+          <div className="lg:hidden mb-5">
+            <ELearningSidebar activeId={activeNavId} mode="mobile" />
           </div>
+
+          <main className={`min-w-0 ${contentClassName}`}>
+            {children}
+          </main>
         </div>
       </div>
     </div>
