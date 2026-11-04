@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_KEY, API_URL } from "../config.mjs";
+import { API_URL } from "../config.mjs";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -40,6 +40,12 @@ axiosInstance.interceptors.request.use(
   },
 );
 
+function isNetworkOrServerRefreshFailure(err) {
+  if (!err?.response) return true; // timeout, offline, CORS, aborted
+  const status = err.response.status;
+  return status >= 500;
+}
+
 // Response interceptor - handle token refresh on 401 errors
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -60,22 +66,43 @@ axiosInstance.interceptors.response.use(
         refreshAccessToken,
         restoreUserFromServer,
         dispatchHydrateAuth,
+        getAccessToken,
+        hasValidAccessToken,
+        getRefreshToken,
       } = await import("./tokenManager.js");
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-
-        if (!refreshToken) {
+        if (!getRefreshToken() && !hasValidAccessToken()) {
           return Promise.reject(error);
         }
 
         const { accessToken: newAccessToken } = await refreshAccessToken();
-        await restoreUserFromServer();
-        await dispatchHydrateAuth();
+        const tokenToUse = newAccessToken || getAccessToken();
+        if (!tokenToUse) {
+          throw new Error("Refresh produced no access token");
+        }
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        try {
+          await restoreUserFromServer();
+          await dispatchHydrateAuth();
+        } catch {
+          /* profile restore is best-effort after a successful refresh */
+        }
+
+        originalRequest.headers.Authorization = `Bearer ${tokenToUse}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
+        // Network / 5xx: keep the session so the user is not kicked for a blip.
+        if (isNetworkOrServerRefreshFailure(refreshError)) {
+          return Promise.reject(refreshError);
+        }
+
+        // Another tab may have refreshed while we failed — retry once with storage tokens.
+        if (hasValidAccessToken()) {
+          originalRequest.headers.Authorization = `Bearer ${getAccessToken()}`;
+          return axiosInstance(originalRequest);
+        }
+
         clearAuthData();
         sessionStorage.setItem("sessionExpired", "true");
         if (window.location.pathname !== "/") {

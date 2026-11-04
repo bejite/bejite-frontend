@@ -13,6 +13,7 @@ import AuthBootstrap from "./components/AuthBootstrap";
 import PushNotificationBootstrap from "./components/PushNotificationBootstrap";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
+import { AdminInboxProvider } from "./context/AdminInboxContext.jsx";
 import { getDefaultAdminPath } from "./constants/adminPermissions";
 import Loader from "./components/ui/Loader";
 import { AdminInboxProvider } from "./context/AdminInboxProvider";
