@@ -3,35 +3,15 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   ArrowLeft,
-  Search,
-  Shield,
-  ShieldCheck,
-  SlidersHorizontal,
-  UserCheck,
-  UserMinus,
-  PauseCircle,
-  PlayCircle,
-  Pencil,
   Check,
   X,
-  Clock,
-  Calendar,
-  Building2,
-  Briefcase,
-  FileText,
-  GitBranch,
-  MessageSquare,
-  Sparkles,
-  Lock,
-  History,
-  RefreshCw,
   AlertCircle,
+  ShieldCheck,
+  UserMinus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NewsFeedLayout from "../components/layout/NewsFeedLayout";
-import DisplayNameWithBadge from "../components/DisplayNameWithBadge";
 import { ConfirmModal } from "../components/modal/confirmBadgeModal";
-import Loader from "../components/ui/Loader";
 import { fetchRecruiters } from "../services/recruitersApi";
 import {
   DELEGATION_PERMISSIONS,
@@ -47,25 +27,11 @@ import {
   isRecruiterAccount,
 } from "../services/accountDelegationService";
 import { getUser, mergeAuthUsers } from "../utils/tokenManager";
-import { profilePhotoUrl } from "../utils/profilePhotoUrl";
-
-const PERMISSION_ICONS = {
-  jobs_manage: Briefcase,
-  applications_review: FileText,
-  pipeline_manage: GitBranch,
-  candidate_outreach: UserCheck,
-  messaging_respond: MessageSquare,
-  content_manage: Sparkles,
-};
-
-function getInitials(name) {
-  if (!name) return "R";
-  const parts = String(name).trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return String(name).slice(0, 2).toUpperCase();
-}
+import RecruiterPickerStep from "../components/assign-recruiter/RecruiterPickerStep";
+import AssignmentTypeStep from "../components/assign-recruiter/AssignmentTypeStep";
+import AssignmentDurationStep from "../components/assign-recruiter/AssignmentDurationStep";
+import AssignedRecruiterCard from "../components/assign-recruiter/AssignedRecruiterCard";
+import DelegationActivityLog from "../components/assign-recruiter/DelegationActivityLog";
 
 function getTomorrowInputDate() {
   const d = new Date();
@@ -84,53 +50,6 @@ function toInputDateValue(isoString) {
   const month = String(parsed.getMonth() + 1).padStart(2, "0");
   const day = String(parsed.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function formatShortDate(isoString) {
-  if (!isoString) return null;
-  const parsed = new Date(isoString);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatDateTime(isoString) {
-  if (!isoString) return "";
-  const parsed = new Date(isoString);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function RecruiterAvatar({ recruiter, sizeClass = "w-11 h-11", textClass = "text-sm" }) {
-  const [failed, setFailed] = useState(false);
-  const photoSrc = profilePhotoUrl(recruiter?.profilePhoto);
-
-  if (photoSrc && !failed) {
-    return (
-      <img
-        src={photoSrc}
-        alt={recruiter?.name || "Recruiter"}
-        onError={() => setFailed(true)}
-        className={`${sizeClass} rounded-full object-cover border border-gray-200 shrink-0`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClass} rounded-full bg-gradient-to-br from-[#1A3E32] to-[#2d6a54] text-white font-bold ${textClass} flex items-center justify-center shrink-0`}
-    >
-      {getInitials(recruiter?.name)}
-    </div>
-  );
 }
 
 export default function AssignRecruiterSettings() {
@@ -487,7 +406,7 @@ export default function AssignRecruiterSettings() {
   return (
     <NewsFeedLayout classes={false} showSidebars={false}>
       <div className="h-full min-h-0 w-full max-w-screen-xl mx-auto flex flex-col">
-        {/* Top Banner */}
+        {/* Top Banner (Description Removed) */}
         <div className="bg-[#1A3E32] px-4 sm:px-6 py-4 flex-shrink-0">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -502,9 +421,6 @@ export default function AssignRecruiterSettings() {
               <h1 className="text-white font-bold text-xl">
                 Assign Account to a Recruiter
               </h1>
-              <p className="text-green-200 text-xs sm:text-sm mt-0.5">
-                Delegate partial or full hiring & account operations to a trusted recruiter
-              </p>
             </div>
 
             <div className="self-start sm:self-center inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-medium text-white shrink-0">
@@ -523,25 +439,6 @@ export default function AssignRecruiterSettings() {
         {/* Scrollable Content */}
         <div className="flex-1 min-h-0 overflow-y-auto nfl-scroll scroll-smooth">
           <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-12">
-            {/* Ownership & Security Guarantee Banner */}
-            <div className="bg-[#EAF5E9]/70 border border-[#1A3E32]/15 rounded-2xl p-4 flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-[#1A3E32] text-white flex items-center justify-center shrink-0 mt-0.5">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-[#1A3E32]">
-                  You always retain primary ownership of your account
-                </p>
-                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                  Assigned recruiters act as authorized delegates on your behalf. Even under{" "}
-                  <span className="font-semibold text-gray-800">Full Assignment</span>,
-                  critical owner controls—including changing your password, 2FA, payment
-                  methods, or deleting your account—remain strictly locked to you. You can
-                  pause, adjust permissions, or revoke access instantly.
-                </p>
-              </div>
-            </div>
-
             {/* Assigned Recruiters List */}
             {!delegationsLoading && delegations.length > 0 && (
               <section className="space-y-2.5">
@@ -561,196 +458,18 @@ export default function AssignRecruiterSettings() {
                 </div>
 
                 <div className="space-y-3">
-                  {delegations.map((delegation) => {
-                    const recruiter = delegation.recruiter || {};
-                    const effectiveStatus =
-                      computeEffectiveDelegationStatus(delegation);
-                    const isFull = delegation.accessLevel === "full";
-                    const expiryFormatted = formatShortDate(delegation.expiresAt);
-                    const isEditingThis = editingDelegationId === delegation.id;
-                    const isBusy = actionBusyId === delegation.id;
-
-                    return (
-                      <div
-                        key={delegation.id}
-                        className={`bg-white rounded-2xl border p-4 sm:p-5 transition-all ${
-                          isEditingThis
-                            ? "border-[#16730F] ring-2 ring-[#16730F]/15"
-                            : "border-gray-100 hover:border-gray-200"
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                          <div className="flex items-start gap-3.5 min-w-0">
-                            <RecruiterAvatar recruiter={recruiter} />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <DisplayNameWithBadge
-                                  user={recruiter}
-                                  fallback={recruiter.name || "Recruiter"}
-                                  badgeSize="xs"
-                                  className="font-bold text-sm sm:text-base text-gray-900"
-                                />
-                                {recruiter.isCorporate && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                    Corporate
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-gray-500 mt-0.5">
-                                {recruiter.jobTitle && (
-                                  <span>{recruiter.jobTitle}</span>
-                                )}
-                                {recruiter.companyName &&
-                                  recruiter.companyName !== recruiter.jobTitle && (
-                                    <span className="inline-flex items-center gap-1 text-gray-400">
-                                      <Building2 className="w-3 h-3 shrink-0" />
-                                      {recruiter.companyName}
-                                    </span>
-                                  )}
-                                {recruiter.email && (
-                                  <span className="text-gray-400 truncate">
-                                    · {recruiter.email}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Badges Row */}
-                              <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                                <span
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                    isFull
-                                      ? "bg-[#1A3E32] text-white"
-                                      : "bg-[#EAF5E9] text-[#16730F] border border-[#16730F]/20"
-                                  }`}
-                                >
-                                  {isFull ? (
-                                    <ShieldCheck className="w-3.5 h-3.5" />
-                                  ) : (
-                                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                                  )}
-                                  {isFull ? "Full Assignment" : "Partial Assignment"}
-                                </span>
-
-                                <span
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    effectiveStatus === "active"
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                      : effectiveStatus === "paused"
-                                        ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                        : "bg-gray-100 text-gray-600 border border-gray-200"
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      effectiveStatus === "active"
-                                        ? "bg-emerald-500"
-                                        : effectiveStatus === "paused"
-                                          ? "bg-amber-500"
-                                          : "bg-gray-400"
-                                    }`}
-                                  />
-                                  {effectiveStatus === "active"
-                                    ? "Active"
-                                    : effectiveStatus === "paused"
-                                      ? "Paused"
-                                      : "Expired"}
-                                </span>
-
-                                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                                  <Clock className="w-3.5 h-3.5 text-gray-400" />
-                                  {expiryFormatted
-                                    ? effectiveStatus === "expired"
-                                      ? `Expired ${expiryFormatted}`
-                                      : `Until ${expiryFormatted}`
-                                    : "Until revoked"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => populateFormFromDelegation(delegation)}
-                              disabled={isBusy}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-[#1A3E32]/40 hover:bg-gray-50 text-xs font-semibold text-gray-700 transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </button>
-
-                            {effectiveStatus !== "expired" && (
-                              <button
-                                type="button"
-                                onClick={() => handleTogglePause(delegation)}
-                                disabled={isBusy}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-amber-50/60 hover:border-amber-200 text-xs font-semibold text-gray-700 transition-colors cursor-pointer disabled:opacity-50"
-                              >
-                                {effectiveStatus === "paused" ? (
-                                  <>
-                                    <PlayCircle className="w-3.5 h-3.5 text-[#16730F]" />
-                                    Resume
-                                  </>
-                                ) : (
-                                  <>
-                                    <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
-                                    Pause
-                                  </>
-                                )}
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => setRevokeTarget(delegation)}
-                              disabled={isBusy}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-100 bg-red-50/50 hover:bg-red-50 text-xs font-semibold text-red-600 transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                              <UserMinus className="w-3.5 h-3.5" />
-                              Revoke
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Granted Scope Pills */}
-                        <div className="mt-3.5 pt-3 border-t border-gray-100">
-                          {isFull ? (
-                            <p className="text-xs text-gray-600">
-                              <span className="font-semibold text-gray-800">
-                                Scope:
-                              </span>{" "}
-                              Full operational access across Job Postings, Applications,
-                              Hiring Pipelines, Candidate Outreach, Messaging, and
-                              Pitches/Posts.
-                            </p>
-                          ) : (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="text-xs font-semibold text-gray-500 mr-1">
-                                Permissions:
-                              </span>
-                              {(delegation.permissions || []).map((permId) => (
-                                <span
-                                  key={permId}
-                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-gray-100 text-gray-700 text-[11px] font-medium"
-                                >
-                                  <Check className="w-3 h-3 text-[#16730F]" />
-                                  {permissionLabelMap[permId] || permId}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {delegation.note && (
-                            <p className="text-xs text-gray-500 italic mt-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
-                              "{delegation.note}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {delegations.map((delegation) => (
+                    <AssignedRecruiterCard
+                      key={delegation.id}
+                      delegation={delegation}
+                      isEditingThis={editingDelegationId === delegation.id}
+                      isBusy={actionBusyId === delegation.id}
+                      onEdit={populateFormFromDelegation}
+                      onTogglePause={handleTogglePause}
+                      onRevoke={setRevokeTarget}
+                      permissionLabelMap={permissionLabelMap}
+                    />
+                  ))}
                 </div>
               </section>
             )}
@@ -761,26 +480,19 @@ export default function AssignRecruiterSettings() {
               onSubmit={handleFormSubmit}
               className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden"
             >
-              {/* Form Header */}
+              {/* Form Header (Description Removed) */}
               <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-gray-900">
-                      {editingDelegationId
-                        ? "Update Recruiter Assignment"
-                        : "New Recruiter Assignment"}
-                    </h2>
-                    {editingDelegationId && (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF5E9] text-[#16730F]">
-                        Editing
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-gray-900">
                     {editingDelegationId
-                      ? "Adjust between partial or full assignment, update permissions, or change expiration."
-                      : "Search for a verified or registered recruiter on Bejite and configure their access level."}
-                  </p>
+                      ? "Update Recruiter Assignment"
+                      : "New Recruiter Assignment"}
+                  </h2>
+                  {editingDelegationId && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF5E9] text-[#16730F]">
+                      Editing
+                    </span>
+                  )}
                 </div>
 
                 {editingDelegationId && (
@@ -796,524 +508,45 @@ export default function AssignRecruiterSettings() {
               </div>
 
               <div className="p-5 sm:p-6 space-y-7">
-                {/* STEP 1: Select Recruiter */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-6 h-6 rounded-full bg-[#1A3E32] text-white text-xs font-bold flex items-center justify-center">
-                        1
-                      </span>
-                      <h3 className="text-sm font-bold text-gray-900">
-                        Select Recruiter
-                      </h3>
-                    </div>
+                {/* STEP 1: Select Recruiter Component */}
+                <RecruiterPickerStep
+                  selectedRecruiter={selectedRecruiter}
+                  isPickerOpen={isPickerOpen}
+                  editingDelegationId={editingDelegationId}
+                  onOpenPicker={() => setIsPickerOpen(true)}
+                  onClosePicker={() => setIsPickerOpen(false)}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  recruiters={recruiters}
+                  recruitersLoading={recruitersLoading}
+                  recruitersError={recruitersError}
+                  onRetry={() => loadRecruiterDirectory(searchQuery)}
+                  onSelectRecruiter={handleSelectRecruiter}
+                  assignedByRecruiterId={assignedByRecruiterId}
+                />
 
-                    {selectedRecruiter && !isPickerOpen && !editingDelegationId && (
-                      <button
-                        type="button"
-                        onClick={() => setIsPickerOpen(true)}
-                        className="text-xs font-semibold text-[#16730F] hover:underline cursor-pointer"
-                      >
-                        Change recruiter
-                      </button>
-                    )}
-                  </div>
+                {/* STEP 2: Assignment Type & Permissions Component */}
+                <AssignmentTypeStep
+                  accessLevel={accessLevel}
+                  onAccessLevelChange={setAccessLevel}
+                  selectedPermissions={selectedPermissions}
+                  onTogglePermission={togglePermission}
+                  onApplyPreset={applyPreset}
+                  permissions={DELEGATION_PERMISSIONS}
+                  presets={DELEGATION_PRESETS}
+                />
 
-                  {/* Selected Recruiter Card */}
-                  {selectedRecruiter && !isPickerOpen ? (
-                    <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border-2 border-[#16730F] bg-[#EAF5E9]/40">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <RecruiterAvatar recruiter={selectedRecruiter} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <DisplayNameWithBadge
-                              user={selectedRecruiter}
-                              fallback={selectedRecruiter.name}
-                              badgeSize="xs"
-                              className="font-bold text-sm text-gray-900"
-                            />
-                            {selectedRecruiter.isCorporate && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                Corporate
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-600 truncate mt-0.5">
-                            {[
-                              selectedRecruiter.jobTitle,
-                              selectedRecruiter.companyName &&
-                              selectedRecruiter.companyName !==
-                                selectedRecruiter.jobTitle
-                                ? selectedRecruiter.companyName
-                                : null,
-                              selectedRecruiter.email,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#16730F] text-white text-xs font-semibold shrink-0">
-                        <Check className="w-3.5 h-3.5" />
-                        Selected
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5">
-                      {/* Search Input */}
-                      <div className="relative">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search by recruiter name, email, role, or company..."
-                          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/15 transition-all"
-                        />
-                        {searchQuery && (
-                          <button
-                            type="button"
-                            onClick={() => setSearchQuery("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                            aria-label="Clear search"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Directory Results */}
-                      <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50/40">
-                        {recruitersLoading ? (
-                          <div className="py-8">
-                            <Loader
-                              fullscreen={false}
-                              size="sm"
-                              description="Loading recruiters..."
-                            />
-                          </div>
-                        ) : recruitersError ? (
-                          <div className="p-6 text-center space-y-2.5">
-                            <p className="text-sm font-medium text-red-600">
-                              {recruitersError}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => loadRecruiterDirectory(searchQuery)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1A3E32] text-white text-xs font-semibold hover:bg-[#153329] transition-colors cursor-pointer"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5" />
-                              Try Again
-                            </button>
-                          </div>
-                        ) : recruiters.length === 0 ? (
-                          <div className="p-6 text-center">
-                            <p className="text-sm font-semibold text-gray-700">
-                              No matching recruiters found
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {searchQuery.trim()
-                                ? `No recruiter matched "${searchQuery}". Try another name, company, or email.`
-                                : "No discoverable recruiters are available right now."}
-                            </p>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="px-3.5 py-2 bg-white border-b border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-                              <span>
-                                {recruiters.length}{" "}
-                                {recruiters.length === 1
-                                  ? "recruiter"
-                                  : "recruiters"}{" "}
-                                available
-                              </span>
-                              {selectedRecruiter && (
-                                <button
-                                  type="button"
-                                  onClick={() => setIsPickerOpen(false)}
-                                  className="font-semibold text-[#16730F] hover:underline cursor-pointer"
-                                >
-                                  Keep {selectedRecruiter.name}
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="max-h-68 overflow-y-auto divide-y divide-gray-100 bg-white">
-                              {recruiters.map((recruiter) => {
-                                const recKey = String(recruiter.id || "")
-                                  .trim()
-                                  .toLowerCase();
-                                const existing = recKey
-                                  ? assignedByRecruiterId.get(recKey)
-                                  : null;
-
-                                return (
-                                  <div
-                                    key={recruiter.id}
-                                    onClick={() => handleSelectRecruiter(recruiter)}
-                                    className="flex items-center justify-between gap-3 px-3.5 py-3 hover:bg-[#EAF5E9]/40 transition-colors cursor-pointer"
-                                  >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <RecruiterAvatar
-                                        recruiter={recruiter}
-                                        sizeClass="w-10 h-10"
-                                        textClass="text-xs"
-                                      />
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <DisplayNameWithBadge
-                                            user={recruiter}
-                                            fallback={recruiter.name}
-                                            badgeSize="xs"
-                                            className="font-semibold text-sm text-gray-900"
-                                          />
-                                          {recruiter.isCorporate && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                              Corporate
-                                            </span>
-                                          )}
-                                          {existing && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                              Assigned
-                                            </span>
-                                          )}
-                                        </div>
-                                        <p className="text-xs text-gray-500 truncate mt-0.5">
-                                          {[
-                                            recruiter.jobTitle,
-                                            recruiter.companyName &&
-                                            recruiter.companyName !==
-                                              recruiter.jobTitle
-                                              ? recruiter.companyName
-                                              : null,
-                                          ]
-                                            .filter(Boolean)
-                                            .join(" · ")}
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelectRecruiter(recruiter);
-                                      }}
-                                      className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-[#1A3E32] hover:text-white text-gray-700 text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-                                    >
-                                      {existing ? "Edit Access" : "Select"}
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* STEP 2: Assignment Level (Partial vs Full) */}
-                <div className="space-y-4 pt-2 border-t border-gray-100">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-6 h-6 rounded-full bg-[#1A3E32] text-white text-xs font-bold flex items-center justify-center">
-                      2
-                    </span>
-                    <h3 className="text-sm font-bold text-gray-900">
-                      Choose Assignment Type
-                    </h3>
-                  </div>
-
-                  {/* Partial vs Full Radio Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {/* Partial Assignment Card */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAccessLevel("partial");
-                        setFormError("");
-                      }}
-                      className={`text-left p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                        accessLevel === "partial"
-                          ? "border-[#16730F] bg-[#EAF5E9]/45 shadow-xs"
-                          : "border-gray-200 bg-white hover:border-gray-300"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                              accessLevel === "partial"
-                                ? "bg-[#16730F] text-white"
-                                : "bg-gray-100 text-[#1A3E32]"
-                            }`}
-                          >
-                            <SlidersHorizontal className="w-4 h-4" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#1A3E32]/10 text-[#1A3E32]">
-                              Recommended
-                            </span>
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                accessLevel === "partial"
-                                  ? "border-[#16730F] bg-[#16730F]"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              {accessLevel === "partial" && (
-                                <Check className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="font-bold text-gray-900 text-sm mt-3">
-                          Partial Assignment
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                          Choose exact capabilities—such as screening applications,
-                          managing pipeline stages, or sourcing candidates.
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] font-semibold text-[#16730F] mt-3 pt-2.5 border-t border-gray-200/70">
-                        Granular module-by-module control
-                      </p>
-                    </button>
-
-                    {/* Full Assignment Card */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAccessLevel("full");
-                        setFormError("");
-                      }}
-                      className={`text-left p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                        accessLevel === "full"
-                          ? "border-[#1A3E32] bg-[#1A3E32]/[0.04] shadow-xs"
-                          : "border-gray-200 bg-white hover:border-gray-300"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                              accessLevel === "full"
-                                ? "bg-[#1A3E32] text-white"
-                                : "bg-gray-100 text-[#1A3E32]"
-                            }`}
-                          >
-                            <ShieldCheck className="w-4 h-4" />
-                          </div>
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              accessLevel === "full"
-                                ? "border-[#1A3E32] bg-[#1A3E32]"
-                                : "border-gray-300"
-                            }`}
-                          >
-                            {accessLevel === "full" && (
-                              <Check className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                        </div>
-
-                        <p className="font-bold text-gray-900 text-sm mt-3">
-                          Full Assignment
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                          Authorize a dedicated recruiter to operate your entire
-                          hiring workflow, messaging, jobs, and pitches end-to-end.
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] font-semibold text-[#1A3E32] mt-3 pt-2.5 border-t border-gray-200/70">
-                        All 6 operational modules · Owner security locked
-                      </p>
-                    </button>
-                  </div>
-
-                  {/* Scope Configuration Panel */}
-                  {accessLevel === "partial" ? (
-                    <div className="rounded-2xl border border-gray-200 p-4 space-y-3.5 bg-gray-50/40">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900">
-                            Select Allowed Permissions
-                          </p>
-                          <p className="text-[11px] text-gray-500">
-                            {selectedPermissions.length} of{" "}
-                            {DELEGATION_PERMISSIONS.length} modules enabled
-                          </p>
-                        </div>
-
-                        {/* Quick Presets */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {DELEGATION_PRESETS.map((preset) => (
-                            <button
-                              key={preset.id}
-                              type="button"
-                              onClick={() => applyPreset(preset.permissions)}
-                              className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 hover:border-[#16730F] text-[11px] font-medium text-gray-700 transition-colors cursor-pointer"
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {DELEGATION_PERMISSIONS.map((perm) => {
-                          const checked = selectedPermissions.includes(perm.id);
-                          const PermIcon = PERMISSION_ICONS[perm.id] || Shield;
-
-                          return (
-                            <button
-                              key={perm.id}
-                              type="button"
-                              onClick={() => togglePermission(perm.id)}
-                              className={`text-left p-3 rounded-xl border transition-all flex items-start gap-3 cursor-pointer ${
-                                checked
-                                  ? "bg-white border-[#16730F] shadow-2xs"
-                                  : "bg-white/70 border-gray-200 hover:border-gray-300"
-                              }`}
-                            >
-                              <div
-                                className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                                  checked
-                                    ? "bg-[#16730F] border-[#16730F] text-white"
-                                    : "border-gray-300 bg-white"
-                                }`}
-                              >
-                                {checked && <Check className="w-3.5 h-3.5" />}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-1.5">
-                                  <PermIcon className="w-3.5 h-3.5 text-[#1A3E32] shrink-0" />
-                                  <p className="text-xs font-bold text-gray-900">
-                                    {perm.label}
-                                  </p>
-                                </div>
-                                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                                  {perm.description}
-                                </p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-[#1A3E32]/20 bg-[#1A3E32]/[0.03] p-4 space-y-3">
-                      <p className="text-xs font-bold text-[#1A3E32]">
-                        Included in Full Assignment:
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {DELEGATION_PERMISSIONS.map((perm) => (
-                          <div
-                            key={perm.id}
-                            className="flex items-center gap-2 text-xs text-gray-700 bg-white rounded-xl px-3 py-2 border border-gray-100"
-                          >
-                            <Check className="w-3.5 h-3.5 text-[#16730F] shrink-0" />
-                            <span className="font-medium">{perm.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-start gap-2 pt-1 text-[11px] text-gray-600">
-                        <Lock className="w-3.5 h-3.5 text-[#1A3E32] shrink-0 mt-0.5" />
-                        <span>
-                          Login password, 2FA settings, saved payment cards, and
-                          account deletion remain strictly restricted to you.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* STEP 3: Duration & Handover Note */}
-                <div className="space-y-4 pt-2 border-t border-gray-100">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-6 h-6 rounded-full bg-[#1A3E32] text-white text-xs font-bold flex items-center justify-center">
-                      3
-                    </span>
-                    <h3 className="text-sm font-bold text-gray-900">
-                      Access Duration & Handover Note
-                    </h3>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-gray-700">
-                      How long should this assignment stay active?
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {DELEGATION_DURATIONS.map((option) => {
-                        const active = durationType === option.id;
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => {
-                              setDurationType(option.id);
-                              setFormError("");
-                            }}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                              active
-                                ? "bg-[#1A3E32] text-white border-[#1A3E32]"
-                                : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {durationType === "custom" && (
-                      <div className="pt-2 max-w-xs">
-                        <label className="text-xs font-medium text-gray-600 flex items-center gap-1.5 mb-1">
-                          <Calendar className="w-3.5 h-3.5 text-[#1A3E32]" />
-                          Automatic expiration date
-                        </label>
-                        <input
-                          type="date"
-                          min={getTomorrowInputDate()}
-                          value={customExpiresAt}
-                          onChange={(e) => {
-                            setCustomExpiresAt(e.target.value);
-                            setFormError("");
-                          }}
-                          className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/15"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-gray-700">
-                        Handover / Scope Note{" "}
-                        <span className="font-normal text-gray-400">
-                          (Optional)
-                        </span>
-                      </label>
-                      <span className="text-[11px] text-gray-400">
-                        {note.length}/240
-                      </span>
-                    </div>
-                    <textarea
-                      rows={2}
-                      maxLength={240}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="e.g. Manage Q4 engineering job postings, screen incoming CVs, and schedule shortlist interviews."
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/15 resize-none"
-                    />
-                  </div>
-                </div>
+                {/* STEP 3: Duration & Handover Note Component */}
+                <AssignmentDurationStep
+                  durationType={durationType}
+                  onDurationTypeChange={setDurationType}
+                  customExpiresAt={customExpiresAt}
+                  onCustomExpiresAtChange={setCustomExpiresAt}
+                  minCustomDate={getTomorrowInputDate()}
+                  note={note}
+                  onNoteChange={setNote}
+                  durations={DELEGATION_DURATIONS}
+                />
 
                 {/* Error Message */}
                 {formError && (
@@ -1341,42 +574,17 @@ export default function AssignRecruiterSettings() {
                     {submitting
                       ? "Saving Assignment..."
                       : editingDelegationId
-                        ? "Save Access Changes"
-                        : accessLevel === "full"
-                          ? "Assign Full Account Access"
-                          : "Assign Partial Account Access"}
+                      ? "Save Access Changes"
+                      : accessLevel === "full"
+                      ? "Assign Full Account Access"
+                      : "Assign Partial Account Access"}
                   </button>
                 </div>
               </div>
             </form>
 
-            {/* Recent Delegation Activity Trail */}
-            {logs.length > 0 && (
-              <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                  <History className="w-4 h-4 text-[#1A3E32]" />
-                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Delegation Activity Log
-                  </h3>
-                </div>
-
-                <div className="divide-y divide-gray-100">
-                  {logs.slice(0, 8).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <span className="text-gray-700 font-medium">
-                        {entry.summary}
-                      </span>
-                      <span className="text-gray-400 shrink-0">
-                        {formatDateTime(entry.timestamp)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            {/* Recent Delegation Activity Trail Component */}
+            <DelegationActivityLog logs={logs} />
           </div>
         </div>
       </div>
@@ -1434,4 +642,3 @@ export default function AssignRecruiterSettings() {
     </NewsFeedLayout>
   );
 }
-

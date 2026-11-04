@@ -37,25 +37,25 @@ export const RECRUITMENT_RIGHT_LINKS = [
   },
 ];
 
-export const JOBSEEKER_ELEARNING_RIGHT_LINK = {
-  label: "E-Learning",
-  icon: "/assets/images/elearning-sidebar.svg",
-  mobileIcon: "/assets/images/elearning-nav.svg",
-  path: "/e-learning/jobseeker",
-  tourId: "e-learning",
-};
+// export const JOBSEEKER_ELEARNING_RIGHT_LINK = {
+//   label: "E-Learning",
+//   icon: "/assets/images/elearning-sidebar.svg",
+//   mobileIcon: "/assets/images/elearning-nav.svg",
+//   path: "/e-learning/jobseeker",
+//   tourId: "e-learning",
+// };
 
-export const RECRUITER_ELEARNING_RIGHT_LINK = {
-  label: "E-Learning",
-  icon: "/assets/images/elearning-sidebar.svg",
-  mobileIcon: "/assets/images/elearning-nav.svg",
-  path: "/e-learning/partner",
-  tourId: "recruiter-e-learning",
-};
+// export const RECRUITER_ELEARNING_RIGHT_LINK = {
+//   label: "E-Learning",
+//   icon: "/assets/images/elearning-sidebar.svg",
+//   mobileIcon: "/assets/images/elearning-nav.svg",
+//   path: "/e-learning/partner",
+//   tourId: "recruiter-e-learning",
+// };
 
 export function getRecruitmentRightLinks(user) {
   if (isRecruiterAccount(user)) {
-    return [...RECRUITMENT_RIGHT_LINKS, RECRUITER_ELEARNING_RIGHT_LINK];
+    return [...RECRUITMENT_RIGHT_LINKS];
   }
-  return [...RECRUITMENT_RIGHT_LINKS, JOBSEEKER_ELEARNING_RIGHT_LINK];
+  return [...RECRUITMENT_RIGHT_LINKS];
 }
