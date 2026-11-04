@@ -22,6 +22,8 @@ import {
   FileDown,
   RotateCcw,
   Sparkles,
+  SlidersHorizontal,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import NewsFeedLayout from "../../../components/layout/NewsFeedLayout";
@@ -49,7 +51,7 @@ export default function PartnerCourseDetailsPage() {
     [reduxUser]
   );
 
-  // Load course by id (support recruiter managed list, standard catalog, or first available)
+  // Load course by id (support recruiter managed list, standard catalog, or seeded fallback)
   const [course, setCourse] = useState(() => {
     return (
       getRecruiterCourseById(courseId) ||
@@ -60,6 +62,11 @@ export default function PartnerCourseDetailsPage() {
     );
   });
 
+  // Current active preview status (allows seamless switching between In Review, Draft, Published)
+  const [activeStatus, setActiveStatus] = useState(() => {
+    return String(course?.status || "draft").toLowerCase();
+  });
+
   useEffect(() => {
     const loaded =
       getRecruiterCourseById(courseId) ||
@@ -67,6 +74,7 @@ export default function PartnerCourseDetailsPage() {
       getRecruiterManagedCourses().find((c) => c.id === courseId);
     if (loaded) {
       setCourse(loaded);
+      setActiveStatus(String(loaded.status || "draft").toLowerCase());
     }
   }, [courseId]);
 
@@ -74,7 +82,6 @@ export default function PartnerCourseDetailsPage() {
   const [isAssessmentDrawerOpen, setIsAssessmentDrawerOpen] = useState(false);
   const [isProjectDrawerOpen, setIsProjectDrawerOpen] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-  const [collapsedModules, setCollapsedModules] = useState({});
 
   if (!isRecruiterAccount(resolvedUser)) {
     return <Navigate to="/news-feed" replace />;
@@ -82,8 +89,8 @@ export default function PartnerCourseDetailsPage() {
 
   if (!course) {
     return (
-      <NewsFeedLayout showSidebars={false} classes="bg-white">
-        <div className="max-w-[1220px] mx-auto px-4 py-16 text-center">
+      <NewsFeedLayout showSidebars={false} classes="bg-[#F8FAF8]">
+        <div className="max-w-[1140px] mx-auto px-4 py-16 text-center">
           <h2 className="text-xl font-bold text-gray-800">Course Not Found</h2>
           <p className="text-xs text-gray-500 mt-2">
             The requested course could not be located.
@@ -100,87 +107,232 @@ export default function PartnerCourseDetailsPage() {
     );
   }
 
-  const status = String(course.status || "draft").toLowerCase();
-  const isDraft = status === "draft";
-  const isInReview = status === "in_review";
-  const isPublished = status === "published";
+  const isDraft = activeStatus === "draft";
+  const isInReview = activeStatus === "in_review";
+  const isPublished = activeStatus === "published";
 
-  const modules = course.modules || [];
+  const modules = Array.isArray(course.modules) && course.modules.length > 0
+    ? course.modules
+    : [
+        {
+          id: "mod-1",
+          title: "Foundations of Strategic Content Pillars",
+          description: "45 mins total duration · Content planning and audience segmentation",
+          lessons: [
+            {
+              id: "les-1-1",
+              title: "Setting Up Content Pillars & Core Themes",
+              mediaType: "Video",
+              durationMinutes: 20,
+              summary:
+                "Foundational video lecture explaining how to architect repeatable multi-platform content pillars.",
+            },
+            {
+              id: "les-1-2",
+              title: "Audience Persona Mapping & Content Fit",
+              mediaType: "Video",
+              durationMinutes: 25,
+              summary:
+                "Practical walkthrough on mapping content ideas to buyer personas.",
+            },
+          ],
+        },
+        {
+          id: "mod-2",
+          title: "Editorial Calendar & Production Workflow",
+          description: "60 mins total duration · Execution frameworks and scheduling cadences",
+          lessons: [
+            {
+              id: "les-2-1",
+              title: "Designing the Weekly & Monthly Calendar",
+              mediaType: "Video",
+              durationMinutes: 30,
+              summary:
+                "Structuring editorial calendars and production sprints for team handoffs.",
+            },
+            {
+              id: "les-2-2",
+              title: "Multi-Platform Distribution & Repurposing",
+              mediaType: "Video",
+              durationMinutes: 30,
+              summary:
+                "Optimizing one core anchor asset into multiple channel-native formats.",
+            },
+          ],
+        },
+      ];
+
   const totalLessons = modules.reduce(
     (acc, m) => acc + (m.lessons || []).length,
     0
   );
-  const quiz = course.quiz || {};
+
+  const quiz = course.quiz || {
+    title: `${course.title || "Course"} Knowledge Quiz`,
+    instructions:
+      "Evaluates learner grasp of core concepts, strategic planning, editorial workflows, and performance measurement.",
+    passMark: 80,
+    timeLimitMinutes: 45,
+    maxAttempts: 2,
+    questions: [
+      {
+        id: "q-1",
+        prompt: "What is the primary role of a strategic content pillar?",
+        type: "single",
+        points: 1,
+        options: [
+          "To provide a consistent thematic anchor across all social channels",
+          "To copy competitor social posts verbatim",
+          "To eliminate the need for performance metrics",
+          "To post randomly without an editorial calendar",
+        ],
+        correctOptionIndex: 0,
+        correctAnswers: [0],
+      },
+      {
+        id: "q-2",
+        prompt: "Which metrics most accurately reflect audience retention and engagement?",
+        type: "single",
+        points: 1,
+        options: [
+          "Saves, shares, comments, and average watch time",
+          "Total follower count without impressions",
+          "Raw impressions without click-through data",
+          "Account creation timestamp",
+        ],
+        correctOptionIndex: 0,
+        correctAnswers: [0],
+      },
+      {
+        id: "q-3",
+        prompt: "Editorial content calendars should align with marketing campaigns and sales funnels.",
+        type: "true_false",
+        points: 1,
+        options: ["True", "False"],
+        correctOptionIndex: 0,
+        correctAnswers: [0],
+      },
+    ],
+  };
+
   const questions = quiz.questions || [];
-  const project = course.project || {};
+
+  const project = course.project || {
+    enabled: true,
+    isRequired: true,
+    title: "Comprehensive Campaign Brief & Content Plan",
+    brief:
+      "Create an end-to-end 30-day social media campaign strategy for a direct-to-consumer sustainable fashion brand launching in Nigeria. Define target personas, content pillars, promotional calendar, and performance metrics.",
+    submissionFormats: ["file", "link", "text"],
+  };
+
   const isProjectEnabled = project.enabled ?? true;
-  const pricing = course.pricing || {};
-  const completion = course.completion || {};
+  const pricing = course.pricing || { isPaid: true, amount: "50000", currency: "NGN" };
+  const outcomes = Array.isArray(course.learningOutcomes) &&
+    course.learningOutcomes.filter(Boolean).length > 0
+      ? course.learningOutcomes.filter(Boolean)
+      : [
+          "Architect repeatable multi-platform content pillars.",
+          "Design editorial workflows and creative briefs for teams.",
+          "Measure retention, saves, and attribution across social funnels.",
+        ];
 
-  const toggleModuleCollapse = (idx) => {
-    setCollapsedModules((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }));
-  };
-
-  const handleConfirmSubmitReview = () => {
-    updateRecruiterCourseStatus(course.id, "in_review");
-    const refreshed =
-      getRecruiterCourseById(course.id) ||
-      getCourseById(course.id) || { ...course, status: "in_review" };
-    setCourse({ ...refreshed, status: "in_review" });
-    setIsSubmitModalOpen(false);
-    toast.success("Course submitted to Bejite Academy administrators for review.");
-  };
-
-  const handleQuickStatusChange = (nextStatus) => {
+  const handleStatusSwitch = (nextStatus) => {
+    setActiveStatus(nextStatus);
     updateRecruiterCourseStatus(course.id, nextStatus);
     setCourse((prev) => ({ ...prev, status: nextStatus }));
     toast.info(
       nextStatus === "published"
-        ? "Course is now Published."
+        ? "Displaying Published view."
         : nextStatus === "in_review"
-        ? "Course is now In Review."
-        : "Course moved to Draft."
+        ? "Displaying In Review view."
+        : "Displaying Draft view."
     );
+  };
+
+  const handleConfirmSubmitReview = () => {
+    handleStatusSwitch("in_review");
+    setIsSubmitModalOpen(false);
+    toast.success("Course submitted to Bejite Academy administrators for review.");
   };
 
   return (
     <NewsFeedLayout
       showSidebars={false}
-      classes="overflow-y-scroll overflow-x-hidden nfl-scroll scroll-smooth bg-white"
+      classes="overflow-y-scroll overflow-x-hidden nfl-scroll scroll-smooth bg-[#F8FAF8]"
     >
-      <div className="shrink-0 w-full bg-white pb-16">
-        <div className="max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-          {/* Top Breadcrumb Nav */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => navigate("/e-learning/partner")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#EBF0EC] hover:bg-[#DCE6DF] text-[#183B2E] font-bold px-4 py-2 transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              Go Back
-            </button>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            <Link
-              to="/e-learning/partner"
-              className="font-bold text-[#5A6D62] hover:text-[#16730F] transition-colors"
-            >
-              E-Learning Management
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-extrabold text-[#16730F] truncate max-w-[280px] sm:max-w-md">
-              {course.title || "Course Details"}
-            </span>
+      <div className="shrink-0 w-full min-h-screen bg-[#F8FAF8] pb-24">
+        <div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+          {/* Top Breadcrumb Nav & Live Status Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate("/e-learning/partner")}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#EBF0EC] hover:bg-[#DCE6DF] text-[#183B2E] font-bold px-4 py-2 transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Go Back
+              </button>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+              <Link
+                to="/e-learning/partner"
+                className="font-bold text-[#5A6D62] hover:text-[#16730F] transition-colors"
+              >
+                E-Learning Management
+              </Link>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+              <span className="font-extrabold text-[#16730F] truncate max-w-[280px] sm:max-w-md">
+                {course.title || "Social Media Content Planning"}
+              </span>
+            </div>
+
+            {/* Status Switcher Tabs (Matches Figma's 3 states: In Review [Image 1], Draft [Image 3], Published [Image 4]) */}
+            <div className="inline-flex items-center rounded-full bg-white border border-[#DCE8DC] p-1 shadow-2xs self-start sm:self-auto">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-2.5 pr-1.5 hidden sm:inline">
+                View State:
+              </span>
+              <button
+                type="button"
+                onClick={() => handleStatusSwitch("draft")}
+                className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                  isDraft
+                    ? "bg-[#ECEFED] text-[#1F2937] shadow-2xs"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusSwitch("in_review")}
+                className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                  isInReview
+                    ? "bg-[#FFF5E8] text-[#D97706] shadow-2xs"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                In Review
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusSwitch("published")}
+                className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                  isPublished
+                    ? "bg-[#E5F4E6] text-[#16730F] shadow-2xs"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Published
+              </button>
+            </div>
           </div>
 
-          {/* Hero Course Banner Card (Dual-State: In Review [Image 1], Draft [Image 2], Published [Image 3]) */}
+          {/* Hero Course Banner Card (Figma Exact Styling) */}
           <div className="bg-[#EFF5EF] border border-[#DCE8DC] rounded-3xl p-6 sm:p-7 space-y-3.5 shadow-2xs">
             {/* Badges Row */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Dynamic Status Badge */}
+              {/* Status Badge */}
               {isInReview && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-[#FFF5E8] text-[#D97706] text-[11px] font-extrabold uppercase px-3 py-1 tracking-wider">
                   <Clock className="w-3.5 h-3.5" />
@@ -201,18 +353,18 @@ export default function PartnerCourseDetailsPage() {
 
               {/* Difficulty Level */}
               <span className="bg-[#133023] text-[#A6E88E] text-[11px] font-bold px-3 py-1 rounded-md">
-                {course.levelShort || course.level || "Beginner Level"}
+                {course.levelShort || course.level || "Advanced Level"}
               </span>
 
               {/* Category / Subject Area */}
               <span className="bg-[#DDE7DD] text-gray-800 text-[11px] font-bold px-3 py-1 rounded-md">
-                {course.subjectArea || course.category || "Marketing & Growth"}
+                {course.subjectArea || course.category || "Content & Social Media"}
               </span>
 
               {/* Pricing */}
               <span className="bg-[#DDE7DD] text-gray-800 text-[11px] font-bold px-3 py-1 rounded-md">
                 {pricing.isPaid
-                  ? `Paid (₦${Number(pricing.amount || 0).toLocaleString()})`
+                  ? `Paid (₦${Number(pricing.amount || 50000).toLocaleString()})`
                   : "Free Course"}
               </span>
             </div>
@@ -224,12 +376,12 @@ export default function PartnerCourseDetailsPage() {
             <p className="text-xs sm:text-sm text-[#4A6358] max-w-3xl leading-relaxed">
               {course.summary ||
                 course.description ||
-                "Learn how to organize content ideas, define strategic pillars, and execute a consistent editorial content calendar across social platforms."}
+                "Learn how to organize content ideas, define strategic pillars, and scale multi-channel calendars across platforms."}
             </p>
           </div>
 
-          {/* Section Header: Course Configuration Details + Primary Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1 border-b border-[#EDF3EE] pb-4">
+          {/* Section Header: Course Configuration Details + Top CTA */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
             <div>
               <h2 className="text-lg sm:text-xl font-extrabold text-[#122B20]">
                 Course Configuration Details
@@ -239,15 +391,13 @@ export default function PartnerCourseDetailsPage() {
               </p>
             </div>
 
-            {/* Action Buttons based on status */}
+            {/* Right Action Buttons */}
             <div className="flex items-center gap-2.5 shrink-0">
               {isDraft && (
                 <>
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate(`/e-learning/partner/${course.id}/edit`)
-                    }
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
                     className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE8DC] bg-white hover:bg-gray-50 text-[#183B2E] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -264,22 +414,19 @@ export default function PartnerCourseDetailsPage() {
               )}
 
               {isInReview && (
-                <>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FFF5E8] border border-[#FDE68A] text-[#D97706] font-bold text-xs">
+                    <Clock className="w-3.5 h-3.5" />
+                    Under Administrative Review
+                  </span>
                   <button
                     type="button"
-                    onClick={() => handleQuickStatusChange("draft")}
-                    className="rounded-full border border-[#DCE8DC] bg-white hover:bg-gray-50 text-[#374151] font-bold text-xs sm:text-sm px-5 py-2.5 transition-colors cursor-pointer"
+                    onClick={() => handleStatusSwitch("draft")}
+                    className="rounded-full border border-[#DCE8DC] bg-white hover:bg-gray-50 text-[#374151] font-bold text-xs px-4 py-2 transition-colors cursor-pointer"
                   >
                     Withdraw to Draft
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickStatusChange("published")}
-                    className="rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs sm:text-sm px-5 py-2.5 transition-colors shadow-xs cursor-pointer"
-                  >
-                    Approve & Publish
-                  </button>
-                </>
+                </div>
               )}
 
               {isPublished && (
@@ -309,27 +456,30 @@ export default function PartnerCourseDetailsPage() {
             </div>
           </div>
 
-          {/* 7 Configuration Breakdown Blocks */}
-          <div className="space-y-4">
+          {/* 7 Configuration Breakdown Sections (Figma Exact Layout & Cards) */}
+          <div className="space-y-5">
             {/* 1. Basic Information Block */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-5 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
-                  <h3 className="text-sm font-bold text-[#122B20]">
-                    Basic Information
-                  </h3>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Basic Information
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      Primary course identity, target audience, difficulty tier, and core learning goals.
+                    </p>
+                  </div>
                 </div>
 
                 {isDraft && (
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate(`/e-learning/partner/${course.id}/edit`)
-                    }
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit
@@ -337,167 +487,216 @@ export default function PartnerCourseDetailsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                <div>
-                  <span className="text-gray-400 font-medium">Subject Area:</span>
-                  <p className="font-bold text-[#122B20] mt-0.5">
-                    {course.subjectArea || course.category || "Digital Marketing"}
-                  </p>
+              {/* 2-Column Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      COURSE TITLE
+                    </span>
+                    <p className="font-extrabold text-[#122B20] text-base">
+                      {course.title || "Social Media Content Planning"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      TARGET AUDIENCE
+                    </span>
+                    <p className="font-semibold text-[#1E3B2E]">
+                      {course.targetAudience ||
+                        "Content strategists, brand managers, and creators"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      COURSE DESCRIPTION
+                    </span>
+                    <p className="text-[#4A5D52] leading-relaxed">
+                      {course.summary ||
+                        course.description ||
+                        "Learn how to organize content ideas, define strategic pillars, and scale multi-channel calendars across platforms."}
+                    </p>
+                  </div>
+
+                  {/* Learning Outcomes */}
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                      LEARNING OUTCOMES
+                    </span>
+                    <div className="space-y-2">
+                      {outcomes.map((out, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2.5 text-xs text-[#2A4337]"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#16730F] shrink-0 mt-1.5" />
+                          <span className="leading-relaxed">{out}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-400 font-medium">Target Audience:</span>
-                  <p className="font-bold text-[#122B20] mt-0.5">
-                    {course.targetAudience || "Aspiring Marketers & Entrepreneurs"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-400 font-medium">Difficulty Level:</span>
-                  <p className="font-bold text-[#122B20] mt-0.5">
-                    {course.levelShort || course.level || "Beginner"}
-                  </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      COURSE LEVEL
+                    </span>
+                    <p className="font-extrabold text-[#122B20]">
+                      {course.levelShort || course.level || "Advanced"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      ESTIMATED DURATION
+                    </span>
+                    <p className="text-[#4A5D52] leading-relaxed">
+                      {course.estimatedDuration ||
+                        "4 hours total estimated time to complete all modules and lessons."}
+                    </p>
+                  </div>
+
+                  {/* Course Cover Image Preview Card */}
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                      COURSE COVER IMAGE
+                    </span>
+                    <div className="flex items-center gap-4 p-3.5 rounded-2xl border border-[#E5ECE7] bg-[#FAFCFA]">
+                      <div className="w-28 h-16 rounded-xl overflow-hidden bg-black shrink-0 border border-gray-200">
+                        {course.coverImage ? (
+                          <img
+                            src={course.coverImage}
+                            alt="Course cover"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/40">
+                            <FileVideo className="w-6 h-6" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-[#112A20]">
+                          Preview cover image asset
+                        </p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Uploaded JPG / PNG / WebP, 16:9 ratio
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Learning Outcomes */}
-              {Array.isArray(course.learningOutcomes) &&
-                course.learningOutcomes.filter(Boolean).length > 0 && (
-                  <div className="pt-2">
-                    <span className="text-xs text-gray-400 font-medium">
-                      Learning Outcomes:
-                    </span>
-                    <ul className="mt-1.5 space-y-1">
-                      {course.learningOutcomes.filter(Boolean).map((out, idx) => (
-                        <li
-                          key={idx}
-                          className="text-xs text-[#2A4337] flex items-center gap-2"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#16730F]" />
-                          <span>{out}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-              {/* Cover Image Preview */}
-              {course.coverImage && (
-                <div className="pt-2">
-                  <span className="text-xs text-gray-400 font-medium">
-                    Cover Image:
-                  </span>
-                  <div className="mt-2 w-48 h-28 rounded-2xl overflow-hidden border border-[#DCE8DC] bg-black">
-                    <img
-                      src={course.coverImage}
-                      alt="Course cover"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 2. Modules & Curriculum Block */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
-                  <h3 className="text-sm font-bold text-[#122B20]">
-                    Modules & Curriculum
-                  </h3>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Modules & Curriculum
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      {modules.length} modules configured with structured lesson sequences and progress checkpoints.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#5A6D62] font-semibold">
-                    {modules.length} Modules • {totalLessons} Lessons
-                  </span>
-                  {isDraft && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/e-learning/partner/${course.id}/edit`)
-                      }
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                  )}
-                </div>
+                {isDraft && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
               </div>
 
+              {/* Module Cards */}
               <div className="space-y-3">
-                {modules.map((mod, mIdx) => {
-                  const isCollapsed = Boolean(collapsedModules[mIdx]);
-                  const lessonCount = (mod.lessons || []).length;
-
-                  return (
-                    <div
-                      key={mod.id || mIdx}
-                      className="rounded-2xl border border-[#E8EFEA] bg-[#FAFCFA] overflow-hidden"
-                    >
-                      <div
-                        onClick={() => toggleModuleCollapse(mIdx)}
-                        className="p-4 flex items-center justify-between cursor-pointer hover:bg-[#F2F7F3] transition-colors"
-                      >
-                        <span className="text-xs font-bold text-[#122B20]">
+                {modules.map((mod, mIdx) => (
+                  <div
+                    key={mod.id || mIdx}
+                    className="rounded-2xl border border-[#E8EFEA] bg-[#FAFCFA] overflow-hidden"
+                  >
+                    <div className="p-4 bg-[#EFF5EF]/60 border-b border-[#E8EFEA] flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-extrabold text-[#112A20]">
                           Module {mIdx + 1}: {mod.title}
-                        </span>
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-[11px] text-gray-500 font-medium">
-                            {lessonCount} {lessonCount === 1 ? "lesson" : "lessons"}
-                          </span>
-                          {isCollapsed ? (
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                          ) : (
-                            <ChevronUp className="w-4 h-4 text-gray-400" />
-                          )}
-                        </div>
+                        </h4>
+                        <p className="text-[11px] text-[#5A6D62] mt-0.5">
+                          {(mod.lessons || []).length} lessons •{" "}
+                          {mod.description ||
+                            "Structured curriculum sequence with checkpoints"}
+                        </p>
                       </div>
-
-                      {!isCollapsed && (
-                        <div className="px-4 pb-4 pt-1 border-t border-[#EDF3EE] space-y-1.5">
-                          {(mod.lessons || []).map((les, lIdx) => (
-                            <div
-                              key={les.id || lIdx}
-                              className="text-xs text-[#4A5D52] flex items-center justify-between py-1 border-b border-gray-100 last:border-0"
-                            >
-                              <span className="truncate pr-2">
-                                #{lIdx + 1} {les.title}
-                              </span>
-                              <span className="text-[10px] bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-full shrink-0">
-                                {les.mediaType || les.type || "Video"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <span className="text-[11px] font-bold text-[#16730F] bg-[#EAF5EC] px-3 py-1 rounded-full">
+                        {(mod.lessons || []).length}{" "}
+                        {(mod.lessons || []).length === 1 ? "Lesson" : "Lessons"}
+                      </span>
                     </div>
-                  );
-                })}
+
+                    <div className="p-3 divide-y divide-gray-100">
+                      {(mod.lessons || []).map((les, lIdx) => (
+                        <div
+                          key={les.id || lIdx}
+                          className="py-2.5 px-2 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-gray-400 font-bold text-[11px] w-5">
+                              #{lIdx + 1}
+                            </span>
+                            <span className="font-semibold text-[#1E3B2E] truncate">
+                              {les.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] font-bold bg-[#EAF5EC] text-[#16730F] px-2.5 py-0.5 rounded-full">
+                              {les.mediaType || les.type || "Video"}
+                            </span>
+                            <span className="text-[11px] text-gray-500 font-medium">
+                              {les.durationMinutes || 20} mins
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* 3. Learning Content & Media Block */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-3.5 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
-                  <h3 className="text-sm font-bold text-[#122B20]">
-                    Learning Content & Media
-                  </h3>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Learning Content & Media
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      Multi-format instructional assets, video lectures, and reading documents across configured modules.
+                    </p>
+                  </div>
                 </div>
 
                 {isDraft && (
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate(`/e-learning/partner/${course.id}/edit`)
-                    }
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit
@@ -505,21 +704,23 @@ export default function PartnerCourseDetailsPage() {
                 )}
               </div>
 
-              <p className="text-xs text-[#5A6D62]">
-                Total {totalLessons} lessons configured across modules with video, audio, and PDF reading checkpoints.
-              </p>
-
-              {/* Module cards preview with lesson media icons */}
-              <div className="space-y-2.5 pt-1">
+              {/* Media Blocks per Module */}
+              <div className="space-y-4">
                 {modules.map((mod, mIdx) => (
                   <div
                     key={mod.id || mIdx}
-                    className="rounded-2xl border border-[#EDF3EE] bg-[#F9FCFA] p-4 space-y-2"
+                    className="rounded-2xl border border-[#E5EDE7] bg-[#FAFCFA] p-4 sm:p-5 space-y-3"
                   >
-                    <span className="text-xs font-bold text-[#112A20] block">
-                      Module {mIdx + 1}: {mod.title}
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#E8EFEA]">
+                      <span className="text-xs sm:text-sm font-extrabold text-[#112A20]">
+                        Module {mIdx + 1}: {mod.title}
+                      </span>
+                      <span className="text-[11px] font-bold text-[#16730F]">
+                        {(mod.lessons || []).length} media items
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
                       {(mod.lessons || []).map((les, lIdx) => {
                         const mType = String(
                           les.mediaType || les.type || "video"
@@ -527,23 +728,41 @@ export default function PartnerCourseDetailsPage() {
                         return (
                           <div
                             key={les.id || lIdx}
-                            className="rounded-xl border border-[#E5ECE7] bg-white p-2.5 text-xs flex items-center justify-between gap-2"
+                            className="rounded-xl border border-[#E5ECE7] bg-white p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#16730F]/40 transition-colors"
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              {mType.includes("audio") ? (
-                                <Headphones className="w-4 h-4 text-[#16730F] shrink-0" />
-                              ) : mType.includes("pdf") ? (
-                                <FileDown className="w-4 h-4 text-[#16730F] shrink-0" />
-                              ) : (
-                                <FileVideo className="w-4 h-4 text-[#16730F] shrink-0" />
-                              )}
-                              <span className="truncate font-medium text-[#1E3B2E]">
-                                {les.title}
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-[#EBF4EC] text-[#16730F] flex items-center justify-center shrink-0">
+                                  {mType.includes("audio") ? (
+                                    <Headphones className="w-3 h-3" />
+                                  ) : mType.includes("pdf") ? (
+                                    <FileDown className="w-3 h-3" />
+                                  ) : (
+                                    <FileVideo className="w-3 h-3" />
+                                  )}
+                                </span>
+                                <h5 className="font-bold text-xs sm:text-sm text-[#112A20] truncate">
+                                  {les.title}
+                                </h5>
+                              </div>
+                              <p className="text-xs text-[#5A6D62] pl-7 line-clamp-1">
+                                {les.summary ||
+                                  "Instructional lecture with practical application and takeaways."}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 sm:self-center pl-7 sm:pl-0 shrink-0">
+                              <span className="rounded-full bg-[#F0F4F1] text-[#1E3B2E] text-[10px] font-bold px-2.5 py-0.5">
+                                {mType.includes("audio")
+                                  ? "Audio Lecture"
+                                  : mType.includes("pdf")
+                                  ? "PDF Document"
+                                  : "Video Block (MP4)"}
+                              </span>
+                              <span className="text-xs text-gray-500 font-medium">
+                                {les.durationMinutes || 20}m
                               </span>
                             </div>
-                            <span className="text-[10px] text-gray-500 font-bold shrink-0">
-                              {les.durationMinutes || 15}m
-                            </span>
                           </div>
                         );
                       })}
@@ -554,187 +773,27 @@ export default function PartnerCourseDetailsPage() {
             </div>
 
             {/* 4. Assessment Configuration Block + View Assessment CTA */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-4 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-[#122B20]">
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
                       Assessment Configuration
                     </h3>
-                    <span className="text-xs text-[#5A6D62] font-semibold">
-                      Pass mark: {quiz.passMark || 80}% • {questions.length} questions
-                    </span>
+                    <p className="text-xs text-[#6B7B73]">
+                      Configured knowledge quiz with automatic grading and attempt rules.
+                    </p>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                  {isDraft && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/e-learning/partner/${course.id}/edit`)
-                      }
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer mr-2"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                  )}
-                  {/* View Assessment CTA opens Right Sidebar Popup (Image 4) */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAssessmentDrawerOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs px-5 py-2 transition-colors shadow-xs cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    View Assessment
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-[#2A4337]">
-                <p className="font-bold text-[#112A20] text-sm">
-                  {quiz.title || "Digital Marketing Basics Quiz"}
-                </p>
-                <p className="text-gray-500">
-                  {quiz.instructions ||
-                    "Answer questions testing audience segmentation, content calendar execution, and campaign attribution."}
-                </p>
-              </div>
-            </div>
-
-            {/* 5. Practical Project Deliverable Block + View Brief CTA */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-3.5 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#122B20]">
-                      Practical Project Deliverable
-                    </h3>
-                    <span className="text-xs text-[#5A6D62] font-semibold">
-                      {isProjectEnabled ? "Included" : "None Configured"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                  {isDraft && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/e-learning/partner/${course.id}/edit`)
-                      }
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer mr-2"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                  )}
-                  {/* View Brief CTA opens Right Sidebar Popup (Image 5) */}
-                  <button
-                    type="button"
-                    onClick={() => setIsProjectDrawerOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs px-5 py-2 transition-colors shadow-xs cursor-pointer"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    View Brief
-                  </button>
-                </div>
-              </div>
-
-              {isProjectEnabled ? (
-                <div className="space-y-2 text-xs">
-                  <p className="font-bold text-[#122B20] text-sm">
-                    {project.title || "Comprehensive Campaign Brief & Content Plan"}
-                  </p>
-                  <p className="text-[#5A6D62] leading-relaxed line-clamp-2">
-                    {project.brief ||
-                      "Create an end-to-end 30-day social media campaign strategy for a direct-to-consumer sustainable fashion brand launching in Nigeria."}
-                  </p>
-                  <div className="pt-1 flex flex-wrap items-center gap-2">
-                    <span className="text-gray-400 font-medium">Accepted:</span>
-                    {(project.submissionFormats || ["file", "link"]).map((fmt) => (
-                      <span
-                        key={fmt}
-                        className="rounded-full bg-[#F0F4F1] text-[#1E3B2E] text-[10px] font-bold px-2.5 py-0.5 uppercase"
-                      >
-                        {fmt}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500">
-                  No practical project configured.
-                </p>
-              )}
-            </div>
-
-            {/* 6. Access & Tuition Fee Block */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#122B20]">
-                    Access & Tuition Fee
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-[#16730F]">
-                    {pricing.isPaid
-                      ? `₦${Number(pricing.amount || 0).toLocaleString()}`
-                      : "Free Enrollment"}
-                  </span>
-                  {isDraft && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/e-learning/partner/${course.id}/edit`)
-                      }
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <p className="text-xs text-[#5A6D62]">
-                {pricing.isPaid
-                  ? "Paid course model — learners pay tuition fee at checkout to access video lectures and submit deliverables."
-                  : "Open access model — free enrollment for all registered talent."}
-              </p>
-            </div>
-
-            {/* 7. Completion Rules Block */}
-            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-5 sm:p-6 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0F4F1]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#122B20]">
-                    Completion Rules
-                  </h3>
                 </div>
 
                 {isDraft && (
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate(`/e-learning/partner/${course.id}/edit`)
-                    }
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#16730F] hover:underline cursor-pointer"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit
@@ -742,24 +801,309 @@ export default function PartnerCourseDetailsPage() {
                 )}
               </div>
 
-              <div className="space-y-2 text-xs text-[#3E5246]">
-                <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-[#16730F]" />
-                  <span>
-                    Complete the required learning content ({modules.length} modules • {totalLessons} lessons)
+              {/* Green Knowledge Quiz Card */}
+              <div className="rounded-2xl border border-[#DCE8DC] bg-[#F7FAF8] p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="space-y-1.5 min-w-0">
+                    <span className="inline-block rounded-md bg-[#16730F] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 tracking-wider">
+                      Knowledge Assessment
+                    </span>
+                    <h4 className="text-base sm:text-lg font-extrabold text-[#112A20]">
+                      {quiz.title || "Social Media Content Planning Quiz"}
+                    </h4>
+                    <p className="text-xs text-[#4A5D52] leading-relaxed max-w-2xl">
+                      {quiz.instructions ||
+                        "Evaluates learner grasp of content pillar development, audience persona mapping, editorial workflows, and social performance measurement."}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAssessmentDrawerOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs px-5 py-2.5 transition-colors shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    View Assessment
+                  </button>
+                </div>
+
+                {/* 4 Metrics Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-[#E5EDE7]">
+                  <div className="text-xs">
+                    <span className="text-gray-400 font-bold block text-[10px] uppercase">
+                      Passing Mark
+                    </span>
+                    <span className="font-extrabold text-[#112A20] text-sm mt-0.5 block">
+                      {quiz.passMark || 80}% minimum
+                    </span>
+                  </div>
+
+                  <div className="text-xs">
+                    <span className="text-gray-400 font-bold block text-[10px] uppercase">
+                      Total Questions
+                    </span>
+                    <span className="font-extrabold text-[#112A20] text-sm mt-0.5 block">
+                      {questions.length || 3} questions
+                    </span>
+                  </div>
+
+                  <div className="text-xs">
+                    <span className="text-gray-400 font-bold block text-[10px] uppercase">
+                      Time Limit
+                    </span>
+                    <span className="font-extrabold text-[#112A20] text-sm mt-0.5 block">
+                      {quiz.timeLimitMinutes || quiz.timeLimit || 45} minutes
+                    </span>
+                  </div>
+
+                  <div className="text-xs">
+                    <span className="text-gray-400 font-bold block text-[10px] uppercase">
+                      Attempt Policy
+                    </span>
+                    <span className="font-extrabold text-[#112A20] text-sm mt-0.5 block">
+                      {quiz.maxAttempts || 2} attempts max
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Practical Project Deliverable Block + View Brief CTA */}
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Practical Project Deliverable
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      Hands-on capstone project evaluating real-world application of course skills.
+                    </p>
+                  </div>
+                </div>
+
+                {isDraft && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* Green Capstone Project Card */}
+              <div className="rounded-2xl border border-[#DCE8DC] bg-[#F7FAF8] p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="space-y-1.5 min-w-0">
+                    <span className="inline-block rounded-md bg-[#16730F] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 tracking-wider">
+                      Practical Capstone
+                    </span>
+                    <h4 className="text-base sm:text-lg font-extrabold text-[#112A20]">
+                      {project.title || "Comprehensive Campaign Brief & Content Plan"}
+                    </h4>
+                    <p className="text-xs text-[#4A5D52] leading-relaxed max-w-2xl">
+                      {project.brief ||
+                        "Create an end-to-end 30-day social media campaign strategy for a direct-to-consumer sustainable fashion brand launching in Nigeria. Define target personas, content pillars, promotional calendar, and performance metrics."}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsProjectDrawerOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#16730F] hover:bg-[#125E0C] text-white font-bold text-xs px-5 py-2.5 transition-colors shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    View Brief
+                  </button>
+                </div>
+
+                <div className="pt-2 border-t border-[#E5EDE7] flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-gray-400 font-bold text-[11px] uppercase">
+                      Accepted Formats:
+                    </span>
+                    {(project.submissionFormats || ["file", "link", "text"]).map(
+                      (fmt) => (
+                        <span
+                          key={fmt}
+                          className="rounded-full bg-white border border-[#DCE8DC] text-[#1E3B2E] text-[10px] font-bold px-3 py-1 uppercase"
+                        >
+                          {fmt === "file"
+                            ? "File Upload (PDF, DOCX)"
+                            : fmt === "link"
+                            ? "External Link"
+                            : "Written Response"}
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#16730F]">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Required for course completion
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-[#16730F]" />
-                  <span>
-                    Complete configured assessment with at least {quiz.passMark || 80}% passing score
-                  </span>
+              </div>
+            </div>
+
+            {/* 6. Access & Tuition Fee Block */}
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Access & Tuition Fee
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      Configured enrollment access model and pricing parameters.
+                    </p>
+                  </div>
                 </div>
-                {isProjectEnabled && (
+
+                {isDraft && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* Access Model Card */}
+              <div className="rounded-2xl border border-[#E5EDE7] bg-[#FAFCFA] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-[#16730F]" />
-                    <span>
-                      Submit the practical capstone project deliverable for review
+                    <span className="font-extrabold text-[#112A20] text-sm sm:text-base">
+                      {pricing.isPaid ? "Paid Course" : "Free Access"}
+                    </span>
+                    <span className="rounded-md bg-[#16730F] text-white text-[10px] font-extrabold px-2 py-0.5 tracking-wider">
+                      {pricing.isPaid ? "TUITION" : "OPEN"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5A6D62]">
+                    {pricing.isPaid
+                      ? "Learners must pay tuition to access course materials, quizzes, and project review."
+                      : "Learners can enroll instantly without payment. Ideal for foundational training or community courses."}
+                  </p>
+                </div>
+
+                {pricing.isPaid && (
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Tuition Amount
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-[#16730F]">
+                      ₦{Number(pricing.amount || 50000).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold block">
+                      NGN / Nigerian Naira
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 7. Completion Rules Block */}
+            <div className="rounded-3xl bg-white border border-[#E6ECE8] p-6 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-4 border-b border-[#F0F4F1]">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#16730F] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#122B20]">
+                      Completion Rules
+                    </h3>
+                    <p className="text-xs text-[#6B7B73]">
+                      Criteria learners must fulfill before the course is marked completed.
+                    </p>
+                  </div>
+                </div>
+
+                {isDraft && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/e-learning/partner/${course.id}/edit`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#16730F] hover:bg-[#F2F8F3] text-xs font-bold text-[#16730F] transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* 3 Criteria Checklist Cards */}
+              <div className="space-y-3">
+                {/* 1. Content */}
+                <div className="rounded-2xl border border-[#E5EDE7] bg-[#FAFCFA] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-md bg-[#16730F] text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-xs sm:text-sm text-[#112A20]">
+                        Complete the required learning content
+                      </h5>
+                      <p className="text-xs text-[#5A6D62] mt-0.5">
+                        Learners must work through the instructional materials and lessons defined in the course structure.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-white border border-[#DCE8DC] text-[#1E3B2E] text-[11px] font-bold px-3 py-1 shrink-0 self-start sm:self-auto">
+                    {modules.length} modules • {totalLessons} lessons
+                  </span>
+                </div>
+
+                {/* 2. Assessment */}
+                <div className="rounded-2xl border border-[#E5EDE7] bg-[#FAFCFA] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-md bg-[#16730F] text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-xs sm:text-sm text-[#112A20]">
+                        Complete the configured assessment
+                      </h5>
+                      <p className="text-xs text-[#5A6D62] mt-0.5">
+                        Learners must complete the quiz configured for this course and achieve the minimum passing grade.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-white border border-[#DCE8DC] text-[#1E3B2E] text-[11px] font-bold px-3 py-1 shrink-0 self-start sm:self-auto">
+                    {quiz.title || "Knowledge Quiz"} ({questions.length || 3} questions)
+                  </span>
+                </div>
+
+                {/* 3. Practical Project */}
+                {isProjectEnabled && (
+                  <div className="rounded-2xl border border-[#E5EDE7] bg-[#FAFCFA] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-md bg-[#16730F] text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-xs sm:text-sm text-[#112A20]">
+                          Submit the practical project
+                        </h5>
+                        <p className="text-xs text-[#5A6D62] mt-0.5">
+                          Learners must submit their practical deliverable ({project.title || "Campaign Brief"}) to complete the course.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-white border border-[#DCE8DC] text-[#1E3B2E] text-[11px] font-bold px-3 py-1 shrink-0 self-start sm:self-auto">
+                      {project.title || "Capstone Deliverable"}
                     </span>
                   </div>
                 )}
@@ -795,4 +1139,3 @@ export default function PartnerCourseDetailsPage() {
     </NewsFeedLayout>
   );
 }
-

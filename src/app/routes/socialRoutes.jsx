@@ -41,15 +41,15 @@ const guard = (element, message, requiredRole = null) => (
   </ProtectedRoute>
 );
 
-function ELearningIndexRedirect() {
-  const reduxUser = useSelector((state) => state.auth?.user);
-  const localUser = getUser();
-  const currentUser = mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
-  if (isRecruiterAccount(currentUser)) {
-    return <Navigate to="/e-learning/partner" replace />;
-  }
-  return <Navigate to="/e-learning/jobseeker" replace />;
-}
+// function ELearningIndexRedirect() {
+//   const reduxUser = useSelector((state) => state.auth?.user);
+//   const localUser = getUser();
+//   const currentUser = mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
+//   if (isRecruiterAccount(currentUser)) {
+//     return <Navigate to="/e-learning/partner" replace />;
+//   }
+//   return <Navigate to="/e-learning/jobseeker" replace />;
+// }
 
 export const socialRoutes = (
   <>
@@ -110,10 +110,10 @@ export const socialRoutes = (
       element={guard(<Notifications />, "Please log in.")}
     />
     {/* Base E-Learning Index Redirect (role-aware: recruiter -> /e-learning/partner, jobseeker -> /e-learning/jobseeker) */}
-    <Route
+    {/* <Route
       path="/e-learning"
       element={guard(<ELearningIndexRedirect />, "Please log in to access E-Learning.")}
-    />
+    /> */}
 
     {/* Jobseeker E-Learning Dedicated Link Routes */}
     <Route
