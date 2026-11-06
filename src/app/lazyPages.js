@@ -77,6 +77,8 @@ export const SubscriptionRetentionPage = lazy(() => import("../pages/employerDas
 export const SubscriptionCancelConfirmPage = lazy(() => import("../pages/employerDashboard/SubscriptionCancelConfirmPage.jsx"));
 export const BadgeStatus = lazy(() => import("../pages/badge/BadgeStatus.jsx"));
 export const AccountSettings = lazy(() => import("../pages/AccountSettings.jsx"));
+export const AssignRecruiterSettings = lazy(() => import("../pages/AssignRecruiterSettings.jsx"));
+export const ManagedAccountsSettings = lazy(() => import("../pages/ManagedAccountsSettings.jsx"));
 export const ActivityLog = lazy(() => import("../pages/ActivityLog.jsx"));
 export const BadgeHolder = lazy(() => import("../pages/badge/BadgeHolder.jsx"));
 export const BadgePaymentCallback = lazy(() => import("../pages/badge/BadgePaymentCallback.jsx"));
@@ -101,3 +103,16 @@ export const ResumeLayout = lazy(() => import("../components/ResumeLayout"));
 export const IndividualVerificationLayout = lazy(() => import("../components/IndividualVerificationLayout"));
 export const CoperateVerificationLayout = lazy(() => import("../components/CoperateVerificationLayout"));
 export const PitchPage = lazy(() => import("../pages/pitch/PitchPage.jsx"));
+export const ELearningDashboardPage = lazy(() => import("../pages/elearning/jobseeker/ELearningDashboardPage.jsx"));
+export const MyLearningPage = lazy(() => import("../pages/elearning/jobseeker/MyLearningPage.jsx"));
+export const ExploreCoursesPage = lazy(() => import("../pages/elearning/jobseeker/ExploreCoursesPage.jsx"));
+export const CourseDetailsPage = lazy(() => import("../pages/elearning/jobseeker/CourseDetailsPage.jsx"));
+export const CourseCheckoutPage = lazy(() => import("../pages/elearning/jobseeker/CourseCheckoutPage.jsx"));
+export const CoursePlayerPage = lazy(() => import("../pages/elearning/jobseeker/CoursePlayerPage.jsx"));
+export const CourseProgressPage = lazy(() => import("../pages/elearning/jobseeker/CourseProgressPage.jsx"));
+export const CourseAssessmentPage = lazy(() => import("../pages/elearning/jobseeker/CourseAssessmentPage.jsx"));
+export const CourseProjectPage = lazy(() => import("../pages/elearning/jobseeker/CourseProjectPage.jsx"));
+export const ELearningManagementPage = lazy(() => import("../pages/elearning/partner/ELearningManagementPage.jsx"));
+export const CourseBuilderPage = lazy(() => import("../pages/elearning/partner/CourseBuilderPage.jsx"));
+export const PartnerCourseDetailsPage = lazy(() => import("../pages/elearning/partner/PartnerCourseDetailsPage.jsx"));
+

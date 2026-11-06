@@ -86,7 +86,7 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
                 />
               </div>
 
-              <div className="px-2">
+              <div>
                 <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                   Stage Description / Objectives
                 </label>
@@ -101,26 +101,37 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#1A3E32] mb-1">
-                    Assigned Interviewer
-                  </label>
-                  <div className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-[#1A3E32]">
+                      Assigned Interviewer
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsRecruiterModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#16730F] hover:text-[#125B0C] hover:underline cursor-pointer"
+                    >
+                      <FaUserCheck className="w-3 h-3" />
+                      Select Recruiter
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
                     <input
                       type="text"
-                      readOnly
                       value={interviewer}
-                      onClick={() => setIsRecruiterModalOpen(true)}
-                      placeholder="Click to select recruiter..."
-                      className="w-full bg-white border border-gray-300 text-gray-800 text-sm px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 font-medium cursor-pointer select-none"
+                      onChange={(e) => {
+                        setInterviewer(e.target.value);
+                        setInterviewerUserId(null);
+                      }}
+                      placeholder="e.g. Technical Panel"
+                      className="w-full bg-white border border-gray-300 text-gray-800 text-sm pl-4 pr-10 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16730F]/40 placeholder:text-gray-400 font-medium"
                     />
                     <button
                       type="button"
                       onClick={() => setIsRecruiterModalOpen(true)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#16730F] transition-colors p-1 cursor-pointer"
-                      title="Select recruiter"
-                      aria-label="Select recruiter"
+                      title="Browse and select recruiter"
+                      className="absolute right-2.5 p-1.5 text-gray-400 hover:text-[#16730F] hover:bg-[#E6F4EA] rounded-lg transition-colors cursor-pointer"
                     >
-                      <FaUserCheck className="w-4 h-4 text-[#16730F]" />
+                      <FaUserCheck className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -172,4 +183,3 @@ export default function EditPipelineStageModal({ isOpen, onClose, stage, onUpdat
     </>
   );
 }
-

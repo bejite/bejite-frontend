@@ -2,28 +2,41 @@ import { toast } from "react-toastify";
 import { getSocialShareUrl } from "./postShare";
 import { sharePitch } from "../services/pitchesApi";
 
-export function getPitchShareUrl(pitchId) {
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+export function getPitchShareUrl(pitchOrId) {
+  const rawId =
+    typeof pitchOrId === "object" && pitchOrId !== null
+      ? pitchOrId.id
+      : pitchOrId;
+  const pitchId = rawId != null ? String(rawId).trim() : "";
+
   if (!pitchId || pitchId === "latest") {
     return `${window.location.origin}/pitch`;
   }
-  return `${window.location.origin}/pitch?id=${encodeURIComponent(pitchId)}`;
+  return `${window.location.origin}/v/${encodeURIComponent(pitchId)}`;
 }
 
 export function buildPitchShareText(pitch) {
-  const creatorName =
-    pitch?.creator?.name?.trim() ||
-    [pitch?.creator?.firstName, pitch?.creator?.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim() ||
-    pitch?.userName?.trim() ||
-    "Someone";
+  const creatorName = normalizeWhitespace(
+    pitch?.creator?.name ||
+      [pitch?.creator?.firstName, pitch?.creator?.lastName]
+        .filter(Boolean)
+        .join(" ") ||
+      pitch?.userName ||
+      "Someone"
+  );
 
-  const headline = pitch?.headline?.trim()?.replace(/[«»]/g, "");
-  const role =
-    pitch?.creator?.role?.trim() ||
-    (Array.isArray(pitch?.targetRoles) ? pitch.targetRoles[0] : null) ||
-    pitch?.userRole?.trim();
+  const headline = normalizeWhitespace(
+    String(pitch?.headline || "").replace(/[«»]/g, "")
+  );
+  const role = normalizeWhitespace(
+    pitch?.creator?.role ||
+      (Array.isArray(pitch?.targetRoles) ? pitch.targetRoles[0] : "") ||
+      pitch?.userRole
+  );
 
   if (headline && role) {
     return `Check out ${creatorName}'s pitch (${role}): "${headline}" on Bejite`;

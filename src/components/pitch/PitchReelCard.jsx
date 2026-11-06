@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Play, CheckCircle } from "lucide-react";
+import { resolvePitchPosterUrl } from "../../utils/pitchThumbnail";
 
 export default function PitchReelCard({ pitch, onSelectPitch }) {
   const videoRef = useRef(null);
@@ -49,7 +50,7 @@ export default function PitchReelCard({ pitch, onSelectPitch }) {
       <video
         ref={videoRef}
         src={pitch.videoUrl}
-        poster={pitch.videoPoster}
+        poster={resolvePitchPosterUrl(pitch)}
         muted
         playsInline
         loop

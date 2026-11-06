@@ -522,6 +522,7 @@ export default function CreatePitchModal({
       publishedPitchData || {
         id: existingPitchId,
         headline,
+        description,
         creator: currentUser,
       };
 
@@ -698,6 +699,7 @@ export default function CreatePitchModal({
                 publishedPitchData || {
                   id: existingPitchId,
                   headline,
+                  description,
                   creator: currentUser,
                 },
                 platform

@@ -12,7 +12,11 @@ function normalizeRecruiter(user) {
 
   const firstName = user.firstName ?? user.first_name ?? "";
   const lastName = user.lastName ?? user.last_name ?? "";
-  const fallbackName = `${firstName} ${lastName}`.trim() || user.username || user.email || "Recruiter";
+  const fallbackName =
+    `${firstName} ${lastName}`.trim() ||
+    user.username ||
+    user.email ||
+    "Recruiter";
   const name = formatDisplayPersonName(user, fallbackName);
 
   const jobTitle =
@@ -50,18 +54,37 @@ function normalizeRecruiter(user) {
   };
 }
 
+function isRecruiterEligibleUser(user) {
+  if (!user || typeof user !== "object") return false;
+  if (user._fromRecruiterDiscovery) return true;
+  const role = String(user.role || "").trim().toLowerCase();
+  if (role === "jobseeker") return false;
+  if (
+    role === "recruiter" ||
+    role === "employer" ||
+    user.isCorporate ||
+    user.mode === "corporate"
+  ) {
+    return true;
+  }
+  return !role;
+}
+
 /**
  * Fetches real recruiters from the backend API.
  * Uses available endpoints (recruiter discovery and connection discovery).
+ * Excludes the currently authenticated user and non-recruiter accounts.
  * Strict: No dummy data or fake fallbacks.
  */
 export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {}) {
   const currentUser = getUser();
+  const currentUserId = String(currentUser?.id || currentUser?._id || "").trim().toLowerCase();
+  const currentUserEmail = String(currentUser?.email || "").trim().toLowerCase();
   const email = currentUser?.email;
   const collected = [];
   const errors = [];
 
-  // 1. Try recruiter discovery endpoint if user email is present
+  // 1. Query dedicated recruiter discovery endpoint if user email is present
   if (email) {
     try {
       const response = await axiosPublic.get("/auth/signup/discover-recruiters", {
@@ -69,7 +92,9 @@ export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {
       });
       const list = response?.data?.users || response?.data?.data || response?.data || [];
       if (Array.isArray(list)) {
-        collected.push(...list);
+        collected.push(
+          ...list.map((u) => (u && typeof u === "object" ? { ...u, _fromRecruiterDiscovery: true } : u))
+        );
       }
     } catch (err) {
       errors.push(err);
@@ -91,7 +116,7 @@ export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {
     }
   }
 
-  // 3. Query platform discoverable users (useful when discovering peers/recruiters)
+  // 3. Query platform discoverable users
   try {
     const response = await axiosInstance.get("/api/connections/discover", {
       params: { limit, offset, _t: Date.now() },
@@ -104,7 +129,7 @@ export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {
     errors.push(err);
   }
 
-  // 4. Query user's accepted connections (colleagues, recruiters)
+  // 4. Query user's accepted connections
   try {
     const response = await axiosInstance.get("/api/connections", {
       params: { page: 1, limit, ...(query ? { q: query.trim() } : {}) },
@@ -118,9 +143,7 @@ export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {
     errors.push(err);
   }
 
-  // If all attempts failed and we collected nothing, throw error to indicate failure
   if (collected.length === 0 && errors.length > 0 && errors.every((e) => e?.response?.status >= 400)) {
-    // Only throw if every endpoint failed and none returned an empty list
     const lastError = errors[0];
     const message =
       lastError?.response?.data?.message ||
@@ -132,27 +155,26 @@ export async function fetchRecruiters({ query = "", limit = 50, offset = 0 } = {
     throw errorObj;
   }
 
-  // Deduplicate by user ID
+  // Deduplicate by user ID/email, exclude self, and keep recruiter-eligible profiles
   const seenIds = new Set();
   const uniqueUsers = [];
   for (const user of collected) {
-    if (!user) continue;
-    const key = String(user.id || user.email || "").toLowerCase();
+    if (!isRecruiterEligibleUser(user)) continue;
+    const rawId = String(user.id || user._id || "").trim().toLowerCase();
+    const rawEmail = String(user.email || "").trim().toLowerCase();
+    if (currentUserId && rawId && rawId === currentUserId) continue;
+    if (currentUserEmail && rawEmail && rawEmail === currentUserEmail) continue;
+
+    const key = rawId || rawEmail;
     if (key && !seenIds.has(key)) {
       seenIds.add(key);
       uniqueUsers.push(user);
     }
   }
 
-  // Filter out admin users
   const nonAdmin = filterAdminUsersFromSearch(uniqueUsers);
+  const normalized = nonAdmin.map(normalizeRecruiter).filter(Boolean);
 
-  // Normalize shape
-  const normalized = nonAdmin
-    .map(normalizeRecruiter)
-    .filter(Boolean);
-
-  // Apply query filter if provided (matching name, email, company, job title)
   if (query && query.trim()) {
     const qLower = query.trim().toLowerCase();
     return normalized.filter((r) => {

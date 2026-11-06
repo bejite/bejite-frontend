@@ -4,8 +4,24 @@
 
 import axiosInstance from "../utils/axiosInstance";
 import { getUploadSizeError, apiErrorMessage } from "../utils/uploadLimits";
+import { upgradePitchThumbnailUrl } from "../utils/pitchThumbnail";
 
 const PITCHES_API_URL = "/api/pitches";
+
+function normalizePitchRecord(pitch) {
+  if (!pitch || typeof pitch !== "object") return pitch;
+  const poster = upgradePitchThumbnailUrl(
+    pitch.videoPoster || pitch.videoThumbnailUrl || pitch.thumbnailUrl,
+    pitch.videoUrl,
+    { mode: "poster" }
+  );
+  if (!poster) return pitch;
+  return {
+    ...pitch,
+    videoPoster: poster,
+    videoThumbnailUrl: pitch.videoThumbnailUrl ? poster : pitch.videoThumbnailUrl,
+  };
+}
 
 export const uploadPitchMedia = async (file) => {
   const sizeError = getUploadSizeError(file);
@@ -24,10 +40,14 @@ export const uploadPitchMedia = async (file) => {
   );
   const data = response.data || {};
   const first = Array.isArray(data.media) ? data.media[0] : null;
+  const uploadedUrl = data.url || first?.url;
+  const rawThumb = data.thumbnailUrl ?? first?.thumbnailUrl ?? null;
   return {
-    url: data.url || first?.url,
+    url: uploadedUrl,
     kind: data.kind || first?.kind || "video",
-    thumbnailUrl: data.thumbnailUrl ?? first?.thumbnailUrl ?? null,
+    thumbnailUrl: upgradePitchThumbnailUrl(rawThumb, uploadedUrl, {
+      mode: "upload",
+    }),
   };
 };
 
@@ -37,7 +57,9 @@ export const getPitchFeed = async (limit = 20, options = {}) => {
   if (options.cursor) params.cursor = options.cursor;
   const response = await axiosInstance.get(`${PITCHES_API_URL}/feed`, { params });
   return {
-    pitches: Array.isArray(response.data?.pitches) ? response.data.pitches : [],
+    pitches: Array.isArray(response.data?.pitches)
+      ? response.data.pitches.map(normalizePitchRecord)
+      : [],
     nextCursor: response.data?.nextCursor || null,
   };
 };
@@ -46,17 +68,19 @@ export const getMyPitches = async (status = "all") => {
   const response = await axiosInstance.get(`${PITCHES_API_URL}/mine`, {
     params: { status },
   });
-  return Array.isArray(response.data?.pitches) ? response.data.pitches : [];
+  return Array.isArray(response.data?.pitches)
+    ? response.data.pitches.map(normalizePitchRecord)
+    : [];
 };
 
 export const getPitch = async (pitchId) => {
   const response = await axiosInstance.get(`${PITCHES_API_URL}/${pitchId}`);
-  return response.data?.pitch || null;
+  return normalizePitchRecord(response.data?.pitch) || null;
 };
 
 export const createPitch = async (payload) => {
   const response = await axiosInstance.post(PITCHES_API_URL, payload);
-  return response.data?.pitch || null;
+  return normalizePitchRecord(response.data?.pitch) || null;
 };
 
 export const updatePitch = async (pitchId, payload) => {
@@ -64,7 +88,7 @@ export const updatePitch = async (pitchId, payload) => {
     `${PITCHES_API_URL}/${pitchId}`,
     payload
   );
-  return response.data?.pitch || null;
+  return normalizePitchRecord(response.data?.pitch) || null;
 };
 
 export const deletePitch = async (pitchId) => {

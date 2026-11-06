@@ -6,6 +6,8 @@ import {
   Eye,
   EyeOff,
   LogOut,
+  UserCheck,
+  Users,
   UserX,
   Bell,
   Globe,
@@ -51,6 +53,12 @@ import {
 import { getTwoFactorStatus } from "../services/twoFactorApi";
 import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
+import {
+  getAccountDelegations,
+  getReceivedDelegations,
+  isRecruiterAccount,
+  summarizeDelegations,
+} from "../services/accountDelegationService";
 
 export default function AccountSettings() {
   useSyncProfilePhoto();
@@ -62,6 +70,7 @@ export default function AccountSettings() {
     const localUser = getUser();
     return mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
   }, [reduxUser]);
+  const isRecruiter = isRecruiterAccount(user);
 
   const displayName = formatDisplayPersonName(user, "User");
   const email = user?.email?.trim() || "";
@@ -86,6 +95,14 @@ export default function AccountSettings() {
   const [toastMessage, setToastMessage] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [passwordRequired, setPasswordRequired] = useState(undefined);
+  const [delegationSummary, setDelegationSummary] = useState(() =>
+    summarizeDelegations([]),
+  );
+  const [receivedDelegations, setReceivedDelegations] = useState([]);
+  const pendingReceivedCount = receivedDelegations.filter(
+    (d) => d.status === "pending",
+  ).length;
+  const managedAccountCount = receivedDelegations.length - pendingReceivedCount;
 
   useEffect(() => {
     let cancelled = false;
@@ -127,10 +144,24 @@ export default function AccountSettings() {
         }
       })
       .catch(() => {});
+    if (isRecruiter) {
+      getAccountDelegations()
+        .then((list) => {
+          if (!cancelled) {
+            setDelegationSummary(summarizeDelegations(list));
+          }
+        })
+        .catch(() => {});
+      getReceivedDelegations()
+        .then((list) => {
+          if (!cancelled) setReceivedDelegations(list);
+        })
+        .catch(() => {});
+    }
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isRecruiter]);
 
   const handleChannelToggle = async (channel) => {
     if (prefsLoading || channelLoading) return;
@@ -197,7 +228,7 @@ export default function AccountSettings() {
     setModal(null);
     showToast("Account deactivated. Log in any time to reactivate it.");
     setTimeout(() => {
-      logout();
+      logout({ revokeServer: false });
     }, 1200);
   };
 
@@ -206,7 +237,7 @@ export default function AccountSettings() {
     setModal(null);
     showToast("Account permanently deleted");
     setTimeout(() => {
-      logout();
+      logout({ revokeServer: false });
     }, 1200);
   };
 
@@ -255,6 +286,52 @@ export default function AccountSettings() {
         },
       ],
     },
+    ...(isRecruiter
+      ? [
+          {
+            title: "Account Delegation",
+            rows: [
+              {
+                icon: UserCheck,
+                iconBg: "bg-[#EAF5E9]",
+                label: "Assign Account to a Recruiter",
+                sublabel: delegationSummary.sublabel,
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {delegationSummary.activeCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#EAF5E9] text-[#16730F] text-xs font-semibold">
+                        {delegationSummary.activeCount} Active
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/assign-recruiter"),
+              },
+              {
+                icon: Users,
+                iconBg: "bg-sky-50",
+                label: "Managed Accounts",
+                sublabel:
+                  managedAccountCount > 0
+                    ? `You manage ${managedAccountCount} account${managedAccountCount > 1 ? "s" : ""} for other recruiters`
+                    : "Review requests from recruiters who want your help",
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pendingReceivedCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-semibold">
+                        {pendingReceivedCount} New
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/managed-accounts"),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: "Notifications",
       rows: [

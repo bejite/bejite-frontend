@@ -58,6 +58,37 @@ export const clearAuthData = () => {
   localStorage.removeItem('token'); // legacy key checked by EmailSent
 };
 
+/**
+ * Tell the backend to blacklist the access JWT and delete refresh sessions.
+ * Call before clearAuthData() so tokens are still available.
+ */
+export async function revokeServerSession({ timeoutMs = 3000 } = {}) {
+  const accessToken = getAccessToken();
+  const refreshToken = getRefreshToken();
+  if (!accessToken && !refreshToken) return;
+
+  // Never let a slow or hung API delay the local logout.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      signal: controller.signal,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+      credentials: 'include',
+      keepalive: true,
+    });
+  } catch {
+    // Local logout must still succeed if the network is down.
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Check if user is authenticated (access or refresh token present)
 export const isAuthenticated = () => {
   return !!(getAccessToken() || getRefreshToken());
