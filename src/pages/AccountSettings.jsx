@@ -7,6 +7,7 @@ import {
   EyeOff,
   LogOut,
   UserCheck,
+  Users,
   UserX,
   Bell,
   Globe,
@@ -54,6 +55,7 @@ import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
 import {
   getAccountDelegations,
+  getReceivedDelegations,
   isRecruiterAccount,
   summarizeDelegations,
 } from "../services/accountDelegationService";
@@ -96,6 +98,11 @@ export default function AccountSettings() {
   const [delegationSummary, setDelegationSummary] = useState(() =>
     summarizeDelegations([]),
   );
+  const [receivedDelegations, setReceivedDelegations] = useState([]);
+  const pendingReceivedCount = receivedDelegations.filter(
+    (d) => d.status === "pending",
+  ).length;
+  const managedAccountCount = receivedDelegations.length - pendingReceivedCount;
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +150,11 @@ export default function AccountSettings() {
           if (!cancelled) {
             setDelegationSummary(summarizeDelegations(list));
           }
+        })
+        .catch(() => {});
+      getReceivedDelegations()
+        .then((list) => {
+          if (!cancelled) setReceivedDelegations(list);
         })
         .catch(() => {});
     }
@@ -216,7 +228,7 @@ export default function AccountSettings() {
     setModal(null);
     showToast("Account deactivated. Log in any time to reactivate it.");
     setTimeout(() => {
-      logout();
+      logout({ revokeServer: false });
     }, 1200);
   };
 
@@ -225,7 +237,7 @@ export default function AccountSettings() {
     setModal(null);
     showToast("Account permanently deleted");
     setTimeout(() => {
-      logout();
+      logout({ revokeServer: false });
     }, 1200);
   };
 
@@ -295,6 +307,26 @@ export default function AccountSettings() {
                   </div>
                 ),
                 onClick: () => navigate("/account-settings/assign-recruiter"),
+              },
+              {
+                icon: Users,
+                iconBg: "bg-sky-50",
+                label: "Managed Accounts",
+                sublabel:
+                  managedAccountCount > 0
+                    ? `You manage ${managedAccountCount} account${managedAccountCount > 1 ? "s" : ""} for other recruiters`
+                    : "Review requests from recruiters who want your help",
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pendingReceivedCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-semibold">
+                        {pendingReceivedCount} New
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/managed-accounts"),
               },
             ],
           },

@@ -15,6 +15,7 @@ import {
   Shield,
   Megaphone,
 } from "lucide-react";
+import { revokeServerSession } from "../../utils/tokenManager";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,7 +23,8 @@ const AdminLayout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await revokeServerSession();
     dispatch(logout());
     navigate("/admin/login");
   };
