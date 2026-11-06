@@ -35,7 +35,6 @@ export default function ProjectBriefDrawer({
 
   if (!isOpen) return null;
 
-  const isEnabled = project.enabled ?? true;
   const title =
     project.title || "Comprehensive Campaign Brief & Content Plan";
   const brief =

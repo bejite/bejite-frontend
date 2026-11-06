@@ -92,6 +92,12 @@ export default defineConfig(({ mode }) => {
   const sentryAuthToken = env.SENTRY_AUTH_TOKEN;
 
   return {
+    server: {
+      host: true,
+      port: 5173,
+      // Prefer 5173; if busy, try 5174, 5175, …
+      strictPort: false,
+    },
     resolve: {
       dedupe: ["react", "react-dom"],
     },

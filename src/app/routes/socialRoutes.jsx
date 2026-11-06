@@ -1,8 +1,5 @@
 import { Route, Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import ProtectedRoute from "../../components/ProtectedRoute.jsx";
-import { getUser, mergeAuthUsers } from "../../utils/tokenManager.js";
-import { isRecruiterAccount } from "../../services/accountDelegationService.js";
 import {
   Recruitment,
   PostDetailPage,
@@ -18,6 +15,7 @@ import {
   ActivityLog,
   AccountSettings,
   AssignRecruiterSettings,
+  ManagedAccountsSettings,
   BadgeStatus,
   BadgeHolder,
   BadgePaymentCallback,
@@ -83,6 +81,14 @@ export const socialRoutes = (
       element={guard(
         <AssignRecruiterSettings />,
         "Only recruiters can assign account access.",
+        "recruiter"
+      )}
+    />
+    <Route
+      path="/account-settings/managed-accounts"
+      element={guard(
+        <ManagedAccountsSettings />,
+        "Please log in to review account access requests.",
         "recruiter"
       )}
     />
