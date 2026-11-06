@@ -87,7 +87,7 @@ export default function AssignmentTypeStep({
           </div>
 
           <p className="font-bold text-gray-900 text-sm mt-3">
-            Partial Assignment
+            Partial Access
           </p>
         </button>
 
@@ -125,7 +125,7 @@ export default function AssignmentTypeStep({
           </div>
 
           <p className="font-bold text-gray-900 text-sm mt-3">
-            Full Assignment
+            Full Access
           </p>
         </button>
       </div>

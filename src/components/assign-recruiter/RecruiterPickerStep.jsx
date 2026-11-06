@@ -1,5 +1,5 @@
-import React from "react";
-import { Check, RefreshCw, Search, X } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import { Check, Loader2, RefreshCw, Search, X } from "lucide-react";
 import DisplayNameWithBadge from "../DisplayNameWithBadge";
 import RecruiterAvatar from "./RecruiterAvatar";
 import Loader from "../ui/Loader";
@@ -21,7 +21,37 @@ export default function RecruiterPickerStep({
   onRetry,
   onSelectRecruiter,
   assignedByRecruiterId = new Map(),
+  hasMore = false,
+  loadingMore = false,
+  loadMoreError = "",
+  onLoadMore,
 }) {
+  const listRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+
+  useEffect(() => {
+    onLoadMoreRef.current = onLoadMore;
+  }, [onLoadMore]);
+
+  const canObserve = hasMore && !loadingMore && !loadMoreError && recruiters.length > 0;
+
+  useEffect(() => {
+    const root = listRef.current;
+    const sentinel = sentinelRef.current;
+    if (!canObserve || !root || !sentinel || typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onLoadMoreRef.current?.();
+      },
+      { root, rootMargin: "0px 0px 48px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [canObserve, recruiters.length]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -93,7 +123,7 @@ export default function RecruiterPickerStep({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              placeholder="Search by recruiter name, email, role, or company..."
+              placeholder="Search by name, role, company, or exact email..."
               className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#1A3E32] focus:ring-2 focus:ring-[#1A3E32]/15 transition-all"
             />
             {searchQuery && (
@@ -147,9 +177,9 @@ export default function RecruiterPickerStep({
               <>
                 <div className="px-3.5 py-2 bg-white border-b border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
                   <span>
-                    {recruiters.length}{" "}
-                    {recruiters.length === 1 ? "recruiter" : "recruiters"}{" "}
-                    available
+                    {hasMore
+                      ? `Showing ${recruiters.length} recruiters · scroll for more`
+                      : `${recruiters.length} ${recruiters.length === 1 ? "recruiter" : "recruiters"} available`}
                   </span>
                   {selectedRecruiter && (
                     <button
@@ -162,7 +192,10 @@ export default function RecruiterPickerStep({
                   )}
                 </div>
 
-                <div className="max-h-68 overflow-y-auto divide-y divide-gray-100 bg-white">
+                <div
+                  ref={listRef}
+                  className="max-h-68 overflow-y-auto divide-y divide-gray-100 bg-white"
+                >
                   {recruiters.map((recruiter) => {
                     const recKey = String(recruiter.id || "")
                       .trim()
@@ -229,6 +262,40 @@ export default function RecruiterPickerStep({
                       </div>
                     );
                   })}
+
+                  {hasMore && (
+                    <div ref={sentinelRef} className="px-3.5 py-3 text-center text-xs text-gray-500">
+                      {loadMoreError ? (
+                        <button
+                          type="button"
+                          onClick={() => onLoadMore?.()}
+                          className="inline-flex items-center gap-1.5 font-semibold text-red-600 hover:underline cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          {loadMoreError} Tap to retry
+                        </button>
+                      ) : loadingMore ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Loading more recruiters...
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onLoadMore?.()}
+                          className="font-semibold text-[#16730F] hover:underline cursor-pointer"
+                        >
+                          Load more
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {!hasMore && recruiters.length > 5 && (
+                    <p className="px-3.5 py-2.5 text-center text-[11px] text-gray-400">
+                      You've reached the end of the list
+                    </p>
+                  )}
                 </div>
               </>
             )}
