@@ -12,7 +12,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import NewsFeedLayout from "../components/layout/NewsFeedLayout";
 import { ConfirmModal } from "../components/modal/confirmBadgeModal";
-import { fetchRecruiters } from "../services/recruitersApi";
 import {
   DELEGATION_PERMISSIONS,
   DELEGATION_PRESETS,
@@ -25,6 +24,7 @@ import {
   updateAccountDelegation,
   revokeAccountDelegation,
   isRecruiterAccount,
+  searchDelegationCandidates,
 } from "../services/accountDelegationService";
 import { getUser, mergeAuthUsers } from "../utils/tokenManager";
 import RecruiterPickerStep from "../components/assign-recruiter/RecruiterPickerStep";
@@ -72,6 +72,11 @@ export default function AssignRecruiterSettings() {
   const [recruitersLoading, setRecruitersLoading] = useState(true);
   const [recruitersError, setRecruitersError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasMoreRecruiters, setHasMoreRecruiters] = useState(false);
+  const [nextRecruiterOffset, setNextRecruiterOffset] = useState(0);
+  const [loadingMoreRecruiters, setLoadingMoreRecruiters] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState("");
+  const recruiterRequestRef = useRef(0);
   const [isPickerOpen, setIsPickerOpen] = useState(true);
 
   // Assignment form state
@@ -146,19 +151,58 @@ export default function AssignRecruiterSettings() {
   }, [canManageDelegation, showToast]);
 
   const loadRecruiterDirectory = useCallback(async (query = "") => {
+    const requestId = ++recruiterRequestRef.current;
     setRecruitersLoading(true);
     setRecruitersError("");
+    setLoadMoreError("");
     try {
-      const results = await fetchRecruiters({ query, limit: 60 });
-      setRecruiters(results);
+      const page = await searchDelegationCandidates({ query });
+      if (requestId !== recruiterRequestRef.current) return;
+      setRecruiters(page.recruiters);
+      setHasMoreRecruiters(page.hasMore);
+      setNextRecruiterOffset(page.nextOffset);
     } catch (err) {
+      if (requestId !== recruiterRequestRef.current) return;
+      setRecruiters([]);
+      setHasMoreRecruiters(false);
       setRecruitersError(
         err?.message || "Could not load recruiters right now. Please try again."
       );
     } finally {
-      setRecruitersLoading(false);
+      if (requestId === recruiterRequestRef.current) setRecruitersLoading(false);
     }
   }, []);
+
+  const loadMoreRecruiters = useCallback(async () => {
+    if (recruitersLoading || loadingMoreRecruiters || !hasMoreRecruiters) return;
+    const requestId = recruiterRequestRef.current;
+    setLoadingMoreRecruiters(true);
+    setLoadMoreError("");
+    try {
+      const page = await searchDelegationCandidates({
+        query: searchQuery,
+        offset: nextRecruiterOffset,
+      });
+      if (requestId !== recruiterRequestRef.current) return;
+      setRecruiters((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...page.recruiters.filter((r) => !seen.has(r.id))];
+      });
+      setHasMoreRecruiters(page.hasMore);
+      setNextRecruiterOffset(page.nextOffset);
+    } catch (err) {
+      if (requestId !== recruiterRequestRef.current) return;
+      setLoadMoreError(err?.message || "Could not load more recruiters.");
+    } finally {
+      setLoadingMoreRecruiters(false);
+    }
+  }, [
+    recruitersLoading,
+    loadingMoreRecruiters,
+    hasMoreRecruiters,
+    searchQuery,
+    nextRecruiterOffset,
+  ]);
 
   useEffect(() => {
     if (!canManageDelegation) return undefined;
@@ -298,7 +342,6 @@ export default function AssignRecruiterSettings() {
           durationType,
           customExpiresAt,
           note,
-          status: "active",
         });
         await refreshDelegationsAndLogs();
         showToast(`Updated account access for ${targetName}`);
@@ -314,9 +357,7 @@ export default function AssignRecruiterSettings() {
         });
         await refreshDelegationsAndLogs();
         showToast(
-          accessLevel === "full"
-            ? `Full account access assigned to ${targetName}`
-            : `Partial account access assigned to ${targetName}`
+          `${accessLevel === "full" ? "Full" : "Partial"} access request sent to ${targetName}. Access starts when they accept.`
         );
       }
       setConfirmFullModalOpen(false);
@@ -377,13 +418,18 @@ export default function AssignRecruiterSettings() {
     setActionBusyId(revokeTarget.id);
     try {
       const removedName = revokeTarget.recruiter?.name || "Recruiter";
+      const wasPending = computeEffectiveDelegationStatus(revokeTarget) === "pending";
       await revokeAccountDelegation(revokeTarget.id);
       if (editingDelegationId === revokeTarget.id) {
         resetForm();
       }
       await refreshDelegationsAndLogs();
       setRevokeTarget(null);
-      showToast(`Revoked account access from ${removedName}`);
+      showToast(
+        wasPending
+          ? `Withdrew the access request to ${removedName}`
+          : `Revoked account access from ${removedName}`
+      );
     } catch (err) {
       showToast(err?.message || "Could not revoke recruiter access", "error");
     } finally {
@@ -521,6 +567,10 @@ export default function AssignRecruiterSettings() {
                   recruitersLoading={recruitersLoading}
                   recruitersError={recruitersError}
                   onRetry={() => loadRecruiterDirectory(searchQuery)}
+                  hasMore={hasMoreRecruiters}
+                  loadingMore={loadingMoreRecruiters}
+                  loadMoreError={loadMoreError}
+                  onLoadMore={loadMoreRecruiters}
                   onSelectRecruiter={handleSelectRecruiter}
                   assignedByRecruiterId={assignedByRecruiterId}
                 />
@@ -560,9 +610,11 @@ export default function AssignRecruiterSettings() {
                 <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <p className="text-xs text-gray-400">
                     {selectedRecruiter
-                      ? `Assigning ${
-                          accessLevel === "full" ? "Full" : "Partial"
-                        } Access to ${selectedRecruiter.name}`
+                      ? editingDelegationId
+                        ? `Editing ${
+                            accessLevel === "full" ? "Full" : "Partial"
+                          } Access for ${selectedRecruiter.name}`
+                        : `${selectedRecruiter.name} must accept before access starts`
                       : "Select a recruiter in Step 1 to enable assignment"}
                   </p>
 
@@ -576,8 +628,8 @@ export default function AssignRecruiterSettings() {
                       : editingDelegationId
                       ? "Save Access Changes"
                       : accessLevel === "full"
-                      ? "Assign Full Account Access"
-                      : "Assign Partial Account Access"}
+                      ? "Send Full Access Request"
+                      : "Send Partial Access Request"}
                   </button>
                 </div>
               </div>
@@ -614,8 +666,8 @@ export default function AssignRecruiterSettings() {
           <ConfirmModal
             key="confirm-full-assignment"
             title="Confirm Full Account Assignment"
-            description={`Grant ${selectedRecruiter.name} full operational access to manage your jobs, applications, hiring pipelines, candidate outreach, messages, and pitches? Your password, 2FA, billing, and account deletion will remain locked to you.`}
-            confirmLabel="Grant Full Access"
+            description={`Offer ${selectedRecruiter.name} full operational access to manage your jobs, applications, hiring pipelines, candidate outreach, messages, and pitches?${editingDelegationId ? "" : " Access starts once they accept."} Your password, 2FA, billing, and account deletion will remain locked to you.`}
+            confirmLabel={editingDelegationId ? "Grant Full Access" : "Send Request"}
             icon={ShieldCheck}
             iconBg="bg-[#EAF5E9]"
             iconColor="text-[#16730F]"
@@ -625,7 +677,20 @@ export default function AssignRecruiterSettings() {
           />
         )}
 
-        {revokeTarget && (
+        {revokeTarget &&
+          (computeEffectiveDelegationStatus(revokeTarget) === "pending" ? (
+          <ConfirmModal
+            key="confirm-withdraw-request"
+            title="Withdraw Access Request"
+            description={`Cancel your pending access request to ${revokeTarget.recruiter?.name || "this recruiter"}? They will no longer be able to accept it.`}
+            confirmLabel="Withdraw Request"
+            danger
+            icon={UserMinus}
+            isLoading={actionBusyId === revokeTarget.id}
+            onClose={() => setRevokeTarget(null)}
+            onConfirm={handleConfirmRevoke}
+          />
+        ) : (
           <ConfirmModal
             key="confirm-revoke-assignment"
             title="Revoke Recruiter Assignment"
@@ -637,7 +702,7 @@ export default function AssignRecruiterSettings() {
             onClose={() => setRevokeTarget(null)}
             onConfirm={handleConfirmRevoke}
           />
-        )}
+        ))}
       </AnimatePresence>
     </NewsFeedLayout>
   );

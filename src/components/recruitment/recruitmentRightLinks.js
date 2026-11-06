@@ -1,5 +1,4 @@
 import { isRecruiterAccount } from "../../services/accountDelegationService";
-import { isJobseekerAccount } from "../../services/elearningService";
 
 export const RECRUITMENT_RIGHT_LINKS = [
   {

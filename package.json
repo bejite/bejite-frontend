@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node init && vite --host --port 5173",
+    "dev": "node init && vite",
     "build": "node init && node --max-old-space-size=8192 ./node_modules/vite/bin/vite.js build",
     "lint": "eslint .",
     "preview": "vite preview",

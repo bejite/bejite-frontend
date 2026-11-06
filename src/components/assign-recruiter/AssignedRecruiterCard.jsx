@@ -3,6 +3,7 @@ import {
   Building2,
   Check,
   Clock,
+  Hourglass,
   PauseCircle,
   Pencil,
   PlayCircle,
@@ -25,8 +26,31 @@ function formatShortDate(isoString) {
   });
 }
 
+const STATUS_STYLES = {
+  active: {
+    label: "Active",
+    pill: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  paused: {
+    label: "Paused",
+    pill: "bg-amber-50 text-amber-700 border border-amber-200",
+    dot: "bg-amber-500",
+  },
+  pending: {
+    label: "Awaiting response",
+    pill: "bg-sky-50 text-sky-700 border border-sky-200",
+    dot: "bg-sky-500",
+  },
+  expired: {
+    label: "Expired",
+    pill: "bg-gray-100 text-gray-600 border border-gray-200",
+    dot: "bg-gray-400",
+  },
+};
+
 /**
- * Reusable card displaying an active or paused recruiter assignment.
+ * Reusable card displaying a pending, active or paused recruiter assignment.
  */
 export default function AssignedRecruiterCard({
   delegation,
@@ -40,6 +64,8 @@ export default function AssignedRecruiterCard({
   const recruiter = delegation?.recruiter || {};
   const effectiveStatus = computeEffectiveDelegationStatus(delegation);
   const isFull = delegation?.accessLevel === "full";
+  const isPending = effectiveStatus === "pending";
+  const statusStyle = STATUS_STYLES[effectiveStatus] || STATUS_STYLES.expired;
   const expiryFormatted = formatShortDate(delegation?.expiresAt);
 
   return (
@@ -98,42 +124,31 @@ export default function AssignedRecruiterCard({
                 ) : (
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                 )}
-                {isFull ? "Full Assignment" : "Partial Assignment"}
+                {isFull ? "Full Access" : "Partial Access"}
               </span>
 
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                  effectiveStatus === "active"
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : effectiveStatus === "paused"
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-gray-100 text-gray-600 border border-gray-200"
-                }`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyle.pill}`}
               >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    effectiveStatus === "active"
-                      ? "bg-emerald-500"
-                      : effectiveStatus === "paused"
-                      ? "bg-amber-500"
-                      : "bg-gray-400"
-                  }`}
-                />
-                {effectiveStatus === "active"
-                  ? "Active"
-                  : effectiveStatus === "paused"
-                  ? "Paused"
-                  : "Expired"}
+                <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                {statusStyle.label}
               </span>
 
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
-                {expiryFormatted
-                  ? effectiveStatus === "expired"
-                    ? `Expired ${expiryFormatted}`
-                    : `Until ${expiryFormatted}`
-                  : "Until revoked"}
-              </span>
+              {isPending ? (
+                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                  <Hourglass className="w-3.5 h-3.5 text-gray-400" />
+                  Sent {formatShortDate(delegation?.createdAt) || "recently"} · access starts when accepted
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                  <Clock className="w-3.5 h-3.5 text-gray-400" />
+                  {expiryFormatted
+                    ? effectiveStatus === "expired"
+                      ? `Expired ${expiryFormatted}`
+                      : `Until ${expiryFormatted}`
+                    : "Until revoked"}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -150,7 +165,7 @@ export default function AssignedRecruiterCard({
             Edit
           </button>
 
-          {effectiveStatus !== "expired" && (
+          {effectiveStatus !== "expired" && !isPending && (
             <button
               type="button"
               onClick={() => onTogglePause?.(delegation)}
@@ -178,7 +193,7 @@ export default function AssignedRecruiterCard({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-100 bg-red-50/50 hover:bg-red-50 text-xs font-semibold text-red-600 transition-colors cursor-pointer disabled:opacity-50"
           >
             <UserMinus className="w-3.5 h-3.5" />
-            Revoke
+            {isPending ? "Cancel request" : "Revoke"}
           </button>
         </div>
       </div>

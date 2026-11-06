@@ -1,6 +1,12 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { clearAuthData, getAccessToken, getUser, isAuthenticated } from '../utils/tokenManager';
+import {
+  clearAuthData,
+  getAccessToken,
+  getUser,
+  isAuthenticated,
+  revokeServerSession,
+} from '../utils/tokenManager';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -17,8 +23,10 @@ const useAuth = () => {
   const storedUser = getUser();
   const authenticated = isAuthenticated();
 
-  // Logout function
-  const handleLogout = () => {
+  // Logout function — revoke server session first, then clear local state.
+  // Pass { revokeServer: false } when the server already ended every session.
+  const handleLogout = async ({ revokeServer = true } = {}) => {
+    if (revokeServer) await revokeServerSession();
     dispatch(logout());
     clearAuthData();
     navigate('/');

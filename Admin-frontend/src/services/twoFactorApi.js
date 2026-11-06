@@ -9,7 +9,7 @@ export async function getTwoFactorStatus() {
     const { data } = await axiosInstance.get("/auth/2fa/status");
     return data;
   } catch (error) {
-    throw new Error(readError(error, "Could not load 2FA status"));
+    throw new Error(readError(error, "Could not load 2FA status"), { cause: error });
   }
 }
 
@@ -18,7 +18,7 @@ export async function setupTwoFactor(password) {
     const { data } = await axiosInstance.post("/auth/2fa/setup", { password });
     return data;
   } catch (error) {
-    throw new Error(readError(error, "Could not start 2FA setup"));
+    throw new Error(readError(error, "Could not start 2FA setup"), { cause: error });
   }
 }
 
@@ -27,7 +27,7 @@ export async function enableTwoFactor(code, password) {
     const { data } = await axiosInstance.post("/auth/2fa/enable", { code, password });
     return data;
   } catch (error) {
-    throw new Error(readError(error, "Could not enable 2FA"));
+    throw new Error(readError(error, "Could not enable 2FA"), { cause: error });
   }
 }
 
@@ -36,6 +36,6 @@ export async function disableTwoFactor(code) {
     const { data } = await axiosInstance.post("/auth/2fa/disable", { code });
     return data;
   } catch (error) {
-    throw new Error(readError(error, "Could not disable 2FA"));
+    throw new Error(readError(error, "Could not disable 2FA"), { cause: error });
   }
 }
