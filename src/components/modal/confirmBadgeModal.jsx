@@ -361,14 +361,14 @@ export function ConfirmModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 ${danger ? "bg-red-500 hover:bg-red-600" : "bg-[#1A3E32]"} disabled:opacity-50`}
+            className={`flex-1 px-4 py-2.5 rounded-xl text-white text-sm font-semibold text-center flex items-center justify-center gap-2 ${danger ? "bg-red-500 hover:bg-red-600" : "bg-[#1A3E32]"} disabled:opacity-50`}
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmLabel}

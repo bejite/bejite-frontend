@@ -98,10 +98,12 @@ const JobConnection = () => {
     }
   };
 
-  const handleAdd = (id) => {
-    if (!addedUsers.includes(id)) {
-      setAddedUsers((prev) => [...prev, id]);
-    }
+  const handleToggleRecruiter = (id) => {
+    setAddedUsers((prev) =>
+      prev.includes(id)
+        ? prev.filter((selectedId) => selectedId !== id)
+        : [...prev, id],
+    );
   };
 
   const handleContinue = async () => {
@@ -208,7 +210,11 @@ const JobConnection = () => {
           </p>
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
-            <UserList users={users} addedUsers={addedUsers} onAdd={handleAdd} />
+            <UserList
+              users={users}
+              addedUsers={addedUsers}
+              onToggle={handleToggleRecruiter}
+            />
             {hasMore && (
               <button
                 type="button"
