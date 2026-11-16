@@ -123,6 +123,22 @@ test.describe('Connect With Recruiters selection (public)', () => {
     expect(submittedPayload.followings).toHaveLength(10);
     expect(submittedPayload.followings).not.toContain('rec-5');
     expect(submittedPayload.followings).toContain('rec-11');
+
+    await expect(page).toHaveURL(/\/resume(?:\?|$)/);
+    await expect(page.getByText(/Build Your Resume\./i)).toBeVisible();
+
+    const storedUser = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('user') || '{}')
+    );
+    expect(storedUser.role).toBe('jobseeker');
+    expect(storedUser.mode).toBe('active_jobseeker');
+
+    const getStartedBtn = page.getByRole('button', { name: /Get Started/i });
+    await expect(getStartedBtn).toBeVisible();
+    await getStartedBtn.click();
+
+    await expect(page).toHaveURL(/\/bio(?:\?|$)/);
+    await expect(page.getByText(/Bio\/Personal Information/i)).toBeVisible();
   });
 });
 
