@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
@@ -31,6 +31,7 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [bellRing, setBellRing] = useState(false);
+  const notifBellRef = useRef(null);
   const { notifications, unreadCount } = useAdminInbox();
 
   const { user } = useSelector((state) => state.auth);
@@ -238,11 +239,14 @@ const AdminLayout = () => {
             {/* Notification Bell with Dropdown */}
             <div className="relative">
               <button
+                ref={notifBellRef}
+                type="button"
                 onClick={handleBellClick}
-                className={`relative p-2.5 rounded-xl border border-gray-100 text-gray-600 hover:text-[#16730F] hover:bg-[#16730F]/5 hover:border-[#16730F]/20 transition-all duration-200 shadow-sm ${
+                className={`relative p-2.5 rounded-xl border border-gray-100 text-gray-600 hover:text-[#16730F] hover:bg-[#16730F]/5 hover:border-[#16730F]/20 transition-all duration-200 shadow-sm cursor-pointer ${
                   bellRing ? "notif-bell-ring" : ""
                 }`}
                 aria-label="Notifications"
+                aria-expanded={notifOpen}
                 id="notification-bell"
               >
                 <Bell size={20} />
@@ -261,6 +265,7 @@ const AdminLayout = () => {
                 onClose={() => setNotifOpen(false)}
                 notifications={notifications}
                 unreadCount={unreadCount}
+                triggerRef={notifBellRef}
               />
             </div>
 
