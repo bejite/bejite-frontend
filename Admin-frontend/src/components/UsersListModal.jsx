@@ -35,9 +35,14 @@ const UsersListModal = ({ isOpen, onClose, title, users, type, loading }) => {
   }, []);
 
   useEffect(() => {
-    if (isOpen && type === "likes") {
-      void fetchConnections();
-    }
+    if (!isOpen || type !== "likes") return undefined;
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) void fetchConnections();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, type, fetchConnections]);
 
   // Check connection status for a user

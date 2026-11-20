@@ -59,7 +59,13 @@ const PostContainer = () => {
   }, []);
 
   useEffect(() => {
-    void fetchFeed();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) void fetchFeed();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchFeed]);
 
   const loadMorePosts = async () => {

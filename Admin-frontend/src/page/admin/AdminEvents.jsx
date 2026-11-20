@@ -140,7 +140,13 @@ export default function AdminEvents() {
   }, []);
 
   useEffect(() => {
-    fetchEvents();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) fetchEvents();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchEvents]);
 
   const liveEvents = useMemo(() => {

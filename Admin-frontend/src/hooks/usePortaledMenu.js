@@ -31,8 +31,14 @@ export function usePortaledMenu({
   const [menuPos, setMenuPos] = useState(null);
   const onCloseRef = useRef(onClose);
   const extraContainRefsRef = useRef(extraContainRefs);
-  onCloseRef.current = onClose;
-  extraContainRefsRef.current = extraContainRefs;
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    extraContainRefsRef.current = extraContainRefs;
+  }, [extraContainRefs]);
 
   const close = useCallback(() => {
     onCloseRef.current?.();
@@ -67,10 +73,7 @@ export function usePortaledMenu({
   }, [isOpen, close]);
 
   useEffect(() => {
-    if (!isOpen) {
-      setMenuPos(null);
-      return undefined;
-    }
+    if (!isOpen) return undefined;
 
     const updatePosition = () => {
       const trigger = triggerRef.current;

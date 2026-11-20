@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   X,
   Building,
@@ -21,22 +21,16 @@ import {
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 
-export const RecruiterProfileDrawer = ({
+const RecruiterProfileDrawerInner = ({
   recruiter,
   totalMessagesCount,
   onClose,
 }) => {
-  const [noteText, setNoteText] = useState("");
+  const [noteText, setNoteText] = useState(() =>
+    recruiter?.email ? getRecruiterNotes(recruiter.email) : "",
+  );
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
-
-  useEffect(() => {
-    if (recruiter?.email) {
-      setNoteText(getRecruiterNotes(recruiter.email));
-    }
-  }, [recruiter?.email]);
-
-  if (!recruiter) return null;
 
   const handleCopy = (field, text) => {
     if (!text) return;
@@ -238,5 +232,21 @@ export const RecruiterProfileDrawer = ({
         </div>
       </div>
     </aside>
+  );
+};
+
+export const RecruiterProfileDrawer = ({
+  recruiter,
+  totalMessagesCount,
+  onClose,
+}) => {
+  if (!recruiter) return null;
+  return (
+    <RecruiterProfileDrawerInner
+      key={recruiter.email || recruiter.id || recruiter.name}
+      recruiter={recruiter}
+      totalMessagesCount={totalMessagesCount}
+      onClose={onClose}
+    />
   );
 };

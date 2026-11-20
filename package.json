@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:admin": "npm --prefix Admin-frontend run dev",
     "build": "node --max-old-space-size=8192 ./node_modules/vite/bin/vite.js build",
     "lint": "eslint .",
     "preview": "vite preview",

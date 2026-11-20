@@ -42,13 +42,17 @@ export function AdminInboxProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    refresh().catch(() => {});
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) refresh().catch(() => {});
+    });
     const intervalId = setInterval(() => {
       refresh({ silent: true });
     }, POLL_MS);
     const onFocus = () => refresh({ silent: true });
     window.addEventListener("focus", onFocus);
     return () => {
+      cancelled = true;
       clearInterval(intervalId);
       window.removeEventListener("focus", onFocus);
     };

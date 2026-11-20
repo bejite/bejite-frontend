@@ -57,27 +57,27 @@ const DetailRow = ({ label, value }) => {
 };
 
 const AdminTransactionDetailModal = ({ transaction, onClose }) => {
-  const [details, setDetails] = useState(transaction);
+  const [fetchedDetails, setFetchedDetails] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(Boolean(transaction?.id));
 
+  const details =
+    fetchedDetails && fetchedDetails.id === transaction?.id
+      ? fetchedDetails
+      : transaction;
+
   useEffect(() => {
-    setDetails(transaction);
-    setError(null);
-    if (!transaction?.id) {
-      setLoading(false);
-      return undefined;
-    }
+    if (!transaction?.id) return undefined;
 
     let cancelled = false;
-    const load = async () => {
-      setLoading(true);
+    Promise.resolve().then(async () => {
+      if (cancelled) return;
       try {
         const { data } = await axiosInstance.get(
           `/api/admin/metrics/revenue/transactions/${transaction.id}`,
         );
         if (!cancelled && data?.transaction) {
-          setDetails(data.transaction);
+          setFetchedDetails(data.transaction);
         }
       } catch {
         if (!cancelled && !transaction.reference && !transaction.email) {
@@ -86,9 +86,8 @@ const AdminTransactionDetailModal = ({ transaction, onClose }) => {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
+    });
 
-    load();
     return () => {
       cancelled = true;
     };

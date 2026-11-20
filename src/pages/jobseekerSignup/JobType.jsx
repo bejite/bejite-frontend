@@ -212,6 +212,14 @@ function JobType() {
       return;
     }
 
+    const salaryDigits = String(form.salary).replace(/[^\d]/g, "");
+    if (salaryDigits && Number(salaryDigits) > 2_147_483_647) {
+      toast.error(
+        "Expected salary is too large. Please enter a realistic amount.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     const activeStatus = String(

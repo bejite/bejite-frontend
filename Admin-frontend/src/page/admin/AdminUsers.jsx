@@ -37,12 +37,8 @@ const AdminUsers = () => {
 
   const filterMenuRef = useRef(null);
   const userIdFromQuery = searchParams.get("userId");
-
-  useEffect(() => {
-    if (userIdFromQuery) {
-      setSelectedUser({ id: userIdFromQuery });
-    }
-  }, [userIdFromQuery]);
+  const modalUser =
+    selectedUser ?? (userIdFromQuery ? { id: userIdFromQuery } : null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -111,10 +107,6 @@ const AdminUsers = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showFilterMenu]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, roleFilter, dateFilter]);
 
   // Calculate display range for "Showing X-Y of Z users"
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
@@ -560,9 +552,9 @@ const AdminUsers = () => {
         )}
       </div>
 
-      {selectedUser && (
+      {modalUser && (
         <AdminUserDetailModal
-          user={selectedUser}
+          user={modalUser}
           onClose={() => {
             setSelectedUser(null);
             if (searchParams.has("userId")) {
