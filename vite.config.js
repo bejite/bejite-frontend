@@ -93,9 +93,16 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      host: true,
-      port: 5173,
-      // Prefer 5173; if busy, try 5174, 5175, …
+      // Bind IPv4 localhost so port conflicts are detected reliably on Windows
+      // (host: true / dual-stack can let two apps both claim the same port).
+      host: "127.0.0.1",
+      port: 5180,
+      // If 5180 is taken, Vite tries 5181, 5182, … automatically.
+      strictPort: false,
+    },
+    preview: {
+      host: "127.0.0.1",
+      port: 4180,
       strictPort: false,
     },
     resolve: {

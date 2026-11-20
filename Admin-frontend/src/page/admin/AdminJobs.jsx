@@ -80,10 +80,6 @@ const AdminJobs = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, segment, statusFilter]);
-
-  useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
@@ -229,7 +225,10 @@ const AdminJobs = () => {
                 : "Search jobs or companies..."
             }
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl outline-none focus:border-[#16730F] focus:ring-1 focus:ring-[#16730F] transition"
           />
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
@@ -247,7 +246,10 @@ const AdminJobs = () => {
             <button
               key={item.id}
               type="button"
-              onClick={() => setSegment(item.id)}
+              onClick={() => {
+                setSegment(item.id);
+                setCurrentPage(1);
+              }}
               className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
                 isActive
                   ? "bg-[#16730F] text-white shadow-sm"
@@ -285,7 +287,10 @@ const AdminJobs = () => {
             <button
               key={item.id}
               type="button"
-              onClick={() => setStatusFilter(item.id)}
+              onClick={() => {
+                setStatusFilter(item.id);
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? "bg-green-800 text-white"

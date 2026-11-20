@@ -37,20 +37,33 @@ const UserCard = ({ user, isAdded, onAdd, onRemove, onToggle }) => {
           type="button"
           onClick={handleAction}
           aria-pressed={isAdded}
-          aria-label={isAdded ? `Unselect ${user.name}` : `Add ${user.name}`}
-          title={isAdded ? "Click to unselect recruiter" : "Click to select recruiter"}
+          aria-label={isAdded ? `Remove ${user.name}` : `Add ${user.name}`}
+          title={isAdded ? "Click to remove recruiter" : "Click to select recruiter"}
           className={`group flex justify-center items-center gap-2 rounded-3xl px-4 py-1.5 shadow-2xl cursor-pointer w-full sm:w-28 mx-auto sm:mx-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16730F]/50 ${
             isAdded
-              ? "bg-[#E0E0E040] border border-[#1A3E32]/20 text-[#1A3E32] hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+              ? "bg-red-50 border border-red-300 text-red-700 sm:bg-[#E0E0E040] sm:border-[#1A3E32]/20 sm:text-[#1A3E32] sm:hover:bg-red-50 sm:hover:border-red-300 sm:hover:text-red-700"
               : "bg-[#16730F] text-white hover:bg-[#125d0c]"
           }`}
         >
           {isAdded ? (
             <>
-              <FaCheck className="text-xs group-hover:hidden group-focus-visible:hidden" aria-hidden="true" />
-              <span className="font-medium group-hover:hidden group-focus-visible:hidden">Added</span>
-              <FaTimes className="hidden text-xs group-hover:inline-block group-focus-visible:inline-block" aria-hidden="true" />
-              <span className="hidden font-medium group-hover:inline group-focus-visible:inline">Remove</span>
+              {/* Mobile: always show Remove (no hover). Desktop: Added → Remove on hover. */}
+              <FaTimes className="text-xs sm:hidden" aria-hidden="true" />
+              <span className="font-medium sm:hidden">Remove</span>
+              <FaCheck
+                className="text-xs hidden sm:inline-block sm:group-hover:hidden sm:group-focus-visible:hidden"
+                aria-hidden="true"
+              />
+              <span className="font-medium hidden sm:inline sm:group-hover:hidden sm:group-focus-visible:hidden">
+                Added
+              </span>
+              <FaTimes
+                className="hidden text-xs sm:group-hover:inline-block sm:group-focus-visible:inline-block"
+                aria-hidden="true"
+              />
+              <span className="hidden font-medium sm:group-hover:inline sm:group-focus-visible:inline">
+                Remove
+              </span>
             </>
           ) : (
             <>

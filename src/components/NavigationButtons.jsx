@@ -15,14 +15,12 @@ const NavigationButtons = ({
   nextLabel = "Next",
   isLoading = false,
   showBack,
-  isEditMode,
+  isEditMode: _isEditMode,
 }) => {
+  // Always show back when onBack is provided, unless showBack is explicitly false.
+  // (Previously isEditMode={false} hid the arrow during signup.)
   const shouldShowBack =
-    typeof showBack === "boolean"
-      ? showBack
-      : isEditMode !== undefined
-        ? Boolean(isEditMode)
-        : Boolean(onBack);
+    typeof showBack === "boolean" ? showBack : Boolean(onBack);
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-10 px-4 gap-4 mb-12 font-nunito-semi">

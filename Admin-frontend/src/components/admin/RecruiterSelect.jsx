@@ -55,6 +55,7 @@ export function RecruiterSelect({
       if (!inTrigger && !inMenu) {
         setIsOpen(false);
         setSearchTerm("");
+        setMenuPos(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -70,6 +71,7 @@ export function RecruiterSelect({
       if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
         setSearchTerm("");
+        setMenuPos(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -83,10 +85,7 @@ export function RecruiterSelect({
   }, [isOpen, menuPos]);
 
   useEffect(() => {
-    if (!isOpen) {
-      setMenuPos(null);
-      return undefined;
-    }
+    if (!isOpen) return undefined;
 
     const updatePosition = () => {
       const trigger = triggerRef.current;
@@ -138,6 +137,7 @@ export function RecruiterSelect({
     }
     setIsOpen(false);
     setSearchTerm("");
+    setMenuPos(null);
   };
 
   const handleClear = (e) => {

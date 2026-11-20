@@ -294,6 +294,8 @@ const Bio = () => {
         onBack={() => {
           if (isEditMode) {
             navigate("/news-feed");
+          } else {
+            navigate("/resume");
           }
         }}
         onNext={handleNextStep}

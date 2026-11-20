@@ -7,7 +7,12 @@ export default defineConfig({
   server: {
     host: true,
     port: 5174,
-    // Prefer 5174; if busy, try 5175, 5176, …
+    // If 5174 is taken, Vite tries 5175, 5176, … automatically.
+    strictPort: false,
+  },
+  preview: {
+    host: true,
+    port: 4174,
     strictPort: false,
   },
   plugins: [react(), tailwindcss()],

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AnimatePresence } from "framer-motion";
@@ -33,58 +33,79 @@ const AdminNotifications = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeCategory, activePriority, statusFilter, searchQuery, sortOrder]);
-
-  // Deep-link from bell / Support item: /admin/notifications?contactId=<uuid>
-  useEffect(() => {
-    const contactId = searchParams.get("contactId");
-    if (!contactId || loading) return;
-
-    const match = notifications.find(
-      (n) =>
-        n.type === "contact_message" &&
-        (String(n.entityId) === String(contactId) ||
-          n.id === `contact-${contactId}` ||
-          n.id === contactId),
+  const contactIdParam = searchParams.get("contactId");
+  const deepLinkNotification = useMemo(() => {
+    if (!contactIdParam || loading) return null;
+    return (
+      notifications.find(
+        (n) =>
+          n.type === "contact_message" &&
+          (String(n.entityId) === String(contactIdParam) ||
+            n.id === `contact-${contactIdParam}` ||
+            n.id === contactIdParam),
+      ) ?? null
     );
+  }, [contactIdParam, notifications, loading]);
 
-    if (!match) return;
+  const isDeepLinking = Boolean(contactIdParam && deepLinkNotification);
+  const effectiveCategory = isDeepLinking
+    ? NOTIFICATION_CATEGORIES.SUPPORT
+    : activeCategory;
+  const effectiveStatusFilter = isDeepLinking ? "all" : statusFilter;
+  const modalNotification = selectedNotification ?? deepLinkNotification;
 
-    setActiveCategory(NOTIFICATION_CATEGORIES.SUPPORT);
-    setStatusFilter("all");
-    setSelectedNotification(match);
+  const handleCategoryChange = (value) => {
+    setActiveCategory(value);
+    setCurrentPage(1);
+  };
+  const handlePriorityChange = (value) => {
+    setActivePriority(value);
+    setCurrentPage(1);
+  };
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+  const handleSortChange = (value) => {
+    setSortOrder(value);
+    setCurrentPage(1);
+  };
 
+  const clearContactDeepLink = () => {
+    if (!searchParams.has("contactId")) return;
     const next = new URLSearchParams(searchParams);
     next.delete("contactId");
     setSearchParams(next, { replace: true });
-  }, [searchParams, notifications, loading, setSearchParams]);
+  };
 
   const filteredNotifications = useMemo(() => {
     return notifications
       .filter((n) => {
-        if (activeCategory !== "all" && n.category !== activeCategory) {
+        if (effectiveCategory !== "all" && n.category !== effectiveCategory) {
           return false;
         }
         if (activePriority !== "all" && n.priority !== activePriority) {
           return false;
         }
-        if (statusFilter === "unread" && n.read) return false;
+        if (effectiveStatusFilter === "unread" && n.read) return false;
         if (
-          statusFilter === "verification" &&
+          effectiveStatusFilter === "verification" &&
           n.category !== NOTIFICATION_CATEGORIES.USERS
         ) {
           return false;
         }
         if (
-          statusFilter === "adpro" &&
+          effectiveStatusFilter === "adpro" &&
           n.category !== NOTIFICATION_CATEGORIES.ADPRO
         ) {
           return false;
         }
         if (
-          statusFilter === "support" &&
+          effectiveStatusFilter === "support" &&
           n.category !== NOTIFICATION_CATEGORIES.SUPPORT
         ) {
           return false;
@@ -129,9 +150,9 @@ const AdminNotifications = () => {
       });
   }, [
     notifications,
-    activeCategory,
+    effectiveCategory,
     activePriority,
-    statusFilter,
+    effectiveStatusFilter,
     searchQuery,
     sortOrder,
   ]);
@@ -234,9 +255,9 @@ const AdminNotifications = () => {
   };
 
   const isFiltered =
-    activeCategory !== "all" ||
+    effectiveCategory !== "all" ||
     activePriority !== "all" ||
-    statusFilter !== "all" ||
+    effectiveStatusFilter !== "all" ||
     Boolean(searchQuery.trim());
 
   return (
@@ -258,15 +279,15 @@ const AdminNotifications = () => {
 
       <NotificationFilters
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
+        onSearchChange={handleSearchChange}
+        activeCategory={effectiveCategory}
+        onCategoryChange={handleCategoryChange}
         activePriority={activePriority}
-        onPriorityChange={setActivePriority}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
+        onPriorityChange={handlePriorityChange}
+        statusFilter={effectiveStatusFilter}
+        onStatusChange={handleStatusChange}
         sortOrder={sortOrder}
-        onSortChange={setSortOrder}
+        onSortChange={handleSortChange}
         notifications={notifications}
         counts={counts}
         totalCount={counts.total}
@@ -331,8 +352,11 @@ const AdminNotifications = () => {
       </div>
 
       <NotificationDetailModal
-        notification={selectedNotification}
-        onClose={() => setSelectedNotification(null)}
+        notification={modalNotification}
+        onClose={() => {
+          setSelectedNotification(null);
+          clearContactDeepLink();
+        }}
         onReview={openNotification}
         onResolved={async () => {
           await refresh();

@@ -42,14 +42,22 @@ function ChatMessageInput({
   const recordStartRef = useRef(0);
   const emojiRef = useRef(null);
   const attachRef = useRef(null);
-  const emojiMenu = usePortaledMenu({
+  const {
+    triggerRef: emojiTriggerRef,
+    menuRef: emojiMenuRef,
+    menuPos: emojiMenuPos,
+  } = usePortaledMenu({
     isOpen: showEmoji,
     onClose: () => setShowEmoji(false),
     minWidth: 280,
     maxHeight: 400,
     extraContainRefs: [emojiRef],
   });
-  const attachMenu = usePortaledMenu({
+  const {
+    triggerRef: attachTriggerRef,
+    menuRef: attachMenuRef,
+    menuPos: attachMenuPos,
+  } = usePortaledMenu({
     isOpen: showAttachMenu,
     onClose: () => setShowAttachMenu(false),
     minWidth: 140,
@@ -258,7 +266,7 @@ function ChatMessageInput({
           <div className="flex items-center space-x-1 md:space-x-2">
             <div className="relative" ref={emojiRef}>
               <button
-                ref={emojiMenu.triggerRef}
+                ref={emojiTriggerRef}
                 type="button"
                 onClick={() => {
                   setShowEmoji((v) => !v);
@@ -271,17 +279,17 @@ function ChatMessageInput({
                 😊
               </button>
               {showEmoji &&
-                emojiMenu.menuPos &&
+                emojiMenuPos &&
                 createPortal(
                   <div
-                    ref={emojiMenu.menuRef}
+                    ref={emojiMenuRef}
                     className="rounded-xl shadow-lg overflow-hidden"
-                    style={getPortaledMenuStyle(emojiMenu.menuPos)}
+                    style={getPortaledMenuStyle(emojiMenuPos)}
                   >
                     <EmojiPicker
                       onEmojiClick={handleEmojiClick}
-                      width={Math.min(320, emojiMenu.menuPos.width)}
-                      height={Math.min(400, emojiMenu.menuPos.maxHeight)}
+                      width={Math.min(320, emojiMenuPos.width)}
+                      height={Math.min(400, emojiMenuPos.maxHeight)}
                       searchPlaceholder="Search emojis…"
                       previewConfig={{ showPreview: false }}
                     />
@@ -292,7 +300,7 @@ function ChatMessageInput({
 
             <div className="relative" ref={attachRef}>
               <button
-                ref={attachMenu.triggerRef}
+                ref={attachTriggerRef}
                 type="button"
                 onClick={() => {
                   setShowAttachMenu((v) => !v);
@@ -305,12 +313,12 @@ function ChatMessageInput({
                 ＋
               </button>
               {showAttachMenu &&
-                attachMenu.menuPos &&
+                attachMenuPos &&
                 createPortal(
                   <div
-                    ref={attachMenu.menuRef}
+                    ref={attachMenuRef}
                     className="bg-white border border-gray-200 rounded-xl shadow-lg py-1"
-                    style={getPortaledMenuStyle(attachMenu.menuPos)}
+                    style={getPortaledMenuStyle(attachMenuPos)}
                   >
                     <button
                       type="button"
