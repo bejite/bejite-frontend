@@ -39,3 +39,5 @@ src/config.js
 /blob-report/
 /playwright/.cache/
 /e2e/.auth/
+# Obfuscated dropper previously committed as ./init — never track again
+/init
