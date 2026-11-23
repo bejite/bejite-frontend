@@ -33,6 +33,10 @@ const ROLE_OPTIONS = [
   },
   { value: ADMIN_ROLES.ADMIN, label: ADMIN_ROLE_LABELS[ADMIN_ROLES.ADMIN] },
   {
+    value: ADMIN_ROLES.MANAGER,
+    label: ADMIN_ROLE_LABELS[ADMIN_ROLES.MANAGER],
+  },
+  {
     value: ADMIN_ROLES.ACCOUNT,
     label: ADMIN_ROLE_LABELS[ADMIN_ROLES.ACCOUNT],
   },
@@ -510,7 +514,7 @@ const AdminList = () => {
                   />
                   <p className="text-xs text-gray-500 mt-1.5">
                     Super Admin: all pages. Admin: analytics &amp; ops pages.
-                    Account: Revenue only.
+                    Manager: admin pages plus Users List. Account: Revenue only.
                   </p>
                 </div>
 
