@@ -1,0 +1,29 @@
+name: Main PR source check
+
+# Runs on every pull request into main or dev.
+# Into main: passes only when the PR comes from dev.
+# Into dev: always passes (so it can be a required check for both branches).
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions: {}
+
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only dev may merge into main
+        env:
+          # Read branch names through env, never by pasting ${{ }} into the script:
+          # a branch name is chosen by whoever opens the PR and could contain shell code.
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "dev" ]; then
+            echo "::error::Pull requests into main must come from dev. This one comes from '$HEAD_REF'. Open it against dev instead."
+            exit 1
+          fi
+          echo "OK: '$HEAD_REF' into '$BASE_REF' is allowed."
