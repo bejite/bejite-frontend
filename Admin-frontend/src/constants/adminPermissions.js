@@ -1,12 +1,14 @@
 export const ADMIN_ROLES = {
   SUPER_ADMIN: "super_admin",
   ADMIN: "admin",
+  MANAGER: "manager",
   ACCOUNT: "account",
 };
 
 export const ADMIN_ROLE_LABELS = {
   [ADMIN_ROLES.SUPER_ADMIN]: "Super Admin",
   [ADMIN_ROLES.ADMIN]: "Admin",
+  [ADMIN_ROLES.MANAGER]: "Manager",
   [ADMIN_ROLES.ACCOUNT]: "Account",
 };
 
@@ -33,6 +35,19 @@ const ROLE_ALLOWED_PATHS = {
     "/admin/demographics",
     "/admin/engagement",
     "/admin/recruitment",
+    "/admin/adpro",
+    "/admin/email-outreach",
+    "/admin/mailbox",
+    "/admin/recruiter-mail",
+    "/admin/events",
+    "/admin/notifications",
+  ],
+  [ADMIN_ROLES.MANAGER]: [
+    "/admin/dashboard",
+    "/admin/demographics",
+    "/admin/engagement",
+    "/admin/recruitment",
+    "/admin/users",
     "/admin/adpro",
     "/admin/email-outreach",
     "/admin/mailbox",
