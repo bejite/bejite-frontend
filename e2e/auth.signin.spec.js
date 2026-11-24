@@ -4,6 +4,10 @@ const email = process.env.E2E_USER_EMAIL;
 const password = process.env.E2E_USER_PASSWORD;
 const hasCreds = Boolean(email && password);
 
+// Never use E2E_USER_EMAIL here — failed attempts share the API rate-limit
+// bucket (10 / 15m) with the real account on the deployed Redis.
+const INVALID_LOGIN_EMAIL = 'e2e-invalid-login@example.com';
+
 test.describe('user sign-in (public)', () => {
   test('shows login form on /', async ({ page }) => {
     await page.goto('/');
@@ -14,26 +18,6 @@ test.describe('user sign-in (public)', () => {
     await expect(
       page.getByRole('heading', { name: 'Welcome Back!' }),
     ).toBeVisible();
-  });
-
-  test('shows an error for invalid credentials', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId('signin-email').fill(email || 'nobody@example.com');
-    await page
-      .getByTestId('signin-password')
-      .fill('definitely-wrong-password-xyz');
-    await page.getByTestId('signin-submit').click();
-
-    await expect(
-      page
-        .locator(
-          '[data-testid="signin-error"], .Toastify__toast--error, .Toastify__toast--info',
-        )
-        .first(),
-    ).toBeVisible({ timeout: 20_000 });
-
-    const token = await page.evaluate(() => localStorage.getItem('accessToken'));
-    expect(token).toBeFalsy();
   });
 
   test('logs in via UI and stores accessToken', async ({ page }) => {
@@ -69,5 +53,25 @@ test.describe('user sign-in (public)', () => {
         pathname.startsWith(p),
       ),
     ).toBe(true);
+  });
+
+  test('shows an error for invalid credentials', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('signin-email').fill(INVALID_LOGIN_EMAIL);
+    await page
+      .getByTestId('signin-password')
+      .fill('definitely-wrong-password-xyz');
+    await page.getByTestId('signin-submit').click();
+
+    await expect(
+      page
+        .locator(
+          '[data-testid="signin-error"], .Toastify__toast--error, .Toastify__toast--info',
+        )
+        .first(),
+    ).toBeVisible({ timeout: 20_000 });
+
+    const token = await page.evaluate(() => localStorage.getItem('accessToken'));
+    expect(token).toBeFalsy();
   });
 });
