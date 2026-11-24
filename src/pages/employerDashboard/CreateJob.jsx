@@ -8,11 +8,21 @@ import {
 } from "../../services/employerApi";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
+import { OptionButtonGroup } from "../../components/forms/OptionButtonGroup";
 import {
   CURRENCY_OPTIONS,
   INDUSTRY_OPTIONS,
   currencyCodeFromLabel,
 } from "../../data/jobTypeData";
+import {
+  WORK_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  EXPERIENCE_LEVEL_OPTIONS,
+  DEFAULT_WORK_MODE,
+  DEFAULT_JOB_TYPE,
+  DEFAULT_EXPERIENCE_LEVEL,
+  formatExperienceLevelBadge,
+} from "../../constants/jobVacancyOptions";
 import { formatSalaryExpectation } from "../../utils/formatSalary";
 import {
   JOB_ABOUT_MAX_LENGTH,
@@ -28,6 +38,7 @@ import {
   FaArrowLeft,
   FaEye,
   FaExternalLinkAlt,
+  FaSpinner,
 } from "react-icons/fa";
 
 const INDUSTRY_SUGGESTIONS = INDUSTRY_OPTIONS.filter(
@@ -60,12 +71,15 @@ const CreateJob = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
+    companyName: "",
     industry: "",
+    jobType: DEFAULT_JOB_TYPE,
+    experienceLevel: DEFAULT_EXPERIENCE_LEVEL,
     about: "",
     qualifications: "",
     responsibilities: "",
     requirements: "",
-    workMode: "Remote",
+    workMode: DEFAULT_WORK_MODE,
     country: "",
     state: "",
     salary: "",
@@ -165,6 +179,13 @@ const CreateJob = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      toast.error(validationError);
+      requestAnimationFrame(() => {
+        errorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
       return;
     }
 
@@ -175,7 +196,10 @@ const CreateJob = () => {
       const salaryValue = formData.salary ? Number(formData.salary) : undefined;
       const response = await createEmployerJob({
         title: formData.title.trim(),
+        companyName: formData.companyName.trim() || undefined,
         industry: formData.industry,
+        jobType: formData.jobType,
+        experienceLevel: formData.experienceLevel,
         about: formData.about.trim() || undefined,
         qualifications: formData.qualifications.trim(),
         responsibilities: formData.responsibilities.trim(),
@@ -206,11 +230,18 @@ const CreateJob = () => {
       }, 2000);
     } catch (err) {
       console.error("Create job error:", err);
-      setError(
+      const errMessage =
         err.response?.data?.message ||
-          err.message ||
-          "Failed to publish job vacancy"
-      );
+        err.message ||
+        "Failed to publish job vacancy";
+      setError(errMessage);
+      toast.error(errMessage);
+      requestAnimationFrame(() => {
+        errorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
     } finally {
       setSubmitting(false);
     }
@@ -267,8 +298,20 @@ const CreateJob = () => {
               <h1 className="text-2xl font-bold mb-2">
                 {formData.title || "Untitled Position"}
               </h1>
+              {formData.companyName.trim() && (
+                <p className="inline-flex items-center gap-2 text-green-50 font-medium mb-3">
+                  <FaBuilding className="text-green-200 shrink-0" />
+                  <span>{formData.companyName.trim()}</span>
+                </p>
+              )}
               <div className="flex flex-wrap gap-3 text-green-100">
                 <span>{formData.industry || "Industry not specified"}</span>
+                <span>•</span>
+                <span>{formData.jobType}</span>
+                <span>•</span>
+                <span>
+                  {formatExperienceLevelBadge(formData.experienceLevel)}
+                </span>
                 <span>•</span>
                 <span>{formData.workMode}</span>
                 <span>•</span>
@@ -460,16 +503,41 @@ const CreateJob = () => {
               )}
               {/* Job Title */}
               <div>
-                <label className="block mb-2 font-semibold text-[#1A3E32]">
+                <label
+                  htmlFor="job-title"
+                  className="block mb-2 font-semibold text-[#1A3E32]"
+                >
                   Job Title <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="job-title"
                   type="text"
                   placeholder="e.g., Senior Frontend Developer"
                   className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F]"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Company Name (optional) */}
+              <div>
+                <label
+                  htmlFor="job-company-name"
+                  className="block mb-2 font-semibold text-[#1A3E32]"
+                >
+                  Company Name{" "}
+                  <span className="font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  id="job-company-name"
+                  type="text"
+                  placeholder="e.g., Bejite Technologies Ltd. (defaults to your profile company)"
+                  className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F]"
+                  value={formData.companyName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyName: e.target.value })
                   }
                 />
               </div>
@@ -490,6 +558,28 @@ const CreateJob = () => {
                   staticOptions={INDUSTRY_SUGGESTIONS}
                 />
               </div>
+
+              {/* Job Type */}
+              <OptionButtonGroup
+                id="job-type-group"
+                label="Job Type"
+                options={JOB_TYPE_OPTIONS}
+                value={formData.jobType}
+                onChange={(jobType) => setFormData({ ...formData, jobType })}
+                columnsClass="grid-cols-2 sm:grid-cols-3"
+              />
+
+              {/* Experience Level */}
+              <OptionButtonGroup
+                id="job-experience-level-group"
+                label="Experience Level"
+                options={EXPERIENCE_LEVEL_OPTIONS}
+                value={formData.experienceLevel}
+                onChange={(experienceLevel) =>
+                  setFormData({ ...formData, experienceLevel })
+                }
+                columnsClass="grid-cols-2 sm:grid-cols-3"
+              />
 
               {/* About */}
               <div>
@@ -767,29 +857,14 @@ const CreateJob = () => {
               </div>
 
               {/* Work Mode */}
-              <div>
-                <label className="block mb-2 font-semibold text-[#1A3E32]">
-                  Work Mode
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {["Remote", "Onsite", "Hybrid"].map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, workMode: mode })
-                      }
-                      className={`py-3 rounded-xl border font-medium transition-colors ${
-                        formData.workMode === mode
-                          ? "bg-[#16730F] text-white border-[#16730F]"
-                          : "bg-white border-gray-200 text-gray-700 hover:border-[#16730F]"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <OptionButtonGroup
+                id="job-work-mode-group"
+                label="Work Mode"
+                options={WORK_MODE_OPTIONS}
+                value={formData.workMode}
+                onChange={(workMode) => setFormData({ ...formData, workMode })}
+                columnsClass="grid-cols-3"
+              />
 
               {/* Country & State */}
               <div className="grid md:grid-cols-2 gap-4">
@@ -872,17 +947,26 @@ const CreateJob = () => {
                 <button
                   type="button"
                   onClick={handlePreview}
-                  className="flex-1 bg-white border-2 border-[#16730F] text-[#16730F] py-4 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="flex-1 bg-white border-2 border-[#16730F] text-[#16730F] py-4 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <FaEye />
                   Preview
                 </button>
                 <button
                   type="button"
-                  onClick={handlePreview}
-                  className="flex-1 bg-[#16730F] text-white py-4 rounded-xl font-semibold hover:bg-[#145A0C] transition-colors"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="flex-1 bg-[#16730F] text-white py-4 rounded-xl font-semibold hover:bg-[#145A0C] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Continue to Preview
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create"
+                  )}
                 </button>
               </div>
             </form>

@@ -1,6 +1,11 @@
 import { useRef, useEffect } from "react";
-import { FaTimes, FaRegBookmark } from "react-icons/fa";
+import { FaTimes, FaRegBookmark, FaCheckCircle } from "react-icons/fa";
 import { formatSalary } from "../../utils/checksFormat";
+import {
+  hasServerAppliedFlag,
+  resolveAppliedJobsUserScope,
+  useAppliedJobsStore,
+} from "../../store/useAppliedJobsStore";
 
 export const SavedJobsModal = ({
   savedJobs,
@@ -10,6 +15,10 @@ export const SavedJobsModal = ({
   onUnsave,
 }) => {
   const modalRef = useRef(null);
+  const scope = resolveAppliedJobsUserScope();
+  const appliedMap = useAppliedJobsStore(
+    (state) => state.appliedByScope[scope] || {},
+  );
 
   const savedJobDetails = savedJobs
     .map((saved) => jobs.find((job) => job.id === saved.jobId))
@@ -76,9 +85,18 @@ export const SavedJobsModal = ({
                       className="flex-1 cursor-pointer"
                       onClick={() => onJobClick(job)}
                     >
-                      <h3 className="font-bold text-gray-900 hover:text-[#16730F] transition-colors">
-                        {job.title}
-                      </h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold text-gray-900 hover:text-[#16730F] transition-colors">
+                          {job.title}
+                        </h3>
+                        {(Boolean(appliedMap[String(job.id)]) ||
+                          hasServerAppliedFlag(job)) && (
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-[#16730F] border border-[#16730F]/25 text-xs font-semibold px-2 py-0.5 rounded-full">
+                            <FaCheckCircle className="text-[10px]" />
+                            Applied
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600">
                         {job.company} • {job.location}
                       </p>

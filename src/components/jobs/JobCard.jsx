@@ -9,6 +9,7 @@ import {
   FaMoneyBillWave,
   FaGraduationCap,
   FaUser,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { MdWorkOutline, MdAccessTime } from "react-icons/md";
 import { formatSalary, formatTimeRemaining } from "../../utils/checksFormat";
@@ -17,15 +18,21 @@ import { getJobCardExcerpt } from "../../utils/jobDescription";
 import VerifiedBadge from "../VerifiedBadge";
 import { userHasVerifiedBadge, userShowsUnverifiedRecruiterPill } from "../../utils/verifiedBadge";
 import useJobImpression from "../../hooks/useJobImpression";
+import { formatExperienceLevelLabel } from "../../constants/jobVacancyOptions";
+import { useIsJobApplied } from "../../store/useAppliedJobsStore";
 
 export const JobCard = ({
   job,
   isSaved,
+  isApplied: isAppliedProp = false,
   onSave,
   onUnsave,
   onClick,
   currentUserId = null,
 }) => {
+  const storedApplied = useIsJobApplied(job);
+  const isApplied = Boolean(isAppliedProp || storedApplied);
+  const companyNameDisplay = job.company || job.companyName || "Company";
   const timeRemaining = formatTimeRemaining(job.expiresAt);
   const salary = formatSalary(job);
   const companyLogoSrc = profilePhotoUrl(
@@ -66,12 +73,12 @@ export const JobCard = ({
               {companyLogoSrc ? (
                 <img
                   src={companyLogoSrc}
-                  alt={job.company}
+                  alt={companyNameDisplay}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
-                  {job.company.charAt(0)}
+                  {companyNameDisplay.charAt(0)}
                 </div>
               )}
             </div>
@@ -107,7 +114,7 @@ export const JobCard = ({
               <span className="flex items-center gap-1 text-sm text-gray-700 font-medium">
                 <PosterIcon className="text-[#16730F] text-xs" />
                 <span className="truncate max-w-[150px] sm:max-w-none">
-                  {job.company}
+                  {companyNameDisplay}
                 </span>
               </span>
 
@@ -119,6 +126,16 @@ export const JobCard = ({
                 ) ? (
                 <VerifiedBadge size="xs" role="recruiter" unverified />
               ) : null}
+
+              {isApplied && (
+                <span
+                  data-testid={`job-card-applied-${job.id}`}
+                  className="inline-flex items-center gap-1 bg-emerald-50 text-[#16730F] border border-[#16730F]/25 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                >
+                  <FaCheckCircle className="text-[11px]" />
+                  Applied
+                </span>
+              )}
 
               {timeRemaining.isUrgent && (
                 <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full animate-pulse">
@@ -136,18 +153,24 @@ export const JobCard = ({
 
               <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg sm:bg-transparent sm:px-0">
                 <FaMapMarkerAlt className="text-[#16730F] text-sm" />
-                <span className="truncate">{job.location.split(",")[0]}</span>
+                <span className="truncate">
+                  {(job.location || "").split(",")[0]}
+                </span>
               </span>
 
-              <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg sm:bg-transparent sm:px-0">
-                <FaBriefcase className="text-[#16730F] text-sm" />
-                <span>{job.jobType}</span>
-              </span>
+              {job.jobType && (
+                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg sm:bg-transparent sm:px-0">
+                  <FaBriefcase className="text-[#16730F] text-sm" />
+                  <span>{job.jobType}</span>
+                </span>
+              )}
 
-              <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg sm:bg-transparent sm:px-0">
-                <FaGraduationCap className="text-[#16730F] text-sm" />
-                <span>{job.experienceLevel}</span>
-              </span>
+              {job.experienceLevel && (
+                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg sm:bg-transparent sm:px-0">
+                  <FaGraduationCap className="text-[#16730F] text-sm" />
+                  <span>{formatExperienceLevelLabel(job.experienceLevel)}</span>
+                </span>
+              )}
             </div>
 
             {excerpt && (

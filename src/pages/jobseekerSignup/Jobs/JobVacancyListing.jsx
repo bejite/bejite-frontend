@@ -15,12 +15,22 @@ import {
 import { toast } from "react-toastify";
 import { FaBookmark, FaSpinner } from "react-icons/fa";
 import { getUser } from "../../../utils/tokenManager";
+import {
+  WORK_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  EXPERIENCE_LEVEL_OPTIONS,
+} from "../../../constants/jobVacancyOptions";
+import { useAppliedJobsStore } from "../../../store/useAppliedJobsStore";
 
 const JOBS_PER_PAGE = 6;
 
 const JobVacancyListing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUserId = getUser()?.id || null;
+  const markJobApplied = useAppliedJobsStore((state) => state.markJobApplied);
+  const syncAppliedJobsFromList = useAppliedJobsStore(
+    (state) => state.syncAppliedJobsFromList,
+  );
   const [jobs, setJobs] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,6 +80,7 @@ const JobVacancyListing = () => {
       try {
         const response = await getJobVacancyById(jobId);
         if (!cancelled && response?.data) {
+          syncAppliedJobsFromList([response.data]);
           setSelectedJob(response.data);
         }
       } catch (err) {
@@ -85,7 +96,7 @@ const JobVacancyListing = () => {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [searchParams, syncAppliedJobsFromList]);
 
   const buildParams = useCallback(
     (page) => {
@@ -138,6 +149,7 @@ const JobVacancyListing = () => {
         const nextJobs = response.data?.jobs || [];
         const total = Number(response.pagination?.total) || 0;
 
+        syncAppliedJobsFromList(nextJobs);
         setIndustries(response.data?.industries || []);
         setTotalJobs(total);
         setCurrentPage(page);
@@ -183,7 +195,7 @@ const JobVacancyListing = () => {
         }
       }
     },
-    [buildParams],
+    [buildParams, syncAppliedJobsFromList],
   );
 
   // Reset and reload when search/filters change.
@@ -228,21 +240,9 @@ const JobVacancyListing = () => {
     return () => observer.disconnect();
   }, [loadMoreJobs, jobs.length, hasMore]);
 
-  const workModes = ["Remote", "Onsite", "Hybrid"];
-  const jobTypes = [
-    "Full-time",
-    "Part-time",
-    "Contract",
-    "Internship",
-    "Temporary",
-  ];
-  const experienceLevels = [
-    "Entry",
-    "Intermediate",
-    "Senior",
-    "Lead",
-    "Executive",
-  ];
+  const workModes = WORK_MODE_OPTIONS.map((opt) => opt.value);
+  const jobTypes = JOB_TYPE_OPTIONS;
+  const experienceLevels = EXPERIENCE_LEVEL_OPTIONS;
 
   const handleSaveJob = useCallback((jobId) => {
     setSavedJobs((prev) => {
@@ -262,18 +262,36 @@ const JobVacancyListing = () => {
     [savedJobs],
   );
 
-  const handleApply = useCallback(() => {
-    if (selectedJob) {
-      setJobs((prev) =>
-        prev.map((job) =>
-          job.id === selectedJob.id
-            ? { ...job, applicantsCount: (job.applicantsCount || 0) + 1 }
-            : job,
-        ),
-      );
-    }
-    toast.success("Application submitted successfully!");
-  }, [selectedJob]);
+  const handleApply = useCallback(
+    (appliedJob) => {
+      const targetJob = appliedJob || selectedJob;
+      if (targetJob?.id) {
+        markJobApplied(targetJob.id);
+        setJobs((prev) =>
+          prev.map((job) =>
+            String(job.id) === String(targetJob.id)
+              ? {
+                  ...job,
+                  hasApplied: true,
+                  applicantsCount: (job.applicantsCount || 0) + 1,
+                }
+              : job,
+          ),
+        );
+        setSelectedJob((prev) =>
+          prev && String(prev.id) === String(targetJob.id)
+            ? {
+                ...prev,
+                hasApplied: true,
+                applicantsCount: (prev.applicantsCount || 0) + 1,
+              }
+            : prev,
+        );
+      }
+      toast.success("Application submitted successfully!");
+    },
+    [markJobApplied, selectedJob],
+  );
 
   const clearFilters = useCallback(() => {
     setSelectedIndustry("");

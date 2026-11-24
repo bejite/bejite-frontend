@@ -6,16 +6,16 @@ import {
   FaBuilding,
   FaBriefcase,
   FaGraduationCap,
-  FaRegEnvelope,
   FaExternalLinkAlt,
   FaUserTie,
-  FaPhone,
   FaLinkedin,
   FaTwitter,
   FaInstagram,
   FaUser,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { MdLocationOn, MdWork } from "react-icons/md";
+import { toast } from "react-toastify";
 import { formatTimeRemaining, formatSalary } from "../../utils/checksFormat";
 import { profilePhotoUrl } from "../../utils/profilePhotoUrl";
 import { ApplicationForm } from "./ApplicationForm";
@@ -25,19 +25,36 @@ import { userHasVerifiedBadge, userShowsUnverifiedRecruiterPill } from "../../ut
 import { getJobPlatformHref, copyJobLink } from "../../utils/jobShare";
 import { formatJobDescriptionText } from "../../utils/jobDescription";
 import { formatStoredRequirements } from "../../utils/jobRequirements";
+import {
+  formatExperienceLevelBadge,
+  formatExperienceLevelLabel,
+} from "../../constants/jobVacancyOptions";
+import {
+  useAppliedJobsStore,
+  useIsJobApplied,
+} from "../../store/useAppliedJobsStore";
 
 const JOB_DETAIL_LIST_CLASS =
   "list-disc list-outside pl-5 space-y-1.5 sm:space-y-2 text-sm sm:text-base text-gray-700 break-words";
 
-export const JobDetailsModal = ({ job, onClose, onApply }) => {
+export const JobDetailsModal = ({
+  job,
+  onClose,
+  onApply,
+  hasApplied: hasAppliedProp = false,
+}) => {
   const [isApplying, setIsApplying] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showShareModal, setShowShareModal] = useState(false);
   const modalRef = useRef(null);
+  const storedApplied = useIsJobApplied(job);
+  const markJobApplied = useAppliedJobsStore((state) => state.markJobApplied);
+  const isApplied = Boolean(hasAppliedProp || storedApplied);
 
   const salary = formatSalary(job);
   const requirements = formatStoredRequirements(job?.requirements);
   const timeRemaining = formatTimeRemaining(job.expiresAt);
+  const companyNameDisplay = job.company || job.companyName || "Company";
   const companyLogoSrc = profilePhotoUrl(
     job.recruiterProfilePhoto || job.companyLogo,
   );
@@ -53,6 +70,7 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
   const PosterIcon = isIndividualPoster ? FaUser : FaBuilding;
 
   const handleApplyClick = () => {
+    if (isApplied) return;
     if (hasExternalApplication) {
       window.open(job.applicationUrl, "_blank", "noopener,noreferrer");
       return;
@@ -124,7 +142,9 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-gray-600 shrink-0">Experience:</span>
-          <span className="font-medium text-right">{job.experienceLevel}</span>
+          <span className="font-medium text-right">
+            {formatExperienceLevelLabel(job.experienceLevel) || "—"}
+          </span>
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-gray-600 shrink-0">Industry:</span>
@@ -144,7 +164,21 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
     </div>
   );
 
-  const applyCtaCard = (
+  const applyCtaCard = isApplied ? (
+    <div
+      data-testid="job-applied-cta-card"
+      className="bg-emerald-50/70 rounded-2xl p-4 sm:p-5 border border-[#16730F]/20"
+    >
+      <div className="flex items-center gap-2 font-semibold text-[#16730F] mb-1.5 text-sm sm:text-base">
+        <FaCheckCircle className="shrink-0" />
+        <span>Application Submitted</span>
+      </div>
+      <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+        You have already applied for this position. The recruiter will reach out
+        if you&apos;re shortlisted.
+      </p>
+    </div>
+  ) : (
     <div className="bg-[#16730F]/5 rounded-2xl p-4 sm:p-5 border border-[#16730F]/20">
       <h3 className="font-semibold text-[#16730F] mb-2 text-sm sm:text-base">
         Don&apos;t miss this opportunity!
@@ -190,14 +224,24 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                 >
                   <FaShareAlt className="text-gray-500 text-sm sm:text-base" />
                 </button>
-                <button
-                  type="button"
-                  onClick={handleApplyClick}
-                  className="hidden sm:inline-flex items-center gap-2 bg-[#16730F] text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base"
-                >
-                  {applyLabel}
-                  {hasExternalApplication && <FaExternalLinkAlt size={12} />}
-                </button>
+                {isApplied ? (
+                  <span
+                    data-testid="job-applied-badge-header"
+                    className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 text-[#16730F] border border-[#16730F]/25 px-4 sm:px-5 py-2 rounded-xl font-semibold text-sm sm:text-base select-none"
+                  >
+                    <FaCheckCircle className="shrink-0" />
+                    Applied
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyClick}
+                    className="hidden sm:inline-flex items-center gap-2 bg-[#16730F] text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm sm:text-base"
+                  >
+                    {applyLabel}
+                    {hasExternalApplication && <FaExternalLinkAlt size={12} />}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -208,12 +252,12 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                     {companyLogoSrc ? (
                       <img
                         src={companyLogoSrc}
-                        alt={job.company}
+                        alt={companyNameDisplay}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#16730F] to-[#1A3E32] text-white font-bold text-lg sm:text-2xl">
-                        {job.company.charAt(0)}
+                        {companyNameDisplay.charAt(0)}
                       </div>
                     )}
                   </div>
@@ -234,7 +278,7 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                     <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1.5 sm:gap-x-4 sm:gap-y-2 text-xs sm:text-sm text-gray-600">
                       <span className="flex items-center gap-1 min-w-0">
                         <PosterIcon className="shrink-0 text-[#16730F]" />
-                        <span className="truncate">{job.company}</span>
+                        <span className="truncate">{companyNameDisplay}</span>
                       </span>
                       <span className="flex items-center gap-1 min-w-0">
                         <MdLocationOn className="shrink-0 text-[#16730F]" />
@@ -244,14 +288,18 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                         <MdWork className="shrink-0 text-[#16730F]" />
                         {job.workMode}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <FaBriefcase className="shrink-0 text-[#16730F]" />
-                        {job.jobType}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FaGraduationCap className="shrink-0 text-[#16730F]" />
-                        {job.experienceLevel} Level
-                      </span>
+                      {job.jobType && (
+                        <span className="flex items-center gap-1">
+                          <FaBriefcase className="shrink-0 text-[#16730F]" />
+                          {job.jobType}
+                        </span>
+                      )}
+                      {job.experienceLevel && (
+                        <span className="flex items-center gap-1">
+                          <FaGraduationCap className="shrink-0 text-[#16730F]" />
+                          {formatExperienceLevelBadge(job.experienceLevel)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -460,18 +508,18 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
                         {companyLogoSrc ? (
                           <img
                             src={companyLogoSrc}
-                            alt={job.company}
+                            alt={companyNameDisplay}
                             className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#16730F] to-[#1A3E32] text-white font-bold text-xl sm:text-2xl">
-                            {job.company.charAt(0)}
+                            {companyNameDisplay.charAt(0)}
                           </div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h2 className="text-lg sm:text-2xl font-bold break-words">
-                          {job.company}
+                          {companyNameDisplay}
                         </h2>
                         <p className="text-sm text-gray-600 mt-0.5">
                           {job.industry}
@@ -587,14 +635,24 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
             </div>
 
             <div className="sm:hidden shrink-0 border-t border-gray-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <button
-                type="button"
-                onClick={handleApplyClick}
-                className="w-full bg-[#16730F] text-white py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm inline-flex items-center justify-center gap-2"
-              >
-                {applyLabel}
-                {hasExternalApplication && <FaExternalLinkAlt size={12} />}
-              </button>
+              {isApplied ? (
+                <div
+                  data-testid="job-applied-badge-mobile"
+                  className="w-full bg-emerald-50 text-[#16730F] border border-[#16730F]/25 py-3 rounded-xl font-semibold text-sm inline-flex items-center justify-center gap-2 select-none"
+                >
+                  <FaCheckCircle />
+                  Applied
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApplyClick}
+                  className="w-full bg-[#16730F] text-white py-3 rounded-xl font-semibold hover:bg-[#145A0C] transition text-sm inline-flex items-center justify-center gap-2"
+                >
+                  {applyLabel}
+                  {hasExternalApplication && <FaExternalLinkAlt size={12} />}
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -603,9 +661,15 @@ export const JobDetailsModal = ({ job, onClose, onApply }) => {
               job={job}
               onBack={() => setIsApplying(false)}
               onSubmit={() => {
-                onApply?.();
+                markJobApplied(job.id);
+                onApply?.(job);
                 setIsApplying(false);
                 onClose();
+              }}
+              onAlreadyApplied={() => {
+                markJobApplied(job.id);
+                toast.info("You have already applied for this position.");
+                setIsApplying(false);
               }}
             />
           </div>

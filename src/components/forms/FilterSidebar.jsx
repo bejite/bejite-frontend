@@ -78,22 +78,28 @@ export const FilterSidebar = ({
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-3">Job Type</h4>
         <div className="space-y-2">
-          {jobTypes.map((type) => (
-            <label
-              key={type}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={selectedJobType === type}
-                onChange={() =>
-                  onJobTypeChange(selectedJobType === type ? "" : type)
-                }
-                className="w-4 h-4 text-[#16730F] rounded"
-              />
-              <span className="text-sm text-gray-600">{type}</span>
-            </label>
-          ))}
+          {jobTypes.map((type) => {
+            const typeValue = typeof type === "string" ? type : type.value;
+            const typeLabel = typeof type === "string" ? type : type.label;
+            return (
+              <label
+                key={typeValue}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedJobType === typeValue}
+                  onChange={() =>
+                    onJobTypeChange(
+                      selectedJobType === typeValue ? "" : typeValue,
+                    )
+                  }
+                  className="w-4 h-4 text-[#16730F] rounded"
+                />
+                <span className="text-sm text-gray-600">{typeLabel}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -102,24 +108,28 @@ export const FilterSidebar = ({
           Experience Level
         </h4>
         <div className="space-y-2">
-          {experienceLevels.map((level) => (
-            <label
-              key={level}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={selectedExperienceLevel === level}
-                onChange={() =>
-                  onExperienceLevelChange(
-                    selectedExperienceLevel === level ? "" : level,
-                  )
-                }
-                className="w-4 h-4 text-[#16730F] rounded"
-              />
-              <span className="text-sm text-gray-600">{level}</span>
-            </label>
-          ))}
+          {experienceLevels.map((level) => {
+            const levelValue = typeof level === "string" ? level : level.value;
+            const levelLabel = typeof level === "string" ? level : level.label;
+            return (
+              <label
+                key={levelValue}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedExperienceLevel === levelValue}
+                  onChange={() =>
+                    onExperienceLevelChange(
+                      selectedExperienceLevel === levelValue ? "" : levelValue,
+                    )
+                  }
+                  className="w-4 h-4 text-[#16730F] rounded"
+                />
+                <span className="text-sm text-gray-600">{levelLabel}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
 

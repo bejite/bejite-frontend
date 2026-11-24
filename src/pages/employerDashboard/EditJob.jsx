@@ -16,6 +16,7 @@ import {
 import { getEmployerJob, updateEmployerJob } from "../../services/employerApi";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
+import { OptionButtonGroup } from "../../components/forms/OptionButtonGroup";
 import Loader from "../../components/ui/Loader";
 import {
   CURRENCY_OPTIONS,
@@ -23,18 +24,19 @@ import {
   currencyCodeFromLabel,
   currencyLabelFromCode,
 } from "../../data/jobTypeData";
+import {
+  WORK_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  EXPERIENCE_LEVEL_OPTIONS,
+  DEFAULT_WORK_MODE,
+  DEFAULT_JOB_TYPE,
+  DEFAULT_EXPERIENCE_LEVEL,
+  normalizeWorkMode,
+  normalizeJobType,
+  normalizeExperienceLevel,
+} from "../../constants/jobVacancyOptions";
 
 const INDUSTRY_SUGGESTIONS = INDUSTRY_OPTIONS;
-
-const normalizeWorkMode = (mode) => {
-  const map = {
-    Remote: "Remote",
-    Onsite: "Onsite",
-    "On-site": "Onsite",
-    Hybrid: "Hybrid",
-  };
-  return map[mode] || "Remote";
-};
 
 const normalizeApplicationUrl = (value) => {
   const raw = String(value || "").trim();
@@ -66,12 +68,15 @@ const EditJob = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
+    companyName: "",
     industry: "",
+    jobType: DEFAULT_JOB_TYPE,
+    experienceLevel: DEFAULT_EXPERIENCE_LEVEL,
     about: "",
     qualifications: "",
     responsibilities: "",
     requirements: "",
-    workMode: "Remote",
+    workMode: DEFAULT_WORK_MODE,
     country: "",
     state: "",
     salaryMin: "",
@@ -110,7 +115,14 @@ const EditJob = () => {
             : null;
       setFormData({
         title: data.title || "",
+        companyName: data.companyName || data.company_name || "",
         industry: data.industry || "",
+        jobType: normalizeJobType(
+          data.jobType || data.job_type || data.work_type,
+        ),
+        experienceLevel: normalizeExperienceLevel(
+          data.experienceLevel || data.experience_level,
+        ),
         about: data.about || "",
         qualifications: data.qualifications || data.roles || "",
         responsibilities: data.responsibilities || data.description || "",
@@ -201,7 +213,10 @@ const EditJob = () => {
       const parsedMax = formData.salaryMax ? Number(formData.salaryMax) : null;
       const response = await updateEmployerJob(jobId, {
         title: formData.title.trim(),
+        companyName: formData.companyName.trim(),
         industry: formData.industry.trim(),
+        jobType: formData.jobType,
+        experienceLevel: formData.experienceLevel,
         about: formData.about.trim(),
         qualifications: formData.qualifications.trim(),
         responsibilities: formData.responsibilities.trim(),
@@ -319,6 +334,26 @@ const EditJob = () => {
             </div>
 
             <div>
+              <label
+                htmlFor="edit-job-company-name"
+                className="block mb-2 font-semibold text-[#1A3E32]"
+              >
+                Company Name{" "}
+                <span className="font-normal text-gray-500">(optional)</span>
+              </label>
+              <input
+                id="edit-job-company-name"
+                type="text"
+                placeholder="e.g., Bejite Technologies Ltd."
+                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#16730F]"
+                value={formData.companyName}
+                onChange={(e) =>
+                  setFormData({ ...formData, companyName: e.target.value })
+                }
+              />
+            </div>
+
+            <div>
               <label className="block mb-2 font-semibold text-[#1A3E32]">
                 Industry <span className="text-red-500">*</span>
               </label>
@@ -333,6 +368,26 @@ const EditJob = () => {
                 staticOptions={INDUSTRY_SUGGESTIONS}
               />
             </div>
+
+            <OptionButtonGroup
+              id="edit-job-type-group"
+              label="Job Type"
+              options={JOB_TYPE_OPTIONS}
+              value={formData.jobType}
+              onChange={(jobType) => setFormData({ ...formData, jobType })}
+              columnsClass="grid-cols-2 sm:grid-cols-3"
+            />
+
+            <OptionButtonGroup
+              id="edit-job-experience-level-group"
+              label="Experience Level"
+              options={EXPERIENCE_LEVEL_OPTIONS}
+              value={formData.experienceLevel}
+              onChange={(experienceLevel) =>
+                setFormData({ ...formData, experienceLevel })
+              }
+              columnsClass="grid-cols-2 sm:grid-cols-3"
+            />
 
             <div>
               <label className="block mb-2 font-semibold text-[#1A3E32]">
@@ -536,29 +591,14 @@ const EditJob = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block mb-2 font-semibold text-[#1A3E32]">
-                Work Mode
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {["Remote", "Onsite", "Hybrid"].map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, workMode: mode })
-                    }
-                    className={`py-3 rounded-xl border font-medium transition-colors ${
-                      formData.workMode === mode
-                        ? "bg-[#16730F] text-white border-[#16730F]"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-[#16730F]"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <OptionButtonGroup
+              id="edit-job-work-mode-group"
+              label="Work Mode"
+              options={WORK_MODE_OPTIONS}
+              value={formData.workMode}
+              onChange={(workMode) => setFormData({ ...formData, workMode })}
+              columnsClass="grid-cols-3"
+            />
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>

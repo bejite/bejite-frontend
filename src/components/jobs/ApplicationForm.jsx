@@ -9,6 +9,10 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import { submitJobApplication } from "../../services/jobVacancyApi";
+import {
+  isAlreadyAppliedError,
+  useAppliedJobsStore,
+} from "../../store/useAppliedJobsStore";
 
 const inputClass =
   "w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base focus:ring-2 focus:ring-[#16730F] outline-none";
@@ -23,7 +27,8 @@ const getStoredUser = () => {
   }
 };
 
-export const ApplicationForm = ({ job, onBack, onSubmit }) => {
+export const ApplicationForm = ({ job, onBack, onSubmit, onAlreadyApplied }) => {
+  const markJobApplied = useAppliedJobsStore((state) => state.markJobApplied);
   const fileInputRef = useRef(null);
   const [applicationMethod, setApplicationMethod] = useState("profile");
   const [resumeFile, setResumeFile] = useState(null);
@@ -111,9 +116,15 @@ export const ApplicationForm = ({ job, onBack, onSubmit }) => {
         throw new Error(response?.message || "Failed to submit application");
       }
 
+      markJobApplied(job.id, { applicationMethod });
       onSubmit?.(response.data);
     } catch (error) {
       console.error("Application submit error:", error);
+      if (isAlreadyAppliedError(error)) {
+        markJobApplied(job.id);
+        onAlreadyApplied?.();
+        return;
+      }
       setSubmitError(
         error.response?.data?.message ||
           error.message ||
