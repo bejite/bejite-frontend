@@ -17,6 +17,7 @@ import ASEPricingCard from "../../components/pricing/ASEPricingCard";
 import ASEPricingComparisonTable from "../../components/pricing/ASEPricingComparisonTable";
 import ASEPricingTopups from "../../components/pricing/ASEPricingTopups";
 import ASECheckoutModal from "../../components/pricing/ASECheckoutModal";
+import Loader from "../../components/ui/Loader";
 
 const formatPlanPrice = (amount) =>
   `₦${Number(amount).toLocaleString("en-NG")}`;
@@ -288,10 +289,10 @@ const ASEPricingPage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-screen bg-[#F5F5F5]">
+      <div className="flex flex-col min-h-screen bg-[#F5F5F5]">
         <NewsFeedHeader />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
+          <Loader fullscreen={false} description="Loading subscription pricing..." />
         </div>
       </div>
     );

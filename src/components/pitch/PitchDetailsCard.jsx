@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Clock, CheckCircle, Heart, Share2 } from "lucide-react";
 
 export default function PitchDetailsCard({
@@ -7,16 +7,42 @@ export default function PitchDetailsCard({
   onToggleLike,
   onShare,
   mobileSize = "balanced",
-  onMobileActivate,
+  scrollContainerRef,
+  onScrollIntent,
 }) {
+  const localScrollRef = useRef(null);
+  const setScrollRef = (node) => {
+    localScrollRef.current = node;
+    if (typeof scrollContainerRef === "function") {
+      scrollContainerRef(node);
+    } else if (scrollContainerRef) {
+      scrollContainerRef.current = node;
+    }
+  };
+
   if (!pitch) return null;
 
   const isDesktop = mobileSize === "desktop";
   const isCollapsed = mobileSize === "collapsed";
   const isExpanded = mobileSize === "expanded";
 
-  const handleScrollActivate = () => {
-    if (!isDesktop && onMobileActivate) onMobileActivate();
+  const handleWheel = (e) => {
+    if (isDesktop || !onScrollIntent) return;
+    const el = localScrollRef.current;
+    if (!el) return;
+
+    // At top + scroll up → let parent grow the video
+    if (e.deltaY < 0 && el.scrollTop <= 2) {
+      onScrollIntent(e.deltaY);
+      return;
+    }
+    // Already at bottom + scroll down → no layout change needed
+    if (
+      e.deltaY > 0 &&
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+    ) {
+      onScrollIntent(e.deltaY);
+    }
   };
 
   return (
@@ -32,10 +58,11 @@ export default function PitchDetailsCard({
       }`}
     >
       <div
+        ref={setScrollRef}
         className={`min-h-0 pr-0.5 ${
-          isCollapsed ? "overflow-hidden" : "overflow-y-auto nfl-scroll"
+          isCollapsed ? "overflow-hidden" : "overflow-y-auto nfl-scroll overscroll-contain"
         }`}
-        onScroll={handleScrollActivate}
+        onWheel={handleWheel}
       >
         {/* Top Badges */}
         <div
@@ -114,7 +141,11 @@ export default function PitchDetailsCard({
             {/* Pitch Description */}
             <p
               className={`text-xs sm:text-sm text-gray-600 leading-relaxed mb-3 sm:mb-3.5 break-words ${
-                isDesktop ? "mb-4 sm:mb-5" : isExpanded ? "line-clamp-5" : "line-clamp-3"
+                isDesktop
+                  ? "mb-4 sm:mb-5"
+                  : isExpanded
+                    ? "line-clamp-5"
+                    : "line-clamp-3"
               }`}
             >
               {pitch.description}
@@ -129,13 +160,13 @@ export default function PitchDetailsCard({
                 {(pitch.skills || [])
                   .slice(0, isDesktop ? undefined : isExpanded ? 10 : 6)
                   .map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-[#EAF5E9] text-[#16730F]"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                    <span
+                      key={skill}
+                      className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-[#EAF5E9] text-[#16730F]"
+                    >
+                      {skill}
+                    </span>
+                  ))}
               </div>
             </div>
           </>

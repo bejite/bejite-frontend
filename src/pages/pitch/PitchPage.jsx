@@ -7,10 +7,16 @@ import PitchVideoPlayer from "../../components/pitch/PitchVideoPlayer";
 import PitchDetailsCard from "../../components/pitch/PitchDetailsCard";
 import MyPitchesView from "../../components/pitch/MyPitchesView";
 import PitchEmptyState from "../../components/pitch/PitchEmptyState";
+import DeleteModal from "../../components/modal/DeleteModal";
+import SharePostModal from "../../components/SharePostModal";
 import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import { toast } from "react-toastify";
 import { CATEGORIES } from "./pitchData";
+import {
+  getPitchPlatformHref,
+  copyPitchLink,
+} from "../../utils/pitchShare";
 import {
   getPitchFeed,
   getMyPitches,
@@ -32,6 +38,8 @@ export default function PitchPage() {
 
   const [pitches, setPitches] = useState([]);
   const [userActivePitches, setUserActivePitches] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [pitchToShare, setPitchToShare] = useState(null);
   const [drafts, setDrafts] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
   const [loadingMine, setLoadingMine] = useState(false);
@@ -43,6 +51,8 @@ export default function PitchPage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingPitch, setDeletingPitch] = useState(false);
 
   const deepLinkIdRef = useRef(searchParams.get("id"));
   const viewedPitchIdsRef = useRef(new Set());
@@ -192,24 +202,32 @@ export default function PitchPage() {
     }
   };
 
-  const handleShare = async (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+  const handleShare = (pitch) => {
+    setPitchToShare(pitch || currentPitch);
+    setShowShareModal(true);
+  };
+
+  const handleShareOption = async (platform) => {
+    const targetPitch = pitchToShare || currentPitch;
+    if (!targetPitch) return;
+
+    if (platform === "copy") {
+      await copyPitchLink(targetPitch.id);
+    }
+
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-      }
-      const result = await sharePitch(pitch.id);
+      const result = await sharePitch(targetPitch.id);
       setPitches((prev) =>
         prev.map((p) =>
-          p.id === pitch.id
-            ? { ...p, shares: result?.shares ?? p.shares + 1 }
+          p.id === targetPitch.id
+            ? { ...p, shares: result?.shares ?? (p.shares || 0) + 1 }
             : p
         )
       );
-      toast.success("Pitch link copied to clipboard!");
     } catch (error) {
-      toast.info(`Pitch link: ${shareUrl}`);
       console.error("sharePitch:", error);
+    } finally {
+      setShowShareModal(false);
     }
   };
 
@@ -301,31 +319,32 @@ export default function PitchPage() {
     });
   };
 
-  const handleDeleteDraft = async (draftId) => {
-    if (!window.confirm("Delete this draft? This cannot be undone.")) return;
-    try {
-      await deletePitch(draftId);
-      removePitchEverywhere(draftId);
-      toast.info("Draft removed");
-    } catch (error) {
-      toast.error(apiErrorMessage(error, "Failed to delete draft"));
-    }
+  const handleDeleteDraft = (draftId) => {
+    setDeleteTarget({ id: draftId, type: "draft" });
   };
 
-  const handleDeleteActivePitch = async (pitchId) => {
-    if (
-      !window.confirm(
-        "Delete this live pitch? It will be removed from the feed and cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  const handleDeleteActivePitch = (pitchId) => {
+    setDeleteTarget({ id: pitchId, type: "active" });
+  };
+
+  const handleConfirmDeletePitch = async () => {
+    if (!deleteTarget) return;
+    setDeletingPitch(true);
+    const { id, type } = deleteTarget;
     try {
-      await deletePitch(pitchId);
-      removePitchEverywhere(pitchId);
-      toast.info("Pitch deleted");
+      await deletePitch(id);
+      removePitchEverywhere(id);
+      toast.info(type === "draft" ? "Draft removed" : "Pitch deleted");
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Failed to delete pitch"));
+      toast.error(
+        apiErrorMessage(
+          error,
+          type === "draft" ? "Failed to delete draft" : "Failed to delete pitch",
+        ),
+      );
+    } finally {
+      setDeletingPitch(false);
     }
   };
 
@@ -341,7 +360,7 @@ export default function PitchPage() {
           <PitchSidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onCreatePitch={openCreateModal}
+            onCreatePitch={openCreateModal} 
           />
 
           <main className="flex-1 min-w-0 w-full flex flex-col gap-3.5 sm:gap-4 md:gap-5">
@@ -438,6 +457,33 @@ export default function PitchPage() {
         onGoToMyPitches={handleGoToMyPitches}
         currentUser={currentUser}
         draftToEdit={editingDraft}
+      />
+
+      <DeleteModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDeletePitch}
+        title={deleteTarget?.type === "draft" ? "Delete Draft" : "Delete Pitch"}
+        message={
+          deleteTarget?.type === "draft"
+            ? "Are you sure you want to delete this draft? This action cannot be undone."
+            : "Are you sure you want to delete this live pitch? It will be permanently removed from your profile and the feed."
+        }
+        confirmText="Delete"
+        isLoading={deletingPitch}
+      />
+
+      <SharePostModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          setPitchToShare(null);
+        }}
+        onShare={handleShareOption}
+        getPlatformHref={(platform) =>
+          getPitchPlatformHref(pitchToShare || currentPitch, platform)
+        }
+        title="Share pitch"
       />
     </NewsFeedLayout>
   );

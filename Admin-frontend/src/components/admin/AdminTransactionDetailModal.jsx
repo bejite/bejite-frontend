@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, CreditCard, UserRound } from "lucide-react";
+import Loader from "../ui/Loader";
 import axiosInstance from "../../utils/axiosInstance";
 
 const formatDateTime = (value) => {
@@ -56,27 +57,27 @@ const DetailRow = ({ label, value }) => {
 };
 
 const AdminTransactionDetailModal = ({ transaction, onClose }) => {
-  const [details, setDetails] = useState(transaction);
+  const [fetchedDetails, setFetchedDetails] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(Boolean(transaction?.id));
 
+  const details =
+    fetchedDetails && fetchedDetails.id === transaction?.id
+      ? fetchedDetails
+      : transaction;
+
   useEffect(() => {
-    setDetails(transaction);
-    setError(null);
-    if (!transaction?.id) {
-      setLoading(false);
-      return undefined;
-    }
+    if (!transaction?.id) return undefined;
 
     let cancelled = false;
-    const load = async () => {
-      setLoading(true);
+    Promise.resolve().then(async () => {
+      if (cancelled) return;
       try {
         const { data } = await axiosInstance.get(
           `/api/admin/metrics/revenue/transactions/${transaction.id}`,
         );
         if (!cancelled && data?.transaction) {
-          setDetails(data.transaction);
+          setFetchedDetails(data.transaction);
         }
       } catch {
         if (!cancelled && !transaction.reference && !transaction.email) {
@@ -85,9 +86,8 @@ const AdminTransactionDetailModal = ({ transaction, onClose }) => {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
+    });
 
-    load();
     return () => {
       cancelled = true;
     };
@@ -151,15 +151,7 @@ const AdminTransactionDetailModal = ({ transaction, onClose }) => {
 
         <div className="px-6 py-5 overflow-y-auto">
           {loading ? (
-            <div
-              className="h-52 flex flex-col items-center justify-center gap-3"
-              role="status"
-              aria-live="polite"
-              aria-label="Loading transaction details"
-            >
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-[#16730F]" />
-              <p className="text-sm text-gray-500">Loading details…</p>
-            </div>
+            <Loader fullscreen={false} size="sm" description="Loading transaction details..." />
           ) : (
             <>
           <div className="flex items-start justify-between gap-3 mb-5">

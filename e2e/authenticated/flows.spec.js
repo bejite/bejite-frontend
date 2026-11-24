@@ -12,7 +12,7 @@ test.describe('authenticated user flows', () => {
     await expect(page).toHaveURL(/\/news-feed/);
     await expect(page.getByTestId('news-feed')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('news-feed-start-post')).toBeVisible();
-    await expect(page.getByText('Start a post')).toBeVisible();
+    await expect(page.getByTestId('news-feed-start-post')).toHaveText(/Create Post/);
   });
 
   test('employer dashboard loads stats', async ({ page }) => {

@@ -7,10 +7,16 @@ import { API_URL } from '../../config';
 import ChatMessageInput from '../chat/ChatMessageInput';
 import ChatMessageBubble from '../chat/ChatMessageBubble';
 import ChatDaySeparator from '../chat/ChatDaySeparator';
-import { formatChatDayLabel, formatChatMessageTime, groupMessagesByDay } from '../../utils/chatTimeUtils';
+import {
+  formatChatDayLabel,
+  formatChatMessageTime,
+  getMessageClusterFlags,
+  groupMessagesByDay,
+} from '../../utils/chatTimeUtils';
 import { formatDisplayPersonName } from '../../utils/personDisplayName';
 import { toQuotePreview } from '../../utils/chatQuote';
 import { notifyChatConversationUpdated } from '../../utils/headerBadgeEvents';
+import DeleteModal from '../modal/DeleteModal';
 
 function messagesFingerprint(msgs) {
   return (msgs || [])
@@ -38,6 +44,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const currentUser = useSelector((state) => state.auth.user);
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -218,9 +226,15 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = (messageId) => {
     if (!messageId) return;
-    if (!window.confirm('Delete this message?')) return;
+    setMessageToDelete(messageId);
+  };
+
+  const handleConfirmDeleteMessage = async () => {
+    if (!messageToDelete) return;
+    const messageId = messageToDelete;
+    setDeletingMessage(true);
 
     try {
       await messagingService.deleteMessage(messageId);
@@ -230,6 +244,7 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
       if (replyTo?.id === messageId) {
         setReplyTo(null);
       }
+      setMessageToDelete(null);
       await fetchMessages(selectedChat.id, true);
       notifyChatConversationUpdated();
     } catch (error) {
@@ -238,6 +253,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
         error?.response?.data?.message ||
         'Failed to delete message';
       toast.error(msg);
+    } finally {
+      setDeletingMessage(false);
     }
   };
 
@@ -404,7 +421,7 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
             <ChatDaySeparator
               label={formatChatDayLabel(day.messages[0]?.created_at)}
             />
-            {day.messages.map((msg) => {
+            {day.messages.map((msg, index) => {
           const senderName = formatDisplayPersonName(
             {
               firstName: msg.firstName ?? msg.first_name,
@@ -413,6 +430,10 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
             'User',
           );
           const messageTime = formatChatMessageTime(msg.created_at);
+          const { isContinuation, showTime } = getMessageClusterFlags(
+            day.messages,
+            index,
+          );
           const ownMessage = isOwnMessage(msg);
           const senderAvatar = getProfileImageUrl(
             msg.profilePictureUrl ||
@@ -442,6 +463,8 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
                 senderAvatar={senderAvatar}
                 senderInitials={senderInitials}
                 messageTime={messageTime}
+                showTime={showTime}
+                isContinuation={isContinuation}
                 editing={editingMessageId === msg.id}
                 saving={savingEdit && editingMessageId === msg.id}
                 onStartEdit={() => setEditingMessageId(msg.id)}
@@ -479,6 +502,16 @@ function ChatsMiddle({ selectedChat, onShowChatList, onShowChatInfo }) {
       Select a conversation to send messages
     </div>
   )}
+
+  <DeleteModal
+    isOpen={Boolean(messageToDelete)}
+    onClose={() => setMessageToDelete(null)}
+    onConfirm={handleConfirmDeleteMessage}
+    title="Delete Message"
+    message="Are you sure you want to delete this message? This action cannot be undone."
+    confirmText="Delete"
+    isLoading={deletingMessage}
+  />
 </main>
   );
 }

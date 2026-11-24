@@ -16,6 +16,7 @@ import {
 import { getEmployerJob, updateEmployerJob } from "../../services/employerApi";
 import useCountryStateOptions from "../../hooks/useCountryStateOptions";
 import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
+import Loader from "../../components/ui/Loader";
 import {
   CURRENCY_OPTIONS,
   INDUSTRY_OPTIONS,
@@ -240,10 +241,7 @@ const EditJob = () => {
     return (
       <NewsFeedLayout showSidebars={false}>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <FaSpinner className="animate-spin text-5xl text-[#16730F] mx-auto mb-4" />
-            <p className="text-gray-500">Loading job details...</p>
-          </div>
+          <Loader fullscreen={false} description="Loading job details..." />
         </div>
       </NewsFeedLayout>
     );

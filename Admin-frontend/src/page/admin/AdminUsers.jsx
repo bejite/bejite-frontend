@@ -1,6 +1,7 @@
 import { Fragment, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import RecruiterSelect from "../../components/admin/RecruiterSelect";
 import {
@@ -36,12 +37,8 @@ const AdminUsers = () => {
 
   const filterMenuRef = useRef(null);
   const userIdFromQuery = searchParams.get("userId");
-
-  useEffect(() => {
-    if (userIdFromQuery) {
-      setSelectedUser({ id: userIdFromQuery });
-    }
-  }, [userIdFromQuery]);
+  const modalUser =
+    selectedUser ?? (userIdFromQuery ? { id: userIdFromQuery } : null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,10 +107,6 @@ const AdminUsers = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showFilterMenu]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, roleFilter, dateFilter]);
 
   // Calculate display range for "Showing X-Y of Z users"
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
@@ -353,8 +346,7 @@ const AdminUsers = () => {
               {loading ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center">
-                    <div className="animate-spin inline-block rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-                    <p className="text-gray-500 mt-2">Loading users...</p>
+                    <Loader fullscreen={false} size="sm" description="Loading users..." />
                   </td>
                 </tr>
               ) : users.length > 0 ? (
@@ -560,9 +552,9 @@ const AdminUsers = () => {
         )}
       </div>
 
-      {selectedUser && (
+      {modalUser && (
         <AdminUserDetailModal
-          user={selectedUser}
+          user={modalUser}
           onClose={() => {
             setSelectedUser(null);
             if (searchParams.has("userId")) {

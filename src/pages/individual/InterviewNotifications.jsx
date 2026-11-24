@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { API_URL } from "../../config";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/ui/Loader";
 
 const InterviewNotifications = () => {
   const [invitations, setInvitations] = useState([]);
@@ -124,11 +125,8 @@ const InterviewNotifications = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-          <p className="text-[#16730F] mt-4">Loading invitations...</p>
-        </div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <Loader fullscreen={false} description="Loading invitations..." />
       </div>
     );
   }

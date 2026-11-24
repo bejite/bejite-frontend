@@ -8,6 +8,7 @@ import React, {
 import { createPortal } from "react-dom";
 import {
   FaSearch,
+  FaPlus,
   FaChevronDown,
   FaUserEdit,
   FaUser,
@@ -60,6 +61,7 @@ import { onNotificationNew } from "../services/socketClient";
 import { Network } from "lucide-react";
 import { toast } from "react-toastify";
 import { useMilestoneBirthdayCount } from "../hooks/useMilestoneBirthdayCount";
+import { requestOpenCreatePost } from "../utils/createPostEvents";
 
 const NewsFeedHeader = ({ user: propUser }) => {
   useSyncProfilePhoto();
@@ -639,7 +641,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
           setNewJobVacancyCount(response.count || 0);
         }
       } catch (err) {
-        console.error("Error fetching new job vacancy count:", err);
+        console.error("Error fetching new job vacancies count:", err);
       }
     };
 
@@ -787,7 +789,7 @@ const NewsFeedHeader = ({ user: propUser }) => {
     if (name === "pitch") return "Pitches";
     if (name === "invite-friends") return "Invite Friends";
     if (name === "adpro") return "AdPro";
-    if (name === "job-vacancy") return "Job Vacancy";
+    if (name === "job-vacancy") return "Job Vacancies";
     if (name === "connection") {
       return isCorporateRecruiter(user) ? "Followers" : "Connections";
     }
@@ -844,6 +846,14 @@ const NewsFeedHeader = ({ user: propUser }) => {
             className="h-8 lg:h-10 cursor-pointer"
           />
           <div className="flex items-center gap-1 lg:hidden">
+            <button
+              type="button"
+              onClick={() => requestOpenCreatePost(navigate)}
+              aria-label="Create Post"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-[#16730F] text-white shadow-sm active:scale-95"
+            >
+              <FaPlus className="h-2.5 w-2.5" />
+            </button>
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen((prev) => !prev)}
@@ -1220,7 +1230,15 @@ const NewsFeedHeader = ({ user: propUser }) => {
           />
           <div className="fixed top-0 left-0 w-[min(85vw,300px)] h-full bg-white shadow-2xl z-50 flex flex-col lg:hidden">
             <div className="p-4 border-b border-gray-100 shrink-0">
-              <img src="/assets/images/logo.png" alt="Bejite" className="h-8" />
+              <img
+                src="/assets/images/logo.png"
+                alt="Bejite"
+                className="h-8 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => {
+                  navigate("/news-feed");
+                  setIsSidebarOpen(false);
+                }}
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto nfl-scroll p-4 pt-2">

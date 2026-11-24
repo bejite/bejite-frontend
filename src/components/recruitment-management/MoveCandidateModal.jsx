@@ -144,7 +144,7 @@ export default function MoveCandidateModal({
           </div>
         </div>
 
-        <div className="overflow-y-auto nfl-scroll flex-1 min-h-0 space-y-3.5 pr-1 sm:pr-2">
+        <div className="overflow-y-auto nfl-scroll flex-1 min-h-0 space-y-3.5 px-1.5 sm:px-2.5 py-1.5">
           <div className="bg-[#16730F] text-white rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 shadow-xs">
             {isBulk ? (
               <>

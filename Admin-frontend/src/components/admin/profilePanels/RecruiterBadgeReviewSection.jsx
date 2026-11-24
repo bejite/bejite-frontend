@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ShieldCheck, ShieldX } from 'lucide-react';
 import axiosInstance from '../../../utils/axiosInstance';
-import { useAdminInbox } from '../../../context/AdminInboxContext';
+import { useAdminInbox } from '../../../context/useAdminInbox';
 
 const STATUS_COPY = {
   unverified: 'Unverified — waiting for ID upload and payment',

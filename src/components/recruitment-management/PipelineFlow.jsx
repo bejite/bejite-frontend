@@ -92,7 +92,7 @@ export default function PipelineFlow({
         {stageItems.map((stg, index) => {
           const isDragging = dragIndex === index;
           const isDropTarget = overIndex === index && dragIndex !== index;
-          const stageName = stg.name || stg.title || "Stage";
+          const stageName = stg.name || stg.title || "N/A";
 
           return (
             <div

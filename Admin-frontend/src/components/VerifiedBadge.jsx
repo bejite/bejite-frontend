@@ -16,15 +16,6 @@ function getVerifiedBadgeLabel(userOrRole) {
   return "Verified";
 }
 
-function userIsRecruiter(userOrRole) {
-  const role =
-    typeof userOrRole === "string"
-      ? userOrRole
-      : userOrRole?.role ?? userOrRole?.author_role ?? null;
-  const normalized = String(role ?? "").toLowerCase();
-  return normalized === "recruiter" || normalized === "employer";
-}
-
 /**
  * Green verified badge pill (distinct from email verification).
  */
@@ -88,5 +79,3 @@ export default function VerifiedBadge({
     </span>
   );
 }
-
-export { userIsRecruiter };

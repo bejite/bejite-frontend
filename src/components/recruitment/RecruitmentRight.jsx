@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Loader2 } from "lucide-react";
 import { getUserProfileImage } from "../../utils/profileImageUtils";
 import {
@@ -8,11 +9,13 @@ import {
 } from "../../utils/personDisplayName";
 import DisplayNameWithBadge from "../DisplayNameWithBadge";
 import useRecruitmentRightStats from "../../hooks/useRecruitmentRightStats";
-import { RECRUITMENT_RIGHT_LINKS } from "./recruitmentRightLinks";
+import { getRecruitmentRightLinks } from "./recruitmentRightLinks";
 import { formatCompactCount as formatNetworkCount } from "../../utils/formatCompactCount";
+import { getUser, mergeAuthUsers } from "../../utils/tokenManager";
 
 function RecruitmentRight() {
   const navigate = useNavigate();
+  const reduxUser = useSelector((state) => state.auth?.user);
   const {
     userData,
     postCount,
@@ -21,10 +24,23 @@ function RecruitmentRight() {
     networkCountLoading,
   } = useRecruitmentRightStats();
 
-  const displayName = userData
-    ? formatDisplayPersonName(userData, "User")
+  const resolvedUser = useMemo(() => {
+    const localUser = getUser();
+    return mergeAuthUsers(
+      mergeAuthUsers(localUser || {}, userData || {}),
+      reduxUser || {}
+    );
+  }, [userData, reduxUser]);
+
+  const rightLinks = useMemo(
+    () => getRecruitmentRightLinks(resolvedUser),
+    [resolvedUser]
+  );
+
+  const displayName = resolvedUser
+    ? formatDisplayPersonName(resolvedUser, "User")
     : "Osakwe Prisca";
-  const username = formatDisplayHandle(userData);
+  const username = formatDisplayHandle(resolvedUser);
 
   return (
     <div className="bg-[#F5F5F5] px-2 py-2 lg:h-full">
@@ -44,7 +60,7 @@ function RecruitmentRight() {
             <div className="text-[#FFFFFF] text-center mt-[-40px] w-full px-2 min-w-0">
               <div className="text-[14px] sm:text-[16px] font-bold min-w-0">
                 <DisplayNameWithBadge
-                  user={userData}
+                  user={resolvedUser}
                   fallback={displayName}
                   badgeSize="xs"
                   badgePlacement="below"
@@ -125,8 +141,9 @@ function RecruitmentRight() {
                   )}
                 </p>
                 <p className="text-[10px] font-medium text-white/60 mt-0.5">
-                  {String(userData?.role || "").toLowerCase() === "recruiter" &&
-                  String(userData?.mode || "").toLowerCase() === "corporate"
+                  {String(resolvedUser?.role || "").toLowerCase() ===
+                    "recruiter" &&
+                  String(resolvedUser?.mode || "").toLowerCase() === "corporate"
                     ? "Followers"
                     : "Connections Made"}
                 </p>
@@ -147,7 +164,7 @@ function RecruitmentRight() {
 
         <div className="lg:flex-1 mt-3 p-4 pb-6 lg:overflow-y-auto nfl-sidebar-scroll scroll-smooth rounded-b-2xl">
           <div className="space-y-4 cursor-pointer">
-            {RECRUITMENT_RIGHT_LINKS.map((item) => (
+            {rightLinks.map((item) => (
               <div
                 key={item.path}
                 data-tour-id={item.tourId || undefined}
@@ -157,7 +174,7 @@ function RecruitmentRight() {
                 role="button"
                 tabIndex={0}
               >
-                <img src={item.icon} alt="" />
+                <img src={item.icon} alt="" className="w-5 h-5 shrink-0" />
                 <p className="text-[#F5F5F5] font-bold">{item.label}</p>
                 {item.secondaryIcon && (
                   <img src={item.secondaryIcon} className="w-4" alt="" />

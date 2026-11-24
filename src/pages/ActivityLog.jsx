@@ -17,6 +17,7 @@ import {
   Share2,
 } from "lucide-react";
 import NewsFeedLayout from "../components/layout/NewsFeedLayout";
+import DeleteModal from "../components/modal/DeleteModal";
 import {
   getUserPosts,
   updatePost,
@@ -157,6 +158,8 @@ const ActivityLogPostCard = ({
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Users list modal state
   const [usersListModalOpen, setUsersListModalOpen] = useState(false);
@@ -237,13 +240,19 @@ const ActivityLogPostCard = ({
     setShowEditModal(true);
   };
 
-  const handleDeleteClick = async () => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        await onDelete(post.id);
-      } catch (err) {
-        console.error("Error deleting post:", err);
-      }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(post.id);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -628,6 +637,16 @@ const ActivityLogPostCard = ({
         users={usersListUsers}
         loading={usersListLoading}
         type={usersListType}
+      />
+
+      <DeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        isLoading={isDeleting}
       />
     </motion.div>
   );
@@ -1038,8 +1057,7 @@ export default function ActivityLog() {
     if (filter === "job") return [];
     return posts.filter(post => {
       if (search && !post.body?.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === "all") return true;
-      if (filter === "post") return !post.media || post.media.length === 0;
+      if (filter === "all" || filter === "post") return true;
       if (filter === "image") return post.media?.some(m => m.kind === "image");
       if (filter === "video") return post.media?.some(m => m.kind === "video");
       return true;

@@ -1,14 +1,18 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Loader2 } from "lucide-react";
 import { getUserProfileImage } from "../../utils/profileImageUtils";
 import { formatDisplayPersonName, formatDisplayHandle } from "../../utils/personDisplayName";
 import DisplayNameWithBadge from "../DisplayNameWithBadge";
 import useRecruitmentRightStats from "../../hooks/useRecruitmentRightStats";
-import { RECRUITMENT_RIGHT_LINKS } from "./recruitmentRightLinks";
+import { getRecruitmentRightLinks } from "./recruitmentRightLinks";
 import { formatCompactCount as formatNetworkCount } from "../../utils/formatCompactCount";
+import { getUser, mergeAuthUsers } from "../../utils/tokenManager";
 
 export default function RecruitmentRightMobileMenu({ onNavigate }) {
   const navigate = useNavigate();
+  const reduxUser = useSelector((state) => state.auth?.user);
   const {
     userData,
     postCount,
@@ -17,13 +21,26 @@ export default function RecruitmentRightMobileMenu({ onNavigate }) {
     networkCountLoading,
   } = useRecruitmentRightStats();
 
+  const resolvedUser = useMemo(() => {
+    const localUser = getUser();
+    return mergeAuthUsers(
+      mergeAuthUsers(localUser || {}, userData || {}),
+      reduxUser || {}
+    );
+  }, [userData, reduxUser]);
+
+  const rightLinks = useMemo(
+    () => getRecruitmentRightLinks(resolvedUser),
+    [resolvedUser]
+  );
+
   const go = (path) => {
     navigate(path);
     onNavigate?.();
   };
 
-  const displayName = formatDisplayPersonName(userData, "User");
-  const username = formatDisplayHandle(userData);
+  const displayName = formatDisplayPersonName(resolvedUser, "User");
+  const username = formatDisplayHandle(resolvedUser);
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
@@ -36,7 +53,7 @@ export default function RecruitmentRightMobileMenu({ onNavigate }) {
           />
           <div className="text-sm font-bold mt-2">
             <DisplayNameWithBadge
-              user={userData}
+              user={resolvedUser}
               fallback={displayName}
               badgeSize="xs"
               badgePlacement="below"
@@ -89,7 +106,7 @@ export default function RecruitmentRightMobileMenu({ onNavigate }) {
       </div>
 
       <nav className="mt-4 flex flex-col gap-1">
-        {RECRUITMENT_RIGHT_LINKS.map((item) => (
+        {rightLinks.map((item) => (
           <button
             key={item.path}
             type="button"

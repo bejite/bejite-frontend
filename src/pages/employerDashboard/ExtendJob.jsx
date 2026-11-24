@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
 import {
   FaClock,
@@ -133,10 +134,7 @@ const ExtendJob = () => {
         </button>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-500 gap-3">
-            <FaSpinner className="animate-spin text-[#16730F] text-xl" />
-            Loading job details...
-          </div>
+          <Loader fullscreen={false} description="Loading job details..." />
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p className="text-red-700 mb-4">{error}</p>

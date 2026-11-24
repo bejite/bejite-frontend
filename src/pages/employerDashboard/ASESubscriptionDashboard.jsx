@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Loader2, Trash2 } from "lucide-react";
 import NewsFeedHeader from "../../components/NewsFeedHeader";
+import Loader from "../../components/ui/Loader";
 import {
   getSubscriptionStatus,
   getPaymentTransactions,
@@ -268,10 +269,10 @@ const ASESubscriptionDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col min-h-screen">
         <NewsFeedHeader />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
+          <Loader fullscreen={false} description="Loading subscription dashboard..." />
         </div>
       </div>
     );

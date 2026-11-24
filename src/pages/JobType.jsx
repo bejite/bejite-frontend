@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { FiCheckCircle } from "react-icons/fi";
 import { FaCheckCircle } from "react-icons/fa";
 import { RecruiterSelect } from "../components/recruiter/recruiterOnboardingUi";
+import { JOB_TITLE_OPTIONS } from "../data/jobTypeData";
 
 function JobType() {
   const navigate = useNavigate();
@@ -67,13 +68,10 @@ function JobType() {
                 name="jobTitle"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
-                options={[
-                  { value: "Developer", label: "Developer" },
-                  { value: "Designer", label: "Designer" },
-                  { value: "Product Manager", label: "Product Manager" },
-                  { value: "Data Analyst", label: "Data Analyst" },
-                ]}
-                placeholder="Enter your job"
+                options={JOB_TITLE_OPTIONS}
+                placeholder="Enter or select job title"
+                editable={true}
+                creatable={true}
               />
             </InputWithIcon>
           </div>

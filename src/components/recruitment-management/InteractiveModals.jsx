@@ -43,7 +43,7 @@ export function AddStageModal({ isOpen, onClose, onAdd }) {
           </div>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto nfl-scroll pr-1 flex-1 min-h-0 space-y-4">
+          <div className="overflow-y-auto nfl-scroll px-1.5 sm:px-2.5 py-1.5 flex-1 min-h-0 space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                 Stage Name
@@ -122,7 +122,7 @@ export function CandidateFeedbackModal({
           </div>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto nfl-scroll pr-1 flex-1 min-h-0 space-y-4">
+          <div className="overflow-y-auto nfl-scroll px-1.5 sm:px-2.5 py-1.5 flex-1 min-h-0 space-y-4">
             <div>
               <RecruiterSelect
                 label="Overall Recommendation"
@@ -138,7 +138,7 @@ export function CandidateFeedbackModal({
                 placeholder="Select recommendation"
               />
             </div>
-            <div>
+            <div className="px-2">
               <label className="block text-xs font-bold text-[#1A3E32] mb-1">
                 Feedback Notes
               </label>
@@ -225,7 +225,7 @@ export function MoveStageModal({
           </div>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto nfl-scroll pr-1 flex-1 min-h-0 space-y-4">
+          <div className="overflow-y-auto nfl-scroll px-1.5 sm:px-2.5 py-1.5 flex-1 min-h-0 space-y-4">
             <div>
               <RecruiterSelect
                 label="Select Target Stage"

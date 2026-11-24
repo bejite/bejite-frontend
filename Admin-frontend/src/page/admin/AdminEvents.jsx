@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, LayoutTemplate, Loader2, X } from "lucide-react";
+import Loader from "../../components/ui/Loader";
 
 import EventHeader from "../../components/admin/events/EventHeader";
 import EventComposer from "../../components/admin/events/EventComposer";
@@ -10,6 +11,7 @@ import EventHistory from "../../components/admin/events/EventHistory";
 import EventAnalyticsModal from "../../components/admin/events/EventAnalyticsModal";
 import ActiveLiveEvents from "../../components/admin/events/ActiveLiveEvents";
 import TemplateCenter from "../../components/admin/events/TemplateCenter";
+import { DeleteConfirmModal } from "../../components/modal/DeleteConfirmModal";
 import {
   listPartnerEvents,
   createPartnerEvent,
@@ -138,7 +140,13 @@ export default function AdminEvents() {
   }, []);
 
   useEffect(() => {
-    fetchEvents();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) fetchEvents();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchEvents]);
 
   const liveEvents = useMemo(() => {
@@ -295,15 +303,31 @@ export default function AdminEvents() {
     }
   };
 
-  const handleDeleteEvent = async (id) => {
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+
+  const confirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    setIsDeletingEvent(true);
     try {
-      await deletePartnerEvent(id, { hard: true });
-      setEventsList((prev) => prev.filter((e) => e.id !== id));
-      toast.warning("Event deleted");
+      await deletePartnerEvent(eventToDelete.id, { hard: true });
+      setEventsList((prev) => prev.filter((e) => e.id !== eventToDelete.id));
+      setEventToDelete(null);
+      toast.success("Event deleted successfully");
     } catch (err) {
       console.error("Failed to delete event:", err);
       toast.error(err?.response?.data?.message || "Failed to delete event");
+    } finally {
+      setIsDeletingEvent(false);
     }
+  };
+
+  const handleRequestDeleteEvent = (id) => {
+    const target = eventsList.find((e) => e.id === id) || {
+      id,
+      title: "this event",
+    };
+    setEventToDelete(target);
   };
 
   return (
@@ -371,16 +395,13 @@ export default function AdminEvents() {
 
           <div className="min-h-[400px]">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <Loader2 className="animate-spin mb-3" size={28} />
-                <p className="text-sm font-medium">Loading events…</p>
-              </div>
+              <Loader fullscreen={false} description="Loading events..." />
             ) : (
               <>
                 {currentTab === "history" && (
                   <EventHistory
                     eventsList={eventsList}
-                    onDeleteEvent={handleDeleteEvent}
+                    onDeleteEvent={handleRequestDeleteEvent}
                     onResendEvent={handleResendEvent}
                     onSelectEvent={setSelectedAnalyticsEvent}
                   />
@@ -500,6 +521,24 @@ export default function AdminEvents() {
           </div>
         )}
       </AnimatePresence>
+
+      <DeleteConfirmModal
+        isOpen={Boolean(eventToDelete)}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={confirmDeleteEvent}
+        title="Delete Event"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">
+              &quot;{eventToDelete?.title}&quot;
+            </span>
+            ? This action cannot be undone.
+          </>
+        }
+        confirmText="Delete Event"
+        isLoading={isDeletingEvent}
+      />
     </div>
   );
 }

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StepTabs from "../StepTabs";
 import ProgressBar from "../ProgressBar";
-import { navigateBack } from "../../utils/navigateBack";
 
 const OnboardingLayout = ({
   children,
@@ -25,31 +24,14 @@ const OnboardingLayout = ({
       className="w-full px-4 pb-6 pt-2 font-nunito-semi max-w-screen-xl mx-auto "
     >
       <button
-        className=" bg-transparent "
-        onClick={() => {
-          if (currentStep <= 1) {
-            const isRecruiterPath = pathname.startsWith("/corporate") ||
-              pathname.startsWith("/edit-profile/recruiter") ||
-              pathname.startsWith("/edit-profile/individual") ||
-              pathname.startsWith("/individual");
-            navigateBack(
-              navigate,
-              isEditMode
-                ? "/news-feed"
-                : isRecruiterPath
-                  ? "/employer-option"
-                  : "/resume",
-            );
-          } else if (typeof getPath === "function") {
-            navigate(getPath(currentStep - 1));
-          } else {
-            navigateBack(navigate, "/news-feed");
-          }
-        }}
+        type="button"
+        className="bg-transparent cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => navigate("/news-feed")}
+        aria-label="Go to News Feed"
       >
         <img
           src="/assets/images/logo.png"
-          alt="logo"
+          alt="Bejite Logo"
           className="h-10"
         />
       </button>

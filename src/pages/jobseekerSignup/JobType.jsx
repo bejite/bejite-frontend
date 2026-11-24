@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import OnboardingLayout from "../../components/layout/onboardingLayout";
 import Loader from "../../components/ui/Loader";
 import FormLabel from "../../components/forms/FormLabel";
+import { AutocompleteInput } from "../../components/forms/AutocompleteInput";
 import {
   JOB_TITLE_OPTIONS,
   INDUSTRY_OPTIONS,
@@ -211,6 +212,14 @@ function JobType() {
       return;
     }
 
+    const salaryDigits = String(form.salary).replace(/[^\d]/g, "");
+    if (salaryDigits && Number(salaryDigits) > 2_147_483_647) {
+      toast.error(
+        "Expected salary is too large. Please enter a realistic amount.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     const activeStatus = String(
@@ -340,23 +349,31 @@ function JobType() {
                     />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <RecruiterSelect
+                    <FormLabel
                       label="JOB TITLE / YOUR ROLE"
                       tooltip="Your target job role or desired position"
+                    />
+                    <AutocompleteInput
                       value={form.jobTitle}
                       onChange={updateField("jobTitle")}
-                      options={JOB_TITLE_OPTIONS}
-                      placeholder="Select job title"
+                      placeholder="Enter or select job title"
+                      formName="job-type"
+                      fieldName="job_title"
+                      staticOptions={JOB_TITLE_OPTIONS}
                     />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <RecruiterSelect
+                    <FormLabel
                       label="INDUSTRY / SECTOR"
                       tooltip="The industry or sector you want to work in (e.g. Technology, Finance, Healthcare)"
+                    />
+                    <AutocompleteInput
                       value={form.industry}
                       onChange={updateField("industry")}
-                      options={INDUSTRY_OPTIONS}
-                      placeholder="Select industry"
+                      placeholder="Enter or select industry"
+                      formName="job-type"
+                      fieldName="industry_sector"
+                      staticOptions={INDUSTRY_OPTIONS}
                     />
                   </div>
                 </div>
@@ -485,6 +502,7 @@ function JobType() {
         <NavigationButtons
           isFormComplete={allFilled}
           isLoading={isSubmitting}
+          isEditMode={Boolean(isEditMode)}
           nextLabel={isEditMode ? "Save changes" : "Finish profile"}
           onBack={() => {
             if (isEditMode && typeof getPath === "function") {

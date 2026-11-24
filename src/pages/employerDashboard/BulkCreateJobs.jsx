@@ -15,6 +15,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import NewsFeedLayout from "../../components/layout/NewsFeedLayout";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import { createEmployerJob } from "../../services/employerApi";
 import {
@@ -244,13 +245,7 @@ const BulkCreateJobs = () => {
                 />
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#16730F] transition-colors cursor-pointer">
                   {uploading ? (
-                    <>
-                      <FaSpinner className="text-4xl text-[#16730F] mx-auto mb-3 animate-spin" />
-                      <p className="text-gray-600">Processing {fileName}...</p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Parsing uploaded file
-                      </p>
-                    </>
+                    <Loader fullscreen={false} size="sm" description={`Processing ${fileName || 'file'}...`} />
                   ) : (
                     <>
                       {fileName ? (

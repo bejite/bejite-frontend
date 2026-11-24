@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaImage, FaVideo, FaTimes, FaClock } from "react-icons/fa";
+import { FaImage, FaVideo, FaTimes, FaClock, FaPoll } from "react-icons/fa";
 import { uploadMedia } from "../services/postsApi";
 import { apiErrorMessage, getUploadSizeError } from "../utils/uploadLimits";
 import EmojiPickerButton from "./common/EmojiPickerButton";
@@ -38,7 +38,7 @@ const PostCreationModal = ({
   editingPost = null,
 }) => {
   const isEditing = Boolean(editingPost?.id);
-  const isPollMode = !isEditing && initialMode === "poll";
+  const [isPollMode, setIsPollMode] = useState(!isEditing && initialMode === "poll");
   const [postBody, setPostBody] = useState("");
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
@@ -70,6 +70,7 @@ const PostCreationModal = ({
     setScheduleDate(defaults.date);
     setScheduleTime(defaults.time);
     setPostMode("now");
+    setIsPollMode(!isEditing && initialMode === "poll");
     setPollQuestion("");
     setPollOptions(["", ""]);
     setPollDurationDays(7);
@@ -86,7 +87,7 @@ const PostCreationModal = ({
       setMediaFiles([]);
       setVisibility(initialVisibility);
     }
-  }, [isOpen, initialMode, editingPost, initialVisibility]);
+  }, [isOpen, initialMode, editingPost, initialVisibility, isEditing]);
 
   if (!isOpen) return null;
 
@@ -249,6 +250,7 @@ const PostCreationModal = ({
 
   const handleClose = () => {
     const nextDefault = getDefaultSchedule();
+    setIsPollMode(false);
     setPostBody("");
     setMediaFiles([]);
     setPollQuestion("");
@@ -269,8 +271,8 @@ const PostCreationModal = ({
     : postBody.trim() || mediaFiles.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-lg w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-white sm:max-h-[90vh]">
         <div className="flex items-center justify-between p-4 border-b border-[#A9A9A9]">
           <h2 className="text-lg font-semibold text-[#1A3E32]">
             {isEditing ? "Edit Post" : isPollMode ? "Create Poll" : "Create Post"}
@@ -288,9 +290,18 @@ const PostCreationModal = ({
           {isPollMode ? (
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#1A3E32]">
-                  Poll question
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-[#1A3E32]">
+                    Poll question
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPollMode(false)}
+                    className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <FaTimes className="text-xs" /> Remove Poll
+                  </button>
+                </div>
                 <div>
                   <input
                     type="text"
@@ -383,18 +394,56 @@ const PostCreationModal = ({
               </div>
             </div>
           ) : (
-            <div>
-              <PostBodyComposer
-                ref={bodyComposerRef}
-                value={postBody}
-                onChange={setPostBody}
-                placeholder="What do you want to talk about?"
-                autoFocus
-              />
-              <div className="flex justify-end mt-2">
-                <EmojiPickerButton onEmojiSelect={insertIntoComposer} />
-              </div>
-            </div>
+            <PostBodyComposer
+              ref={bodyComposerRef}
+              value={postBody}
+              onChange={setPostBody}
+              placeholder="What do you want to talk about?"
+              autoFocus
+              toolbar={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                    aria-label="Add image"
+                    title="Add image"
+                  >
+                    <FaImage className="text-base" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                    aria-label="Add video"
+                    title="Add video"
+                  >
+                    <FaVideo className="text-base" />
+                  </button>
+                  {!isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsPollMode(true)}
+                      disabled={uploadingMedia}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#16730F] hover:bg-[#16730F]/10 disabled:opacity-50"
+                      aria-label="Add poll"
+                      title="Add poll"
+                    >
+                      <FaPoll className="text-base" />
+                    </button>
+                  )}
+                  <EmojiPickerButton
+                    onEmojiSelect={insertIntoComposer}
+                    buttonClassName="h-9 w-9 rounded-full hover:bg-[#16730F]/10"
+                  />
+                  {uploadingMedia && (
+                    <span className="ml-1 text-xs text-gray-500">Uploading...</span>
+                  )}
+                </>
+              }
+            />
           )}
 
           {!isPollMode && mediaFiles.length > 0 && (
@@ -463,32 +512,6 @@ const PostCreationModal = ({
         </div>
 
         <div className="p-4 border-t border-[#A9A9A9]">
-          {!isPollMode && (
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
-              <button
-                type="button"
-                onClick={() => imageInputRef.current?.click()}
-                disabled={uploadingMedia}
-                className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50"
-              >
-                <FaImage className="text-lg" />
-                <span className="text-sm">Add Image</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => videoInputRef.current?.click()}
-                disabled={uploadingMedia}
-                className="flex items-center gap-2 text-[#16730F] hover:bg-gray-100 px-3 py-2 rounded-lg disabled:opacity-50"
-              >
-                <FaVideo className="text-lg" />
-                <span className="text-sm">Add Video</span>
-              </button>
-              {uploadingMedia && (
-                <span className="text-sm text-gray-500">Uploading...</span>
-              )}
-            </div>
-          )}
-
           {!isPollMode && (
             <>
               <input

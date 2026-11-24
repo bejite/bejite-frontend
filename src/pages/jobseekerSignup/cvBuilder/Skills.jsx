@@ -19,6 +19,7 @@ import axiosInstance from "../../../utils/axiosInstance";
 import { AutocompleteInput } from "../../../components/forms/AutocompleteInput";
 import FormLabel from "../../../components/forms/FormLabel";
 import OnboardingLayout from "../../../components/layout/onboardingLayout";
+import DeleteModal from "../../../components/modal/DeleteModal";
 import {
   categoryOptions,
   experienceOptions,
@@ -266,6 +267,8 @@ const CategorySelect = ({ value, onChange }) => {
 function Skills() {
   const navigate = useNavigate();
   const { currentStep, isEditMode, cvData, getPath } = useOutletContext();
+  const [skillToDelete, setSkillToDelete] = useState(null);
+  const [deletingSkill, setDeletingSkill] = useState(false);
 
   const handleStepClick = (path) => {
     navigate(path);
@@ -540,22 +543,9 @@ function Skills() {
                       </div>
                     </div>
                     <button
-                      onClick={async () => {
-                        if (item.id) {
-                          try {
-                            await axiosInstance.delete(
-                              `/api/cv-builder/skills/${user?.id}/${item.id}`,
-                            );
-                            toast.success("Skill deleted successfully!");
-                          } catch (err) {
-                            console.error("Error deleting skill:", err);
-                            toast.error("Failed to delete skill");
-                            return;
-                          }
-                        }
-                        setAllSkill((prev) => prev.filter((_, i) => i !== idx));
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
+                      type="button"
+                      onClick={() => setSkillToDelete({ item, idx })}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start cursor-pointer"
                       aria-label="Delete skill"
                     >
                       <FaTrash />
@@ -569,6 +559,7 @@ function Skills() {
 
         <NavigationButtons
           isFormComplete={true}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));
@@ -659,6 +650,39 @@ function Skills() {
         />
 
         <Loader show={isLoading} />
+
+      <DeleteModal
+        isOpen={Boolean(skillToDelete)}
+        onClose={() => setSkillToDelete(null)}
+        onConfirm={async () => {
+          if (!skillToDelete) return;
+          const { item, idx } = skillToDelete;
+          setDeletingSkill(true);
+          try {
+            if (item.id) {
+              await axiosInstance.delete(
+                `/api/cv-builder/skills/${user?.id}/${item.id}`,
+              );
+              toast.success("Skill deleted successfully!");
+            }
+            setAllSkill((prev) => prev.filter((_, i) => i !== idx));
+            setSkillToDelete(null);
+          } catch (err) {
+            console.error("Error deleting skill:", err);
+            toast.error("Failed to delete skill");
+          } finally {
+            setDeletingSkill(false);
+          }
+        }}
+        title="Delete Skill"
+        message={
+          skillToDelete?.item?.skillSector
+            ? `Are you sure you want to delete "${skillToDelete.item.skillSector}"? This action cannot be undone.`
+            : "Are you sure you want to delete this skill? This action cannot be undone."
+        }
+        confirmText="Delete"
+        isLoading={deletingSkill}
+      />
     </OnboardingLayout>
   );
 }

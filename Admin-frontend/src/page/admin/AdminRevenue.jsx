@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axiosInstance from "../../utils/axiosInstance";
+import Loader from "../../components/ui/Loader";
 import { toast } from "react-toastify";
 import { CreditCard, DollarSign, Activity, TrendingUp, Eye } from "lucide-react";
 import {
@@ -82,36 +83,44 @@ const AdminRevenue = () => {
   const periodLabel = getChartPeriodLabel(period);
   const hasLoadedRef = useRef(false);
   const metricsRef = useRef(metrics);
-  metricsRef.current = metrics;
 
   useEffect(() => {
-    const fetchRevenueData = async () => {
+    metricsRef.current = metrics;
+  }, [metrics]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(async () => {
+      if (cancelled) return;
       try {
         if (!hasLoadedRef.current) setLoading(true);
         const [revenueRes, overviewRes] = await Promise.all([
           axiosInstance.get(`/api/admin/metrics/revenue?period=${period}`),
           axiosInstance.get("/api/admin/metrics/overview"),
         ]);
-
+        if (cancelled) return;
         setMetrics(revenueRes.data);
         setTotalUsers(overviewRes.data?.totalUsers || 0);
         hasLoadedRef.current = true;
         setMetricsReady(true);
       } catch (error) {
+        if (cancelled) return;
         console.error("Error fetching revenue metrics", error);
         toast.error("Failed to load revenue data");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+    });
+    return () => {
+      cancelled = true;
     };
-
-    fetchRevenueData();
   }, [period]);
 
   useEffect(() => {
     let cancelled = false;
 
-    const fetchTransactions = async () => {
+    Promise.resolve().then(async () => {
+      if (cancelled) return;
       try {
         const { data } = await axiosInstance.get(
           `/api/admin/metrics/revenue/transactions?page=${currentPage}&limit=${ITEMS_PER_PAGE}`,
@@ -138,20 +147,15 @@ const AdminRevenue = () => {
           totalPages: all.length > 0 ? Math.ceil(all.length / ITEMS_PER_PAGE) : 0,
         });
       }
-    };
+    });
 
-    fetchTransactions();
     return () => {
       cancelled = true;
     };
   }, [currentPage, metricsReady]);
 
   if (loading) {
-    return (
-      <div className="h-[80vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]"></div>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading revenue metrics..." />;
   }
 
   const totalTx = txPagination.total || 0;
@@ -459,6 +463,7 @@ const AdminRevenue = () => {
 
       {selectedTransaction && (
         <AdminTransactionDetailModal
+          key={selectedTransaction.id || selectedTransaction.reference}
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
         />

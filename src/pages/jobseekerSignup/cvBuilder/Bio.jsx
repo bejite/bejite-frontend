@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { navigateBack } from "../../../utils/navigateBack";
 import { useDispatch } from "react-redux";
 import StepTabs from "../../../components/StepTabs";
 import ProgressBar from "../../../components/ProgressBar";
@@ -291,17 +290,14 @@ const Bio = () => {
 
       <NavigationButtons
         isFormComplete={isFormComplete}
-        // showSkip={true}
-        // onSkip={() => {
-        //   if (isEditMode) {
-        //     navigate(getPath(currentStep + 1));
-        //   } else {
-        //     navigate("/links");
-        //   }
-        // }}
-        onBack={() =>
-          navigateBack(navigate, isEditMode ? "/news-feed" : "/resume")
-        }
+        isEditMode={isEditMode}
+        onBack={() => {
+          if (isEditMode) {
+            navigate("/news-feed");
+          } else {
+            navigate("/resume");
+          }
+        }}
         onNext={handleNextStep}
       />
     </OnboardingLayout>

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { HeroSection } from "../../../components/jobs/HeroSection";
 import { SearchBar } from "../../../components/jobs/SearchBar";
 import NewsFeedLayout from "../../../components/layout/NewsFeedLayout";
+import Loader from "../../../components/ui/Loader";
 import { FilterSidebar } from "../../../components/forms/FilterSidebar";
 import { JobDetailsModal } from "../../../components/jobs/JobDetailsModal";
 import { SavedJobsModal } from "../../../components/jobs/SavedJobsModal";
@@ -358,7 +359,7 @@ const JobVacancyListing = () => {
             <div className="relative min-h-[28rem]">
               {isLoading && jobs.length === 0 && (
                 <div className="absolute inset-0 z-10 flex items-start justify-center pt-20 bg-[#F5F5F5]/70 backdrop-blur-[1px]">
-                  <FaSpinner className="animate-spin text-[#16730F] text-4xl" />
+                  <Loader fullscreen={false} description="Loading vacancies..." />
                 </div>
               )}
 

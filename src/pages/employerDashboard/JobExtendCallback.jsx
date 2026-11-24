@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import { verifyJobExtensionPayment } from "../../services/employerApi";
 
 const JobExtendCallback = () => {
@@ -53,13 +54,7 @@ const JobExtendCallback = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="text-center max-w-md">
         {status === "processing" && (
-          <>
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#16730F] mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              Processing Payment
-            </h2>
-            <p className="text-gray-600 mt-2">{message}</p>
-          </>
+          <Loader fullscreen={false} description={message || "Processing Payment..."} />
         )}
 
         {status === "success" && (

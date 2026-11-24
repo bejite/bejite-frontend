@@ -30,13 +30,12 @@ const AseSearchCreditNotice = () => {
       role="status"
       className="mx-3 sm:mx-4 md:mx-6 mt-3 sm:mt-4 rounded-xl border border-[#6B8E23]/40 bg-[#F0F7E8] px-4 py-3 flex gap-3 items-start"
     >
-      <FaInfoCircle className="text-[#16730F] shrink-0 mt-0.5" aria-hidden="true" />
-      <div className="flex-1 min-w-0 text-sm text-[#1A3E32] leading-relaxed">
+      {/* <FaInfoCircle className="text-[#16730F] shrink-0 mt-0.5" aria-hidden="true" /> */}
+      <div className="flex-1 text-center min-w-0 text-sm text-[#1A3E32] leading-relaxed">
         <p className="font-semibold text-[#16730F]">Search credits apply</p>
-        <p className="mt-1">
-          Each search and each &ldquo;Load more&rdquo; uses one ASE search credit.
+        <p className="mt-1 text-center">
           Narrow your filters (job title, skills, location, and so on) before searching
-          so you get the candidates you want and avoid using credits unnecessarily.
+          so you get the candidates you want.
         </p>
       </div>
       <button

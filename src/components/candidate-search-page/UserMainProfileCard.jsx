@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaComment, FaChevronDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import Loader from '../ui/Loader';
 import axiosInstance from '../../utils/axiosInstance';
 import { fetchFullUserProfile } from '../../services/fetchFullUserProfile';
 import { profileAvatarSrc } from '../../utils/profilePhotoUrl';
@@ -83,12 +84,7 @@ const UserMainProfileCard = ({ candidateId, connectUserId: connectUserIdProp }) 
   }, [candidateId]);
 
   if (loading) {
-    return (
-      <div className="w-full max-w-4xl mx-auto px-4 py-12 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F]" />
-        <p className="mt-4 text-[#1A3E32]">Loading full profile...</p>
-      </div>
-    );
+    return <Loader fullscreen={false} description="Loading full profile..." />;
   }
 
   if (error) {

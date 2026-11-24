@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../../components/ui/Loader";
 import UserList from "../../components/UserList";
+import { hydrateAuth, updateUser } from "../../features/auth/authSlice";
 import { discoverRecruitersForSignup } from "../../services/signupApi";
 import axiosInstance from "../../utils/axiosInstance";
 import * as connectionsApi from "../../services/connectionsApi";
@@ -24,6 +27,60 @@ const mapRecruiterForList = (user) => ({
   isCorporate: Boolean(user.isCorporate || user.mode === "corporate"),
 });
 
+function readStoredUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Merge backend signup response with stored/query onboarding metadata for downstream profile setup. */
+function buildNormalizedSignupUser({ responseUser, existingUser, email, role, mode }) {
+  const resolvedRole = (
+    responseUser?.role ||
+    role ||
+    existingUser?.role ||
+    "jobseeker"
+  ).toLowerCase();
+  const resolvedMode = responseUser?.mode || mode || existingUser?.mode || "";
+  const resolvedEmail = responseUser?.email || email || existingUser?.email || "";
+  const resolvedFirstName =
+    responseUser?.firstName ||
+    responseUser?.first_name ||
+    existingUser?.firstName ||
+    existingUser?.first_name ||
+    "";
+  const resolvedLastName =
+    responseUser?.lastName ||
+    responseUser?.last_name ||
+    existingUser?.lastName ||
+    existingUser?.last_name ||
+    "";
+  const resolvedId =
+    responseUser?.id ||
+    responseUser?.userId ||
+    responseUser?._id ||
+    existingUser?.id ||
+    existingUser?.userId ||
+    existingUser?._id;
+
+  const normalizedUser = {
+    ...existingUser,
+    ...(responseUser || {}),
+    email: resolvedEmail,
+    firstName: resolvedFirstName,
+    lastName: resolvedLastName,
+    role: resolvedRole,
+    mode: resolvedMode,
+  };
+  if (resolvedId) {
+    normalizedUser.id = resolvedId;
+  }
+  return normalizedUser;
+}
+
 const JobConnection = () => {
   const [users, setUsers] = useState([]);
   const [addedUsers, setAddedUsers] = useState([]);
@@ -32,6 +89,7 @@ const JobConnection = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -97,10 +155,12 @@ const JobConnection = () => {
     }
   };
 
-  const handleAdd = (id) => {
-    if (!addedUsers.includes(id)) {
-      setAddedUsers((prev) => [...prev, id]);
-    }
+  const handleToggleRecruiter = (id) => {
+    setAddedUsers((prev) =>
+      prev.includes(id)
+        ? prev.filter((selectedId) => selectedId !== id)
+        : [...prev, id],
+    );
   };
 
   const handleContinue = async () => {
@@ -127,7 +187,10 @@ const JobConnection = () => {
       const data = response.data;
 
       const accessToken =
-        data?.accessToken || data?.token || data?.data?.accessToken;
+        data?.accessToken ||
+        data?.token ||
+        data?.data?.accessToken ||
+        data?.data?.token;
       const refreshToken = data?.refreshToken || data?.data?.refreshToken;
 
       if (accessToken) {
@@ -138,10 +201,22 @@ const JobConnection = () => {
         localStorage.setItem("refreshToken", refreshToken);
       }
 
-      const responseUser = data?.user || data?.confirmedUser;
-      if (responseUser) {
-        localStorage.setItem("user", JSON.stringify(responseUser));
-      }
+      const responseUser =
+        data?.user ||
+        data?.confirmedUser ||
+        data?.data?.user ||
+        data?.data?.confirmedUser;
+      const existingUser = readStoredUser();
+      const normalizedUser = buildNormalizedSignupUser({
+        responseUser,
+        existingUser,
+        email,
+        role,
+        mode,
+      });
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
+      dispatch(hydrateAuth());
+      dispatch(updateUser(normalizedUser));
 
       const byId = new Map(users.map((u) => [String(u.id), u]));
       const networkResults = await Promise.allSettled(
@@ -165,8 +240,17 @@ const JobConnection = () => {
         );
       }
 
-      toast.success(data.message || "Signup completed successfully!");
-      navigate("/");
+      toast.success(data?.message || "Signup completed successfully!");
+      navigate("/resume", {
+        state: {
+          email: normalizedUser.email,
+          firstName: normalizedUser.firstName,
+          lastName: normalizedUser.lastName,
+          role: normalizedUser.role,
+          mode: normalizedUser.mode,
+        },
+        replace: true,
+      });
     } catch (error) {
       console.error("CompleteSignup error:", error);
       const message =
@@ -199,7 +283,7 @@ const JobConnection = () => {
 
         {loadingUsers ? (
           <div className="w-full max-w-3xl flex justify-center py-16">
-            <span className="w-8 h-8 border-2 border-[#16730F] border-t-transparent rounded-full animate-spin" />
+            <Loader fullscreen={false} description="Loading recruiters..." />
           </div>
         ) : users.length === 0 ? (
           <p className="text-[#333] text-center py-8">
@@ -207,7 +291,11 @@ const JobConnection = () => {
           </p>
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
-            <UserList users={users} addedUsers={addedUsers} onAdd={handleAdd} />
+            <UserList
+              users={users}
+              addedUsers={addedUsers}
+              onToggle={handleToggleRecruiter}
+            />
             {hasMore && (
               <button
                 type="button"

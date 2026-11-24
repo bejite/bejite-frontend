@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Lock,
   Eye,
   EyeOff,
   LogOut,
+  UserCheck,
+  Users,
   UserX,
   Bell,
   Globe,
@@ -25,6 +28,7 @@ import {
   ProfileVisibilityModal,
   TwoFactorModal,
 } from "../components/modal/confirmBadgeModal";
+import AccountActionFlowModal from "../components/modal/AccountActionFlowModal";
 import { SettingRow } from "../components/SettingsRow";
 import {
   getUser,
@@ -47,10 +51,18 @@ import {
   updateNotificationPreferences,
 } from "../services/pushNotificationService";
 import { getTwoFactorStatus } from "../services/twoFactorApi";
+import { deactivateAccount, deleteAccount } from "../services/accountApi";
 import { getProfileVisibilitySetting } from "../services/profileVisibilityApi";
+import {
+  getAccountDelegations,
+  getReceivedDelegations,
+  isRecruiterAccount,
+  summarizeDelegations,
+} from "../services/accountDelegationService";
 
 export default function AccountSettings() {
   useSyncProfilePhoto();
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const reduxUser = useSelector((state) => state.auth?.user);
 
@@ -58,6 +70,7 @@ export default function AccountSettings() {
     const localUser = getUser();
     return mergeAuthUsers(localUser || {}, reduxUser || localUser || {});
   }, [reduxUser]);
+  const isRecruiter = isRecruiterAccount(user);
 
   const displayName = formatDisplayPersonName(user, "User");
   const email = user?.email?.trim() || "";
@@ -81,6 +94,15 @@ export default function AccountSettings() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [passwordRequired, setPasswordRequired] = useState(undefined);
+  const [delegationSummary, setDelegationSummary] = useState(() =>
+    summarizeDelegations([]),
+  );
+  const [receivedDelegations, setReceivedDelegations] = useState([]);
+  const pendingReceivedCount = receivedDelegations.filter(
+    (d) => d.status === "pending",
+  ).length;
+  const managedAccountCount = receivedDelegations.length - pendingReceivedCount;
 
   useEffect(() => {
     let cancelled = false;
@@ -115,13 +137,31 @@ export default function AccountSettings() {
       });
     getTwoFactorStatus()
       .then((data) => {
-        if (!cancelled) setTwoFactorEnabled(Boolean(data.enabled));
+        if (cancelled) return;
+        setTwoFactorEnabled(Boolean(data.enabled));
+        if (typeof data.passwordRequired === "boolean") {
+          setPasswordRequired(data.passwordRequired);
+        }
       })
       .catch(() => {});
+    if (isRecruiter) {
+      getAccountDelegations()
+        .then((list) => {
+          if (!cancelled) {
+            setDelegationSummary(summarizeDelegations(list));
+          }
+        })
+        .catch(() => {});
+      getReceivedDelegations()
+        .then((list) => {
+          if (!cancelled) setReceivedDelegations(list);
+        })
+        .catch(() => {});
+    }
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isRecruiter]);
 
   const handleChannelToggle = async (channel) => {
     if (prefsLoading || channelLoading) return;
@@ -182,9 +222,34 @@ export default function AccountSettings() {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  const handleConfirmAction = (action) => {
+  // The server revokes every session on success, so the user is signed out locally right after.
+  const handleAccountDeactivate = async ({ reasonId, details }) => {
+    await deactivateAccount({ reasonId, details });
     setModal(null);
-    showToast(`${action} successful`);
+    showToast("Account deactivated. Log in any time to reactivate it.");
+    setTimeout(() => {
+      logout({ revokeServer: false });
+    }, 1200);
+  };
+
+  const handleAccountDelete = async ({ reasonId, details, password, googleToken }) => {
+    await deleteAccount({ reasonId, details, password, googleToken });
+    setModal(null);
+    showToast("Account permanently deleted");
+    setTimeout(() => {
+      logout({ revokeServer: false });
+    }, 1200);
+  };
+
+  const handleRedirectContact = (reason, mode) => {
+    setModal(null);
+    showToast("Connecting you with our support team...");
+    navigate("/contact", {
+      state: {
+        reason,
+        action: mode === "delete" ? "account_deletion" : "account_deactivation",
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -221,6 +286,52 @@ export default function AccountSettings() {
         },
       ],
     },
+    ...(isRecruiter
+      ? [
+          {
+            title: "Account Delegation",
+            rows: [
+              {
+                icon: UserCheck,
+                iconBg: "bg-[#EAF5E9]",
+                label: "Assign Account to a Recruiter",
+                sublabel: delegationSummary.sublabel,
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {delegationSummary.activeCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#EAF5E9] text-[#16730F] text-xs font-semibold">
+                        {delegationSummary.activeCount} Active
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/assign-recruiter"),
+              },
+              {
+                icon: Users,
+                iconBg: "bg-sky-50",
+                label: "Managed Accounts",
+                sublabel:
+                  managedAccountCount > 0
+                    ? `You manage ${managedAccountCount} account${managedAccountCount > 1 ? "s" : ""} for other recruiters`
+                    : "Review requests from recruiters who want your help",
+                action: (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pendingReceivedCount > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-semibold">
+                        {pendingReceivedCount} New
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                ),
+                onClick: () => navigate("/account-settings/managed-accounts"),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: "Notifications",
       rows: [
@@ -455,30 +566,32 @@ export default function AccountSettings() {
             title="Log Out"
             description="Are you sure you want to log out of your Bejite account?"
             confirmLabel="Log Out"
+            icon={LogOut}
+            iconBg="bg-[#EAF5E9]"
+            iconColor="text-[#16730F]"
             onClose={() => setModal(null)}
             onConfirm={handleLogout}
           />
         )}
         {modal === "deactivate" && (
-          <ConfirmModal
-            key="deactivate"
-            title="Deactivate Account"
-            description="Your profile will be hidden from other users. You can reactivate at any time by logging back in."
-            confirmLabel="Deactivate"
-            danger
+          <AccountActionFlowModal
+            key="deactivate-flow" 
+            isOpen={true}
+            mode="deactivate"
             onClose={() => setModal(null)}
-            onConfirm={() => handleConfirmAction("Account deactivated")}
+            onConfirm={handleAccountDeactivate}
+            onRedirectContact={(reason) => handleRedirectContact(reason, "deactivate")}
           />
         )}
         {modal === "delete" && (
-          <ConfirmModal
-            key="delete"
-            title="Delete Account"
-            description="This action is permanent and cannot be undone. All your data, posts, and connections will be removed."
-            confirmLabel="Delete Forever"
-            danger
+          <AccountActionFlowModal
+            key="delete-flow"
+            isOpen={true}
+            mode="delete"
+            passwordRequired={passwordRequired}
             onClose={() => setModal(null)}
-            onConfirm={() => handleConfirmAction("Account deleted")}
+            onConfirm={handleAccountDelete}
+            onRedirectContact={(reason) => handleRedirectContact(reason, "delete")}
           />
         )}
       </AnimatePresence>

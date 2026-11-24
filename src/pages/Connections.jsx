@@ -35,6 +35,7 @@ import {
 } from "../utils/recruiterProfilePaths";
 import axiosInstance from "../utils/axiosInstance";
 import { updateUser } from "../features/auth/authSlice";
+import Loader from "../components/ui/Loader";
 
 const shuffleArray = (arr) => {
   const shuffled = [...arr];
@@ -796,9 +797,12 @@ const Connections = () => {
             <>
               {connectionSearchBar}
               {networkLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#16730F]" />
-                  <p className="text-sm text-gray-500">Updating followers...</p>
+                <div className="py-10 flex flex-col items-center justify-center">
+                  <Loader
+                    fullscreen={false}
+                    size="sm"
+                    description="Updating followers..."
+                  />
                 </div>
               ) : (
                 <ConnectionList
@@ -830,9 +834,12 @@ const Connections = () => {
             <>
               {connectionSearchBar}
               {networkLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#16730F]" />
-                  <p className="text-sm text-gray-500">Updating network...</p>
+                <div className="py-10 flex flex-col items-center justify-center">
+                  <Loader
+                    fullscreen={false}
+                    size="sm"
+                    description="Updating network..."
+                  />
                 </div>
               ) : (
                 <ConnectionList
@@ -936,14 +943,14 @@ const Connections = () => {
     return (
       <NewsFeedLayout showSidebars={false}>
         <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center px-4">
-          <div className="text-center max-w-sm">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#16730F] mx-auto"></div>
-            <p className="mt-4 text-gray-600 text-sm sm:text-base">
-              {isCorporateViewer
+          <Loader
+            fullscreen={false}
+            description={
+              isCorporateViewer
                 ? "Loading followers..."
-                : "Loading connections..."}
-            </p>
-          </div>
+                : "Loading connections..."
+            }
+          />
         </div>
       </NewsFeedLayout>
     );
@@ -1038,10 +1045,11 @@ const PeopleList = ({
   if (searchLoading || isLoading) {
     return (
       <div className="text-center py-10 sm:py-14 px-2">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#16730F] mx-auto"></div>
-        <p className="mt-4 text-gray-600 text-sm sm:text-base font-medium">
-          {searchLoading ? "Searching professionals..." : "Finding people you may know..."}
-        </p>
+        <Loader
+          fullscreen={false}
+          size="sm"
+          description={searchLoading ? "Searching professionals..." : "Finding people you may know..."}
+        />
       </div>
     );
   }

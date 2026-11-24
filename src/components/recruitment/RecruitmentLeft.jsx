@@ -5,7 +5,8 @@ import { useSelector } from "react-redux";
 import { getUser } from "../../utils/tokenManager";
 import InviteFriendsModal from "../InviteFriendsModal";
 import ConnectModal from "../ConnectModal";
-import { Network } from "lucide-react";
+import { Network, Plus } from "lucide-react";
+import { requestOpenCreatePost } from "../../utils/createPostEvents";
 import { isCorporateRecruiter } from "../../utils/recruiterProfilePaths";
 import * as connectionsApi from "../../services/connectionsApi";
 import { profileAvatarSrc } from "../../utils/profilePhotoUrl";
@@ -264,10 +265,17 @@ export default function RecruitmentLeft() {
   return (
     <div className="bg-[#F5F5F5] px-2 py-2 h-full">
       <aside className="bg-[#16730F] rounded-2xl pb-2 pt-2 flex flex-col h-full">
-        {/* <div className="space-y-2 p-7">
-        <FaArrowLeft className="text-[#1A3E32]" />
-        <h2 className="text-[20px] text-[#ffffff]">Dashboardss</h2>
-      </div> */}
+        <div className="px-2 pt-1">
+          <button
+            type="button"
+            data-testid="news-feed-start-post"
+            onClick={() => requestOpenCreatePost(navigate)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A3E32] px-3 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#143028] active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            Create Post
+          </button>
+        </div>
         <nav className=" space-y-4  p-2">
           {filteredNavItems.map(({ icon: Icon, label, iconClassName }, idx) => (
             <div

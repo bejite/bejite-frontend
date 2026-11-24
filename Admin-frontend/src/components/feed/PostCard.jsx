@@ -21,7 +21,8 @@ import PostPoll from "./PostPoll";
 import PostCommentsSection from "../PostCommentsSection";
 import { formatDisplayPersonName } from "../../utils/personDisplayName";
 import { getAuthorSubtitle } from "../../utils/authorDisplay";
-import VerifiedBadge, { userIsRecruiter } from "../VerifiedBadge";
+import VerifiedBadge from "../VerifiedBadge";
+import { userIsRecruiter } from "../../utils/userIsRecruiter";
 import {
   getPortaledMenuStyle,
   usePortaledMenu,

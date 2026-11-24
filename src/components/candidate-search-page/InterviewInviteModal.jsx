@@ -4,7 +4,13 @@ import { LuSend } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { getEmployerDashboard } from "../../services/employerApi";
 
-const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
+const InterviewInviteModal = ({
+  isOpen,
+  onClose,
+  candidate,
+  onSuccess,
+  isReinvite = false,
+}) => {
   const [formData, setFormData] = useState({
     job_id: "",
     job_title: "",
@@ -178,15 +184,15 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto nfl-scroll scroll-smooth">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-lg my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto nfl-scroll scroll-smooth">
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-[#16730F]">
-            Send Interview Invite
+            {isReinvite ? "Re-invite for Interview" : "Send Interview Invite"}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-gray-100 rounded-full cursor-pointer"
           >
             <RxCross1 className="w-5 h-5 text-gray-500" />
           </button>
@@ -367,10 +373,10 @@ const InterviewInviteModal = ({ isOpen, onClose, candidate, onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 bg-[#16730F] text-white rounded-xl font-medium hover:bg-[#125B0C] disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 bg-[#16730F] text-white rounded-xl font-medium hover:bg-[#125B0C] disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <LuSend className="w-4 h-4" />
-              {loading ? "Sending…" : "Send Invite"}
+              {loading ? "Sending…" : isReinvite ? "Send Re-invite" : "Send Invite"}
             </button>
           </div>
         </form>

@@ -11,6 +11,7 @@ import { trackPartnerEventClick } from '../../services/verifiedBadgeApi'
 import { getUser } from '../../utils/tokenManager'
 import { getRecruiterIdUploadPath } from '../../utils/recruiterProfilePaths'
 import { classifyNavigationTarget } from '../../utils/safeNavigate'
+import Loader from '../../components/ui/Loader'
 
 const NOTIFICATIONS_PAGE_SIZE = 20
 const INVITATIONS_PAGE_SIZE = 50
@@ -457,6 +458,7 @@ const Notifications = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'interview_invite':
+      case 'interviewer_assigned':
         return '📅'
       case 'invite_accepted':
         return '✅'
@@ -516,11 +518,8 @@ const Notifications = () => {
     return (
       <div>
         <NewsFeedHeader />
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-            <p className="text-[#16730F] mt-4">Loading notifications...</p>
-          </div>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <Loader fullscreen={false} description="Loading notifications..." />
         </div>
       </div>
     )
@@ -626,8 +625,7 @@ const Notifications = () => {
 
               {invitationsLoading ? (
                 <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#16730F]"></div>
-                  <p className="text-[#16730F] mt-4">Loading interview invitations...</p>
+                  <Loader fullscreen={false} size="sm" description="Loading interview invitations..." />
                 </div>
               ) : invitations.length === 0 ? (
                 <div className="text-center py-12">

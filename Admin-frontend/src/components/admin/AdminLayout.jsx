@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
@@ -14,6 +14,7 @@ import {
   Shield,
   Megaphone,
   Mail,
+  Inbox,
   Calendar,
   Bell,
 } from "lucide-react";
@@ -22,19 +23,23 @@ import {
   getAdminRoleLabel,
 } from "../../constants/adminPermissions";
 import NotificationDropdown from "./NotificationDropdown";
-import { useAdminInbox } from "../../context/AdminInboxContext";
+import { useAdminInbox } from "../../context/useAdminInbox";
+import { fetchMailboxSummary } from "../../services/recruiterMailService";
+import { revokeServerSession } from "../../utils/tokenManager";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [bellRing, setBellRing] = useState(false);
+  const notifBellRef = useRef(null);
   const { notifications, unreadCount } = useAdminInbox();
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await revokeServerSession();
     dispatch(logout());
     navigate("/admin/login");
   };
@@ -44,6 +49,32 @@ const AdminLayout = () => {
     setBellRing(true);
     setTimeout(() => setBellRing(false), 800);
   }, []);
+
+  const canSeeMailbox = canAccessPath(user?.admin_role, "/admin/mailbox");
+  const [mailboxUnread, setMailboxUnread] = useState(0);
+  const recruiterMailUnread = canSeeMailbox ? mailboxUnread : 0;
+
+  useEffect(() => {
+    if (!canSeeMailbox) return undefined;
+
+    let cancelled = false;
+
+    const loadUnread = async () => {
+      try {
+        const summary = await fetchMailboxSummary();
+        if (!cancelled) setMailboxUnread(summary.inboxUnread || 0);
+      } catch {
+        if (!cancelled) setMailboxUnread(0);
+      }
+    };
+
+    loadUnread();
+    window.addEventListener("bejite-mailbox-changed", loadUnread);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("bejite-mailbox-changed", loadUnread);
+    };
+  }, [canSeeMailbox]);
 
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
@@ -56,6 +87,12 @@ const AdminLayout = () => {
     { name: "Jobs List", path: "/admin/jobs", icon: Briefcase },
     { name: "AdPro Review", path: "/admin/adpro", icon: Megaphone },
     { name: "Email Outreach", path: "/admin/email-outreach", icon: Mail },
+    {
+      name: "Mailbox",
+      path: "/admin/mailbox",
+      icon: Inbox,
+      badge: recruiterMailUnread > 0 ? recruiterMailUnread : null,
+    },
     { name: "Events Manager", path: "/admin/events", icon: Calendar },
     {
       name: "Notifications",
@@ -72,7 +109,7 @@ const AdminLayout = () => {
     "Admin";
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-nunito-semi">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -202,11 +239,14 @@ const AdminLayout = () => {
             {/* Notification Bell with Dropdown */}
             <div className="relative">
               <button
+                ref={notifBellRef}
+                type="button"
                 onClick={handleBellClick}
-                className={`relative p-2.5 rounded-xl border border-gray-100 text-gray-600 hover:text-[#16730F] hover:bg-[#16730F]/5 hover:border-[#16730F]/20 transition-all duration-200 shadow-sm ${
+                className={`relative p-2.5 rounded-xl border border-gray-100 text-gray-600 hover:text-[#16730F] hover:bg-[#16730F]/5 hover:border-[#16730F]/20 transition-all duration-200 shadow-sm cursor-pointer ${
                   bellRing ? "notif-bell-ring" : ""
                 }`}
                 aria-label="Notifications"
+                aria-expanded={notifOpen}
                 id="notification-bell"
               >
                 <Bell size={20} />
@@ -225,6 +265,7 @@ const AdminLayout = () => {
                 onClose={() => setNotifOpen(false)}
                 notifications={notifications}
                 unreadCount={unreadCount}
+                triggerRef={notifBellRef}
               />
             </div>
 

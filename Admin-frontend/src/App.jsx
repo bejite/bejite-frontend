@@ -13,8 +13,9 @@ import AuthBootstrap from "./components/AuthBootstrap";
 import PushNotificationBootstrap from "./components/PushNotificationBootstrap";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import AdminLayout from "./components/admin/AdminLayout";
-import { AdminInboxProvider } from "./context/AdminInboxContext";
 import { getDefaultAdminPath } from "./constants/adminPermissions";
+import Loader from "./components/ui/Loader";
+import { AdminInboxProvider } from "./context/AdminInboxProvider";
 
 const AdminLogin = lazy(() => import("./page/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./page/admin/AdminDashboard"));
@@ -29,6 +30,7 @@ const AdminRecruitment = lazy(() => import("./page/admin/AdminRecruitment"));
 const AdminEmailOutreach = lazy(
   () => import("./page/admin/AdminEmailOutreach"),
 );
+const AdminMailbox = lazy(() => import("./page/admin/AdminMailbox"));
 const AdminEvents = lazy(() => import("./page/admin/AdminEvents"));
 const AdminNotifications = lazy(
   () => import("./page/admin/AdminNotifications"),
@@ -42,7 +44,7 @@ const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 function RouteFallback() {
   return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[#16730F]" />
+      <Loader fullscreen={false} />
     </div>
   );
 }
@@ -84,6 +86,11 @@ function App() {
                 <Route path="admins" element={<AdminList />} />
                 <Route path="adpro" element={<AdminAdPro />} />
                 <Route path="email-outreach" element={<AdminEmailOutreach />} />
+                <Route path="mailbox" element={<AdminMailbox />} />
+                <Route
+                  path="recruiter-mail"
+                  element={<Navigate to="/admin/mailbox" replace />}
+                />
                 <Route path="events" element={<AdminEvents />} />
                 <Route path="notifications" element={<AdminNotifications />} />
               </Route>

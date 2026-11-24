@@ -103,6 +103,7 @@ export default function JobseekerHiringProcessReminder() {
 
   // Check persistent localStorage dismissal for this specific user
   const isDismissedInStorage = useMemo(() => {
+    if (dismissed) return true;
     if (!userId) return false;
     try {
       return localStorage.getItem(`${HIRING_REMINDER_DISMISS_PREFIX}${userId}`) === 'true';

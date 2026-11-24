@@ -269,6 +269,7 @@ const BasicDetails = () => {
 
       <NavigationButtons
         isFormComplete={isFormComplete && !submitting}
+        isEditMode={isEditMode}
         onBack={() => {
           if (isEditMode) {
             navigate("/news-feed");

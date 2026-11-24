@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTimes, FaUserFriends } from "react-icons/fa";
 import { toast } from "react-toastify";
+import Loader from "./ui/Loader";
 import { getMutualConnections } from "../services/connectionsApi";
 import { profileAvatarSrc } from "../utils/profilePhotoUrl";
 import { formatDisplayPersonName } from "../utils/personDisplayName";
@@ -105,9 +106,7 @@ export default function MutualConnectionsModal({
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="py-16 flex justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#16730F]" />
-            </div>
+            <Loader fullscreen={false} size="sm" description="Loading mutual connections..." />
           ) : connections.length === 0 ? (
             <p className="py-12 text-center text-sm text-gray-500">
               No mutual connections yet.

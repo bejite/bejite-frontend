@@ -1,7 +1,8 @@
 import { Mail, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { formatDisplayRole } from '../../../utils/personDisplayName';
 import { profileAvatarSrc, PROFILE_PHOTO_PLACEHOLDER } from '../../../utils/profilePhotoUrl';
-import VerifiedBadge, { userIsRecruiter } from '../../VerifiedBadge';
+import VerifiedBadge from '../../VerifiedBadge';
+import { userIsRecruiter } from '../../../utils/userIsRecruiter';
 
 const PANEL_BADGE_STYLES = {
   jobseeker: 'bg-blue-50 text-blue-700',

@@ -102,14 +102,22 @@ const Verify = () => {
               </button>
             </div>
 
-            <button
-              type="button"
-              className="mt-2 flex items-center justify-center gap-2 text-[#16730F] text-sm font-medium underline hover:text-[#145a0c] min-h-[44px] px-2"
-              onClick={() => navigate(-1)}
-            >
-              <FaArrowLeft className="shrink-0" />
-              Go back
-            </button>
+            {isEditMode && (
+              <button
+                type="button"
+                className="mt-2 flex items-center justify-center gap-2 text-[#16730F] text-sm font-medium underline hover:text-[#145a0c] min-h-[44px] px-2"
+                onClick={() => {
+                  if (typeof getPath === "function") {
+                    navigate(getPath(3));
+                  } else {
+                    navigate(-1);
+                  }
+                }}
+              >
+                <FaArrowLeft className="shrink-0" />
+                Go back
+              </button>
+            )}
           </div>
         ) : (
           <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 sm:gap-6 items-center">

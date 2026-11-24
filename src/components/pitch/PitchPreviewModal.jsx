@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import PitchVideoPlayer from "./PitchVideoPlayer";
 import PitchDetailsCard from "./PitchDetailsCard";
+import SharePostModal from "../SharePostModal";
+import {
+  getPitchPlatformHref,
+  copyPitchLink,
+} from "../../utils/pitchShare";
 import {
   likePitch,
   unlikePitch,
@@ -13,6 +19,10 @@ import {
 } from "../../services/pitchesApi";
 
 const LG_QUERY = "(min-width: 1024px)";
+/** Min scroll/swipe distance before switching video ↔ card focus */
+const FOCUS_DELTA = 28;
+/** Prevent rapid flip-flopping between panels */
+const FOCUS_COOLDOWN_MS = 320;
 
 export default function PitchPreviewModal({
   isOpen,
@@ -22,11 +32,17 @@ export default function PitchPreviewModal({
 }) {
   const [pitches, setPitches] = useState(allPitches);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [pitchToShare, setPitchToShare] = useState(null);
   /** Mobile only: which panel is enlarged — null = balanced */
   const [mobileFocus, setMobileFocus] = useState(null);
   const [isLg, setIsLg] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia(LG_QUERY).matches : true
   );
+
+  const lastSwitchAt = useRef(0);
+  const touchStartY = useRef(null);
+  const cardScrollRef = useRef(null);
 
   useEffect(() => {
     if (allPitches.length > 0) {
@@ -59,6 +75,7 @@ export default function PitchPreviewModal({
 
   useEffect(() => {
     setMobileFocus(null);
+    touchStartY.current = null;
   }, [currentIndex]);
 
   const handlePrev = useCallback(() => {
@@ -70,6 +87,115 @@ export default function PitchPreviewModal({
     if (pitches.length <= 1) return;
     setCurrentIndex((prev) => (prev < pitches.length - 1 ? prev + 1 : 0));
   }, [pitches.length]);
+
+  /**
+   * Scroll down (deltaY > 0) → grow card, shrink video
+   * Scroll up   (deltaY < 0) → grow video, shrink card
+   * When the card body is scrolled mid-content, don't steal the gesture.
+   */
+  const applyScrollFocus = useCallback(
+    (deltaY, { fromCardScroll = false } = {}) => {
+      if (isLg || !deltaY) return;
+
+      const now = Date.now();
+      if (now - lastSwitchAt.current < FOCUS_COOLDOWN_MS) return;
+
+      const scrollEl = cardScrollRef.current;
+      const atCardTop = !scrollEl || scrollEl.scrollTop <= 2;
+
+      if (deltaY > FOCUS_DELTA) {
+        // Scroll / swipe down → focus card
+        if (mobileFocus === "card") return;
+        setMobileFocus("card");
+        lastSwitchAt.current = now;
+        return;
+      }
+
+      if (deltaY < -FOCUS_DELTA) {
+        // Scroll / swipe up → focus video (only if card content is at top)
+        if (fromCardScroll && !atCardTop) return;
+        if (mobileFocus === "video") return;
+        setMobileFocus("video");
+        lastSwitchAt.current = now;
+      }
+    },
+    [isLg, mobileFocus]
+  );
+
+  const handleColumnWheel = useCallback(
+    (e) => {
+      if (isLg) return;
+      // Prefer card-internal scroll when the card is expanded and has overflow
+      const scrollEl = cardScrollRef.current;
+      if (
+        mobileFocus === "card" &&
+        scrollEl &&
+        e.deltaY > 0 &&
+        scrollEl.scrollHeight > scrollEl.clientHeight &&
+        scrollEl.scrollTop + scrollEl.clientHeight < scrollEl.scrollHeight - 2
+      ) {
+        return;
+      }
+      if (
+        mobileFocus === "card" &&
+        scrollEl &&
+        e.deltaY < 0 &&
+        scrollEl.scrollTop > 2
+      ) {
+        return;
+      }
+      applyScrollFocus(e.deltaY);
+    },
+    [isLg, mobileFocus, applyScrollFocus]
+  );
+
+  const handleTouchStart = useCallback(
+    (e) => {
+      if (isLg) return;
+      touchStartY.current = e.touches[0]?.clientY ?? null;
+    },
+    [isLg]
+  );
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (isLg || touchStartY.current == null) return;
+      const y = e.touches[0]?.clientY;
+      if (y == null) return;
+      // Finger up → positive (scroll down); finger down → negative (scroll up)
+      const deltaY = touchStartY.current - y;
+      if (Math.abs(deltaY) < FOCUS_DELTA) return;
+
+      const scrollEl = cardScrollRef.current;
+      if (
+        mobileFocus === "card" &&
+        scrollEl &&
+        deltaY > 0 &&
+        scrollEl.scrollHeight > scrollEl.clientHeight &&
+        scrollEl.scrollTop + scrollEl.clientHeight < scrollEl.scrollHeight - 2
+      ) {
+        touchStartY.current = y;
+        return;
+      }
+      if (
+        mobileFocus === "card" &&
+        scrollEl &&
+        deltaY < 0 &&
+        scrollEl.scrollTop > 2
+      ) {
+        touchStartY.current = y;
+        return;
+      }
+
+      applyScrollFocus(deltaY);
+      touchStartY.current = y;
+    },
+    [isLg, mobileFocus, applyScrollFocus]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartY.current = null;
+  }, []);
 
   // Keyboard navigation + lock body scroll while open
   useEffect(() => {
@@ -99,11 +225,6 @@ export default function PitchPreviewModal({
 
   const currentPitch = pitches[currentIndex] || initialPitch;
   if (!currentPitch) return null;
-
-  const focusPanel = (panel) => {
-    if (isLg) return;
-    setMobileFocus(panel);
-  };
 
   const videoSize =
     isLg || !mobileFocus
@@ -161,23 +282,32 @@ export default function PitchPreviewModal({
     }
   };
 
-  const handleShare = async (pitch) => {
-    const shareUrl = `${window.location.origin}/pitch?id=${pitch.id}`;
+  const handleShare = (pitch) => {
+    setPitchToShare(pitch || currentPitch);
+    setShowShareModal(true);
+  };
+
+  const handleShareOption = async (platform) => {
+    const targetPitch = pitchToShare || currentPitch;
+    if (!targetPitch) return;
+
+    if (platform === "copy") {
+      await copyPitchLink(targetPitch.id);
+    }
+
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-      }
-      const result = await sharePitch(pitch.id);
+      const result = await sharePitch(targetPitch.id);
       setPitches((prev) =>
         prev.map((p) =>
-          p.id === pitch.id
-            ? { ...p, shares: result?.shares ?? p.shares + 1 }
+          p.id === targetPitch.id
+            ? { ...p, shares: result?.shares ?? (p.shares || 0) + 1 }
             : p
         )
       );
-      toast.success("Pitch link copied to clipboard!");
-    } catch {
-      toast.info(`Pitch link: ${shareUrl}`);
+    } catch (error) {
+      console.error("sharePitch:", error);
+    } finally {
+      setShowShareModal(false);
     }
   };
 
@@ -248,17 +378,27 @@ export default function PitchPreviewModal({
 
       {/* Modal Dialog Content — constrained to viewport, no page scroll */}
       <div className="relative z-50 w-full max-w-5xl h-[calc(100dvh-1rem)] sm:h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1rem)] flex items-center justify-center overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center gap-3 sm:gap-4 lg:gap-8 w-full h-full max-h-full min-h-0 py-8 lg:py-4">
-          {/* Video — tap expands on mobile only (controls stopPropagation) */}
+        <div
+          className="flex flex-col lg:flex-row items-center lg:items-center justify-center gap-3 sm:gap-4 lg:gap-8 w-full h-full max-h-full min-h-0 py-8 lg:py-4 touch-pan-y"
+          onWheel={handleColumnWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          {/* Video — scroll up expands on mobile */}
           <div
             className={
               isLg
                 ? "shrink-0"
                 : `flex items-center justify-center min-h-0 transition-all duration-300 ease-out ${
-                    videoSize === "expanded" ? "flex-[1.35] w-full" : "flex-none"
+                    videoSize === "expanded"
+                      ? "flex-[1.35] w-full"
+                      : videoSize === "collapsed"
+                        ? "flex-none"
+                        : "flex-none"
                   }`
             }
-            onClick={() => focusPanel("video")}
           >
             <PitchVideoPlayer
               pitch={currentPitch}
@@ -270,7 +410,7 @@ export default function PitchPreviewModal({
             />
           </div>
 
-          {/* Card — tap expands on mobile only */}
+          {/* Card — scroll down expands on mobile */}
           <div
             className={
               isLg
@@ -283,7 +423,6 @@ export default function PitchPreviewModal({
                         : "flex-1"
                   }`
             }
-            onClick={() => focusPanel("card")}
           >
             <PitchDetailsCard
               pitch={currentPitch}
@@ -291,11 +430,32 @@ export default function PitchPreviewModal({
               onToggleLike={handleToggleLike}
               onShare={handleShare}
               mobileSize={isLg ? "desktop" : cardSize}
-              onMobileActivate={() => focusPanel("card")}
+              scrollContainerRef={cardScrollRef}
+              onScrollIntent={(deltaY) =>
+                applyScrollFocus(deltaY, { fromCardScroll: true })
+              }
             />
           </div>
         </div>
       </div>
+
+      {showShareModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <SharePostModal
+            isOpen={showShareModal}
+            onClose={() => {
+              setShowShareModal(false);
+              setPitchToShare(null);
+            }}
+            onShare={handleShareOption}
+            getPlatformHref={(platform) =>
+              getPitchPlatformHref(pitchToShare || currentPitch, platform)
+            }
+            title="Share pitch"
+          />,
+          document.body
+        )}
     </div>
   );
 }

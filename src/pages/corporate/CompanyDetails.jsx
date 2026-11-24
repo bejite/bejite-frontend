@@ -295,6 +295,7 @@ const CompanyDetails = () => {
           showSkip={true}
           onSkip={handleSkip}
           isFormComplete={isFormComplete}
+          isEditMode={isEditMode}
           onBack={() => {
             if (isEditMode) {
               navigate(getPath(currentStep - 1));

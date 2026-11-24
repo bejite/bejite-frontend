@@ -14,6 +14,7 @@ import { formatDisplayPersonName } from "../utils/personDisplayName";
 import DisplayNameWithBadge from "./DisplayNameWithBadge";
 import FormattedPostBody from "./feed/FormattedPostBody";
 import MentionComposerField from "./feed/MentionComposerField";
+import DeleteModal from "./modal/DeleteModal";
 
 const getDisplayName = (user) => formatDisplayPersonName(user);
 
@@ -402,6 +403,7 @@ export default function PostCommentsSection({
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [commentToDelete, setCommentToDelete] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editDraft, setEditDraft] = useState("");
   const [savingCommentId, setSavingCommentId] = useState(null);
@@ -534,16 +536,15 @@ export default function PostCommentsSection({
     }
   };
 
-  const handleDelete = async (comment) => {
+  const handleDelete = (comment) => {
     if (deletingCommentId) return;
+    setCommentToDelete(comment);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!commentToDelete || deletingCommentId) return;
+    const comment = commentToDelete;
     const idsToRemove = collectDescendantCommentIds(comment.id, comments);
-    const confirmed = window.confirm(
-      idsToRemove.size > 1
-        ? "Delete this comment and its replies?"
-        : "Delete this comment?",
-    );
-    if (!confirmed) return;
 
     setDeletingCommentId(comment.id);
 
@@ -558,6 +559,7 @@ export default function PostCommentsSection({
 
     setComments((prev) => prev.filter((entry) => !idsToRemove.has(entry.id)));
     onCommentCountChange?.(-idsToRemove.size);
+    setCommentToDelete(null);
 
     try {
       await deleteComment(postId, comment.id);
@@ -632,6 +634,21 @@ export default function PostCommentsSection({
           ))}
         </div>
       )}
+
+      <DeleteModal
+        isOpen={Boolean(commentToDelete)}
+        onClose={() => setCommentToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Comment"
+        message={
+          commentToDelete &&
+          collectDescendantCommentIds(commentToDelete.id, comments).size > 1
+            ? "Are you sure you want to delete this comment and its replies? This action cannot be undone."
+            : "Are you sure you want to delete this comment? This action cannot be undone."
+        }
+        confirmText="Delete"
+        isLoading={Boolean(deletingCommentId)}
+      />
     </div>
   );
 }

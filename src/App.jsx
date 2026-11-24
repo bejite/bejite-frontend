@@ -11,9 +11,12 @@ import ProfileCompletionReminder from "./components/ProfileCompletionReminder.js
 import JobseekerHiringProcessReminder from "./components/JobseekerHiringProcessReminder.jsx";
 import FeatureTour from "./components/FeatureTour.jsx";
 import PageLoader from "./components/PageLoader.jsx";
+import PageViewTracker from "./components/PageViewTracker.jsx";
 import AppRoutes from "./app/routes/AppRoutes.jsx";
+import { GOOGLE_CLIENT_ID as CONFIGURED_GOOGLE_CLIENT_ID } from "./config.mjs";
 
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID =
+  CONFIGURED_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
 function App() {
   return (
@@ -27,6 +30,7 @@ function App() {
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <Router>
           <AuthBootstrap>
+            <PageViewTracker />
             <VerifiedBadgeSync />
             <PushNotificationBootstrap />
             <Suspense fallback={<PageLoader />}>

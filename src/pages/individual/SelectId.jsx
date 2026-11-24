@@ -9,7 +9,7 @@ import { RecruiterSelect } from "../../components/recruiter/recruiterOnboardingU
 
 const SelectId = () => {
   const navigate = useNavigate();
-  const { isEditMode, recruiterData, getPath } = useOutletContext();
+  const { isEditMode, recruiterData, getPath, currentStep } = useOutletContext();
   const { updateIdType } = useRecruiterProfile();
 
   const [formData, setFormData] = useState({
@@ -79,7 +79,14 @@ const SelectId = () => {
       <div className="pb-8">
         <NavigationButtons
           isFormComplete={isFormComplete && !submitting}
-          onBack={() => navigate(-1)}
+          isEditMode={isEditMode}
+          onBack={() => {
+            if (isEditMode) {
+              navigate(getPath((currentStep || 5) - 1));
+              return;
+            }
+            navigate(-1);
+          }}
           nextLabel="Next"
           onNext={handleNextStep}
         />

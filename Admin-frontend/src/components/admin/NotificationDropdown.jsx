@@ -24,6 +24,7 @@ const NotificationDropdown = ({
   onClose,
   notifications,
   unreadCount: unreadCountProp,
+  triggerRef,
 }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -34,19 +35,26 @@ const NotificationDropdown = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        onClose();
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current?.contains(e.target)) return;
+      if (triggerRef?.current?.contains(e.target)) return;
+      if (e.target instanceof Element && e.target.closest("#notification-bell")) {
+        return;
       }
+      onClose();
     };
     const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClick);
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside, {
+        passive: true,
+      });
     }, 0);
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, triggerRef]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -92,11 +100,11 @@ const NotificationDropdown = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.96 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="notif-glass absolute right-0 top-full mt-2 w-[400px] max-w-[calc(100vw-32px)] rounded-2xl shadow-2xl border border-gray-200/60 z-50 overflow-hidden"
+          className="notif-glass fixed sm:absolute inset-x-3 sm:inset-x-auto top-[4.25rem] sm:top-full sm:mt-2 sm:right-0 sm:w-[400px] sm:max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl border border-gray-200/60 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.25rem)] sm:max-h-[calc(100dvh-6rem)]"
           role="dialog"
           aria-label="Notifications"
         >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="shrink-0 flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100">
             <div className="flex items-center gap-2.5">
               <h3 className="text-base font-bold text-gray-800">
                 Notifications
@@ -108,14 +116,16 @@ const NotificationDropdown = ({
               )}
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              aria-label="Close notifications"
+              className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto nfl-scroll">
+          <div className="flex-1 min-h-0 max-h-[380px] overflow-y-auto overscroll-contain nfl-scroll">
             {recentNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
                 <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">

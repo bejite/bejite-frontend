@@ -30,4 +30,10 @@ export default [
       ],
     },
   },
+  {
+    files: ['e2e/**/*.{js,jsx}', 'playwright.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ]

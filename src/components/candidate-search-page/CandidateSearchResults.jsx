@@ -10,6 +10,7 @@ import { formatDisplayText } from "../../utils/displayFormatUtils";
 import { filterAdminUsersFromSearch } from "../../utils/filterAdminUsers";
 import AvailabilityStatusDot from "./AvailabilityStatusDot";
 import { buildCandidateSearchParams } from "./buildCandidateSearchParams";
+import Loader from "../ui/Loader";
 
 const CandidateSearchResults = ({
   onViewProfile,
@@ -26,6 +27,7 @@ const CandidateSearchResults = ({
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [invitedCandidateIds, setInvitedCandidateIds] = useState(() => new Set());
   const [accessBlock, setAccessBlock] = useState(null);
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +35,52 @@ const CandidateSearchResults = ({
   // Refs to track and cancel duplicate requests (handles React StrictMode)
   const abortControllerRef = useRef(null);
   const requestIdRef = useRef(0);
+
+  // Fetch already invited candidates for this employer
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchExistingInvitations = async () => {
+      try {
+        const token =
+          localStorage.getItem("accessToken") ||
+          localStorage.getItem("authToken") ||
+          localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/interview-invitations/employer`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) return;
+        const resData = await res.json();
+        const invitations = resData?.data || [];
+        if (!isCancelled && Array.isArray(invitations)) {
+          const ids = new Set(
+            invitations
+              .map((inv) => inv.candidate_id ?? inv.candidateId)
+              .filter(Boolean)
+              .map((id) => Number(id))
+          );
+          setInvitedCandidateIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn("Could not fetch employer invitations:", err?.message || err);
+      }
+    };
+
+    fetchExistingInvitations();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const formatCandidates = useCallback((candidatesData) => {
     const filtered = filterAdminUsersFromSearch(candidatesData);
@@ -68,6 +116,14 @@ const CandidateSearchResults = ({
         hasVerifiedBadge: Boolean(candidate.hasVerifiedBadge),
         first_name: candidate.first_name,
         last_name: candidate.last_name,
+        isInvited: Boolean(
+          candidate.is_invited ||
+          candidate.isInvited ||
+          candidate.has_invited ||
+          candidate.has_invitation ||
+          candidate.invitation_status ||
+          candidate.invited
+        ),
       };
     });
   }, []);
@@ -259,6 +315,50 @@ const CandidateSearchResults = ({
     };
   }, [searchCriteria, enabled, fetchCandidates]);
 
+  const isCandidateInvited = useCallback(
+    (candidate) => {
+      if (!candidate) return false;
+      const cid = Number(candidate.id);
+      return (
+        invitedCandidateIds.has(cid) ||
+        Boolean(candidate.isInvited || candidate.is_invited)
+      );
+    },
+    [invitedCandidateIds],
+  );
+
+  const handleInviteClick = (candidate) => {
+    setSelectedCandidate(candidate);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCandidate(null);
+  };
+
+  const handleInviteSuccess = (invitationData) => {
+    const candidateId = Number(
+      invitationData?.candidate_id ??
+      invitationData?.candidateId ??
+      selectedCandidate?.id
+    );
+    if (candidateId) {
+      setInvitedCandidateIds((prev) => {
+        const next = new Set(prev);
+        next.add(candidateId);
+        return next;
+      });
+      setCandidates((prev) =>
+        prev.map((c) =>
+          Number(c.id) === candidateId ? { ...c, isInvited: true } : c
+        )
+      );
+    }
+    setInviteSuccess(true);
+    setTimeout(() => setInviteSuccess(false), 3500);
+  };
+
   const handleLoadMore = () => {
     if (loadingMore || !pagination?.hasNext) {
       return;
@@ -268,11 +368,12 @@ const CandidateSearchResults = ({
 
   if (loading) {
     return (
-      <div className={`bg-[#1A3E32] w-full ${compact ? "px-4 py-6 rounded-none min-h-[50vh] flex items-center" : "px-4 sm:px-6 py-8 rounded-2xl shadow-lg"}`}>
-        <div className="text-center w-full">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          <p className="text-white mt-4">Loading candidates...</p>
-        </div>
+      <div className={`bg-[#1A3E32] w-full flex items-center justify-center ${compact ? "px-4 py-6 rounded-none min-h-[50vh]" : "px-4 sm:px-6 py-8 rounded-2xl shadow-lg"}`}>
+        <Loader
+          fullscreen={false}
+          description="Loading candidates..."
+          textColor="text-white"
+        />
       </div>
     );
   }
@@ -290,23 +391,9 @@ const CandidateSearchResults = ({
     );
   }
 
-  const handleInviteClick = (candidate) => {
-    setSelectedCandidate(candidate);
-    setIsModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedCandidate(null);
-  };
-
-  const handleInviteSuccess = () => {
-    setInviteSuccess(true);
-    setTimeout(() => setInviteSuccess(false), 3000);
-  };
 
   return (
-    <div className={`bg-[#1A3E32] w-full ${compact ? "px-3 py-3 rounded-none min-h-full" : "px-4 sm:px-6 py-4 rounded-2xl shadow-lg"}`}>
+    <div className={`bg-[#1A3E32] w-full max-w-full min-w-0 overflow-hidden ${compact ? "px-3 py-3 rounded-none min-h-full" : "px-3 sm:px-4 py-4 rounded-2xl shadow-lg"}`}>
       {inviteSuccess && (
         <div className="mb-4 p-3 bg-green-500/20 border border-green-500 rounded-lg text-green-400 text-sm text-center">
           Interview invitation sent successfully!
@@ -323,6 +410,7 @@ const CandidateSearchResults = ({
             <React.Fragment key={candidate.id}>
               <CandidateProfile 
                 candidate={candidate} 
+                isInvited={isCandidateInvited(candidate)}
                 onViewProfile={onViewProfile}
                 onInvite={handleInviteClick}
                 compact={compact}
@@ -347,6 +435,7 @@ const CandidateSearchResults = ({
         isOpen={isModalOpen}
         onClose={handleModalClose}
         candidate={selectedCandidate}
+        isReinvite={isCandidateInvited(selectedCandidate)}
         onSuccess={handleInviteSuccess}
       />
     </div>
@@ -545,7 +634,7 @@ const LoadMoreSection = ({ compact, loading, error, onLoadMore, onUpgrade }) => 
       {loading ? "Loading more candidates..." : "Load more candidates"}
     </button>
     <p className={`text-white/70 mt-2 ${compact ? "text-[10px]" : "text-xs"}`}>
-      Uses 1 search credit
+      {/* Does not use an extra search credit */}
     </p>
   </div>
 );
@@ -586,44 +675,39 @@ const NoCandidatesFound = ({ navigate, compact }) => (
   </div>
 );
 
-const CandidateProfile = ({ candidate, onViewProfile, onInvite, compact }) => (
-  <div className={compact ? "px-2 py-3" : "mt-4 px-2 py-2 sm:px-3"}>
-    <div className={`flex ${compact ? "flex-row items-start gap-3" : "flex-col md:flex-row items-start gap-4 md:gap-5"}`}>
-      <ProfileImage
-        initials={candidate.initials}
-        name={candidate.name}
-        availability={candidate.availability}
-        image={candidate.image}
-        compact={compact}
-      />
-      <ProfileDetails
-        user={candidate}
-        name={candidate.name}
-        type={candidate.type}
-        jobTitle={candidate.jobTitle}
-        location={candidate.location}
-        skills={candidate.skills}
-        experienceYears={candidate.experienceYears}
-        onViewProfile={() =>
-          onViewProfile(candidate.id, candidate.user_id ?? candidate.userId)
-        }
-        onInvite={() => onInvite(candidate)}
-        compact={compact}
-      />
-    </div>
+const CandidateProfile = ({ candidate, isInvited = false, onViewProfile, onInvite, compact }) => (
+  <div className={`min-w-0 max-w-full overflow-hidden ${compact ? "px-2 py-3" : "mt-3 px-0.5 py-2"}`}>
+    <ProfileDetails
+      user={candidate}
+      name={candidate.name}
+      type={candidate.type}
+      jobTitle={candidate.jobTitle}
+      location={candidate.location}
+      skills={candidate.skills}
+      experienceYears={candidate.experienceYears}
+      initials={candidate.initials}
+      image={candidate.image}
+      availability={candidate.availability}
+      onViewProfile={() =>
+        onViewProfile(candidate.id, candidate.user_id ?? candidate.userId)
+      }
+      onInvite={() => onInvite(candidate)}
+      isInvited={isInvited}
+      compact={compact}
+    />
   </div>
 );
 
 const ProfileImage = ({ initials, name, availability, image, compact }) => (
   <div className="relative shrink-0">
     <div className={`rounded-full overflow-hidden bg-[#6B8E23] flex items-center justify-center ${
-      compact ? "w-14 h-14" : "w-[88px] h-[88px] sm:w-[96px] sm:h-[96px]"
+      compact ? "w-12 h-12" : "w-14 h-14"
     }`}>
 
       {image ? (
         <img src={image} alt={`${name} profile`} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-white text-2xl font-bold">{initials}</span>
+        <span className={`text-white font-bold ${compact ? "text-sm" : "text-base"}`}>{initials}</span>
       )}
 
     </div>
@@ -637,77 +721,144 @@ const ProfileImage = ({ initials, name, availability, image, compact }) => (
 );
 
 
-const ProfileDetails = ({ user, name, type, jobTitle, location, skills, experienceYears, onViewProfile, onInvite, compact }) => (
-  <div className="w-full flex-1 min-w-0 space-y-1">
-    <div>
-      <p className={`text-white font-medium truncate ${compact ? "text-sm" : "text-[15px] sm:text-[16px]"}`}>
-        {compact ? (
-          <DisplayNameWithBadge user={user} fallback={name} badgeSize="xs" />
-        ) : (
-          <>
-            <strong>Name:</strong>{" "}
-            <DisplayNameWithBadge user={user} fallback={name} badgeSize="xs" />
-          </>
-        )}
-      </p>
-      <p className={`text-white/80 ${compact ? "text-[11px]" : "text-[12px]"}`}>
-        {compact ? `${type} · ${jobTitle}` : <><strong>Type:</strong> {type}</>}
-      </p>
-    </div>
-    <div>
-      {!compact && (
-        <p className="text-white text-[13px] sm:text-[14px] font-medium"><strong>Job Title:</strong> {jobTitle}</p>
-      )}
-      <p className={`text-white/90 ${compact ? "text-[11px]" : "text-[12px]"}`}>
-        {compact ? location : <><strong>Location:</strong> {location}</>}
-        {compact && experienceYears > 0 ? ` · ${experienceYears} yr${experienceYears === 1 ? "" : "s"}` : null}
-      </p>
+const skillLabels = (skills) => {
+  const source = Array.isArray(skills)
+    ? skills
+    : typeof skills === "string"
+      ? skills.split(/[,;\n]+/)
+      : [];
+  const labels = [];
+  for (const raw of source) {
+    const text =
+      typeof raw === "string"
+        ? raw
+        : raw?.skill || raw?.name || raw?.label || "";
+    String(formatDisplayText(text) ?? text)
+      .split(/[,;\n]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach((part) => labels.push(part));
+  }
+  return labels;
+};
 
-      {!compact && experienceYears > 0 && (
-        <p className="text-white text-[12px]"><strong>Experience:</strong> {experienceYears} years</p>
-      )}
+const ProfileDetails = ({
+  user,
+  name,
+  type,
+  jobTitle,
+  location,
+  skills,
+  experienceYears,
+  initials,
+  image,
+  availability,
+  onViewProfile,
+  onInvite,
+  isInvited = false,
+  compact,
+}) => {
+  const visibleSkills = skillLabels(skills);
+  const skillLimit = compact ? 4 : 6;
+  const shownSkills = visibleSkills.slice(0, skillLimit);
 
-      {skills.length > 0 && (
-        <div className={compact ? "mt-1" : "mt-1"}>
+  return (
+    <div className="w-full min-w-0 max-w-full space-y-2">
+      <div className="flex items-start gap-3 min-w-0">
+        <ProfileImage
+          initials={initials}
+          name={name}
+          availability={availability}
+          image={image}
+          compact={compact}
+        />
+        <div className="min-w-0 flex-1">
+          <p className={`text-white font-medium break-words ${compact ? "text-sm" : "text-[15px]"}`}>
+            {compact ? (
+              <DisplayNameWithBadge user={user} fallback={name} badgeSize="xs" />
+            ) : (
+              <>
+                <strong>Name:</strong>{" "}
+                <DisplayNameWithBadge user={user} fallback={name} badgeSize="xs" />
+              </>
+            )}
+          </p>
+          <p className={`text-white/80 break-words ${compact ? "text-[11px]" : "text-[12px]"}`}>
+            {compact ? `${type} · ${jobTitle}` : <><strong>Type:</strong> {type}</>}
+          </p>
+          {!compact && (
+            <p className="text-white text-[13px] font-medium break-words">
+              <strong>Job Title:</strong> {jobTitle}
+            </p>
+          )}
+          <p className={`text-white/90 break-words ${compact ? "text-[11px]" : "text-[12px]"}`}>
+            {compact ? location : <><strong>Location:</strong> {location}</>}
+            {experienceYears > 0
+              ? compact
+                ? ` · ${experienceYears} yr${experienceYears === 1 ? "" : "s"}`
+                : null
+              : null}
+          </p>
+          {!compact && experienceYears > 0 && (
+            <p className="text-white text-[12px] break-words">
+              <strong>Experience:</strong> {experienceYears} years
+            </p>
+          )}
+        </div>
+      </div>
+
+      {shownSkills.length > 0 && (
+        <div className="min-w-0 max-w-full">
           {!compact && (
             <p className="text-white text-[12px] font-medium"><strong>Skills:</strong></p>
           )}
-          <div className="flex flex-wrap gap-1 mt-1">
-            {skills.slice(0, compact ? 2 : 3).map((skill, index) => (
-              <span key={index} className={`bg-[#556B1F] text-white px-2 py-0.5 rounded ${compact ? "text-[9px]" : "text-[10px]"}`}>
-                {formatDisplayText(skill) ?? skill}
+          <div className="flex flex-wrap gap-1 mt-1 w-full min-w-0">
+            {shownSkills.map((skill, index) => (
+              <span
+                key={`${skill}-${index}`}
+                className={`max-w-full min-w-0 break-words [overflow-wrap:anywhere] bg-[#556B1F] text-white px-2 py-0.5 rounded ${compact ? "text-[10px] leading-snug" : "text-[11px] leading-snug"}`}
+              >
+                {skill}
               </span>
             ))}
-            {skills.length > (compact ? 2 : 3) && (
-              <span className={`text-white ${compact ? "text-[9px]" : "text-[10px]"}`}>
-                +{skills.length - (compact ? 2 : 3)} more
+            {visibleSkills.length > skillLimit && (
+              <span className={`text-white self-center ${compact ? "text-[10px]" : "text-[11px]"}`}>
+                +{visibleSkills.length - skillLimit} more
               </span>
             )}
           </div>
         </div>
       )}
-    </div>
-    <ProfileActions onViewProfile={onViewProfile} onInvite={onInvite} compact={compact} />
-  </div>
-);
 
-const ProfileActions = ({ onViewProfile, onInvite, compact }) => (
-  <div className={`flex gap-2 ${compact ? "mt-2 flex-col sm:flex-row" : "mt-2 flex-wrap"}`}>
+      <ProfileActions
+        onViewProfile={onViewProfile}
+        onInvite={onInvite}
+        isInvited={isInvited}
+        compact={compact}
+      />
+    </div>
+  );
+};
+
+const ProfileActions = ({ onViewProfile, onInvite, isInvited = false, compact }) => (
+  <div className="flex w-full min-w-0 flex-col gap-2">
     <button
+      type="button"
       onClick={onViewProfile}
-      className={`rounded-3xl bg-[#556B1F] hover:bg-[#6B8E23] text-white font-medium transition-colors ${
-        compact ? "w-full sm:flex-1 px-3 py-2 text-[11px]" : "px-3 py-1.5 min-w-[120px] text-[12px]"
-      }`}
+      className={`w-full rounded-3xl bg-[#556B1F] hover:bg-[#6B8E23] text-white font-medium transition-colors px-3 leading-snug cursor-pointer ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
     >
-      View Profile
+      View CV
     </button>
     <button
+      type="button"
       onClick={onInvite}
-      className={`rounded-3xl bg-[#6B8E23] hover:bg-[#556B1F] text-white font-medium transition-colors ${
-        compact ? "w-full sm:flex-1 px-3 py-2 text-[11px]" : "px-3 py-1.5 min-w-[120px] text-[12px]"
-      }`}
+      className={`w-full rounded-3xl ${
+        isInvited
+          ? "bg-[#16730F] hover:bg-[#125B0C]"
+          : "bg-[#6B8E23] hover:bg-[#556B1F]"
+      } text-white font-medium transition-colors px-3 leading-snug whitespace-normal cursor-pointer ${compact ? "py-1.5 text-[11px]" : "py-2 text-[12px]"}`}
     >
-      Invite for interview
+      {isInvited ? "Reinvite for interview" : "Invite for interview"}
     </button>
   </div>
 );

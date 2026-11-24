@@ -35,7 +35,7 @@ const SESSION_ROTATION_KEY = "bejite_pymk_session_rotation";
 /**
  * Fisher-Yates array shuffling for unbiased distribution
  */
-export const shuffleArray = (arr) => {
+const shuffleArray = (arr) => {
   const result = [...arr];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

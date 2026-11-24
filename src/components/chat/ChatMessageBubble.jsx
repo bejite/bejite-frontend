@@ -60,6 +60,8 @@ export default function ChatMessageBubble({
   senderAvatar,
   senderInitials,
   messageTime,
+  showTime = true,
+  isContinuation = false,
   editing = false,
   saving = false,
   onStartEdit,
@@ -347,10 +349,14 @@ export default function ChatMessageBubble({
       }
     : {};
 
+  const showEdited = wasEdited && !isDeleted;
+  const showFooter = showTime || showEdited;
+  const stackGap = showTime ? "mb-6" : "mb-1";
+
   if (isOwnMessage) {
     return (
       <div
-        className={`flex justify-end mb-6 min-w-0 w-full ${
+        className={`flex justify-end min-w-0 w-full ${stackGap} ${
           menuOpen ? "relative z-[80]" : ""
         }`}
         data-message-id={message.id}
@@ -370,22 +376,26 @@ export default function ChatMessageBubble({
             </div>
             {renderActionsMenu()}
           </div>
-          <div className="flex items-center justify-end gap-2 mt-1.5 w-fit max-w-full">
-            {wasEdited && !isDeleted && (
-              <span className="text-[10px] italic text-[#A89B72]">edited</span>
-            )}
-            {messageTime && (
-              <span className="text-[10px] tracking-wide text-[#A89B72]">
-                {messageTime}
-              </span>
-            )}
-            <img
-              src="/assets/images/tick.svg"
-              alt=""
-              className="w-[11px] h-[7px]"
-              aria-hidden="true"
-            />
-          </div>
+          {showFooter && (
+            <div className="flex items-center justify-end gap-2 mt-1.5 w-fit max-w-full">
+              {showEdited && (
+                <span className="text-[10px] italic text-[#A89B72]">edited</span>
+              )}
+              {showTime && messageTime && (
+                <span className="text-[10px] tracking-wide text-[#A89B72]">
+                  {messageTime}
+                </span>
+              )}
+              {showTime && (
+                <img
+                  src="/assets/images/tick.svg"
+                  alt=""
+                  className="w-[11px] h-[7px]"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -393,12 +403,14 @@ export default function ChatMessageBubble({
 
   return (
     <div
-      className={`flex items-start gap-3 mb-6 min-w-0 max-w-[min(100%,32rem)] ${
+      className={`flex items-start gap-3 min-w-0 max-w-[min(100%,32rem)] ${stackGap} ${
         menuOpen ? "relative z-[80]" : ""
       }`}
       data-message-id={message.id}
     >
-      {senderAvatar ? (
+      {isContinuation ? (
+        <div className="w-9 shrink-0" aria-hidden="true" />
+      ) : senderAvatar ? (
         <img
           src={senderAvatar}
           alt={senderName}
@@ -411,25 +423,27 @@ export default function ChatMessageBubble({
       )}
 
       <div className="flex flex-col min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#A89B72] mb-1.5">
-          <DisplayNameWithBadge
-            user={
-              senderBadgeUser
-                ? {
-                    ...senderBadgeUser,
-                    hasVerifiedBadge: senderHasVerifiedBadge,
-                    role: senderBadgeUser.role || message.role,
-                  }
-                : {
-                    firstName: senderName,
-                    hasVerifiedBadge: senderHasVerifiedBadge,
-                    role: message.role,
-                  }
-            }
-            fallback={senderName}
-            badgeSize="xs"
-          />
-        </p>
+        {!isContinuation && (
+          <p className="text-sm font-medium text-[#A89B72] mb-1.5">
+            <DisplayNameWithBadge
+              user={
+                senderBadgeUser
+                  ? {
+                      ...senderBadgeUser,
+                      hasVerifiedBadge: senderHasVerifiedBadge,
+                      role: senderBadgeUser.role || message.role,
+                    }
+                  : {
+                      firstName: senderName,
+                      hasVerifiedBadge: senderHasVerifiedBadge,
+                      role: message.role,
+                    }
+              }
+              fallback={senderName}
+              badgeSize="xs"
+            />
+          </p>
+        )}
         <div ref={menuRef} className="relative w-fit max-w-full">
           <div
             {...bubbleProps}
@@ -441,9 +455,10 @@ export default function ChatMessageBubble({
           </div>
           {renderActionsMenu()}
         </div>
-        {messageTime && (
+        {showFooter && (
           <p className="text-[10px] tracking-wide text-[#A89B72] mt-1.5 self-start">
-            {messageTime}
+            {showEdited && <span className="italic mr-1.5">edited</span>}
+            {showTime && messageTime}
           </p>
         )}
       </div>
